@@ -20,6 +20,14 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        success:
+          "bg-green-600 text-white shadow-xs hover:bg-green-700 focus-visible:ring-green-500/30 dark:bg-green-500",
+        info:
+          "bg-blue-500 text-white hover:bg-blue-600 shadow-xs focus-visible:ring-blue-500/30 dark:bg-blue-400",
+        accent:
+          "bg-violet-600 text-white hover:bg-violet-700 shadow-xs focus-visible:ring-violet-500/30 dark:bg-violet-500",
+        muted:
+          "bg-muted text-muted-foreground hover:bg-muted/80 shadow-xs",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -34,6 +42,7 @@ const buttonVariants = cva(
     },
   }
 )
+
 
 function Button({
   className,

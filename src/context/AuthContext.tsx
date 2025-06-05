@@ -9,6 +9,7 @@ type Role = "admin" | "docente" | "familiar";
 type AppUser = {
   uid: string;
   email: string | null;
+  name: string | null;
   role: Role;
 };
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             role,
+            name: userDoc.exists() ? userDoc.data().name : null
           });
         } else {
           setUser(null);
