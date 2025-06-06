@@ -28,6 +28,7 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password)
       console.log("Login successful")
+      navigate("/dashboard")
     } catch (err: any) {
       console.error("Firebase error:", err.code, err.message)
       setError("Invalid credentials")
@@ -44,7 +45,7 @@ export default function Login() {
   }, [user, navigate])
 
   return (
-    <div className="grid grid-cols-2 h-screen">
+    <div className="grid lg:grid-cols-2 md:grid-cols-1 h-screen ">
       <div className="flex justify-center items-center flex-col bg-white">
         <img
           src={logo}
@@ -53,6 +54,7 @@ export default function Login() {
         />
         <ReutilizableCard
           title="Login"
+          full={false}
           description="Please enter your credentials"
           action={
             <Button
