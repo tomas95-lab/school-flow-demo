@@ -15,6 +15,8 @@ interface ReutilizableCardProps {
   action?: ReactNode;
   children?: ReactNode;
   footer?: ReactNode;
+  center?: boolean;
+  full?: number;
 }
 
 export function ReutilizableCard({
@@ -23,10 +25,13 @@ export function ReutilizableCard({
   action,
   children,
   footer,
+  center,
+  full,
 }: ReutilizableCardProps) {
-  return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
+  // Calcula la clase de col-span solo si full está definido y es válido
+return (
+    <Card className={`w-full ${full ? "h-screen" : "w-sm-full"}`}>
+      <CardHeader className={`flex flex-col ${center ? "items-center" : "items-start"}`}>
         <CardTitle><h1 className="text-2xl font-bold">{title}</h1></CardTitle>
         <CardDescription>
           {description}
