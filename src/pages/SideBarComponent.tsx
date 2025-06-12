@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/sidebar"
 import { useNavigate, useLocation } from "react-router-dom"
 import React from "react"
-
+import { Badge } from "@/components/ui/badge"
+import { useContext} from "react"
+import { AuthContext } from "@/context/AuthContext"
 
 // Lista de rutas válidas reales extraídas del sidebar
 const validRoutes = [
@@ -39,7 +41,9 @@ const validRoutes = [
   "/configuracion/bot"
 ];
 
+
 export default function SideBarComponent({ children }: { children: React.ReactNode }) {
+  const { user } = useContext(AuthContext)
   const location = useLocation() 
   const url = location.pathname 
   const urlArray = url.split("/") 
@@ -71,7 +75,7 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex w-full h-16 shrink-0 items-center gap-2 border-b px-4 fixed top-0 bg-white z-50">
+        <header className="flex w-full h-16 shrink-0 items-center gap-2 border-b px-4 bg-white z-50">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex items-center justify-between w-full">
@@ -109,9 +113,17 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            <Badge className="ml-4">
+                {user?.role === 'admin'? 'Administrador'
+                  : user?.role === 'docente'
+                  ? 'Docente'
+                  : user?.role === 'familiar'
+                  ? 'Familiar'
+                  : 'Invitado'}
+            </Badge>  
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-20">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-4">
           {children}
         </div>
       </SidebarInset>

@@ -1,24 +1,29 @@
-"use client"
-
 import type { ColumnDef } from "@tanstack/react-table"
- 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-export type Student = {
-  id: string
-  Nombre: string,
-  presente: boolean, 
-  fecha: string,
+
+export interface AttendanceRow {
+  id: string | undefined
+  Nombre: string
+  presente: boolean
+  fecha: string
 }
 
-export const columns: ColumnDef<Student>[] = [
+export const columnsDetalle: ColumnDef<AttendanceRow>[] = [
+  {
+    accessorKey: "Nombre",
+    header: "Nombre",
+  },
   {
     accessorKey: "presente",
     header: "Presente",
-  },
-  {
-    accessorKey: "nombre",
-    header: "Nombre",
+    cell: ({ row }) => {
+      const value = row.getValue("presente");
+      const isPresente = value === true;
+      return (
+        <span className={isPresente ? "text-green-500" : "text-red-500"}>
+          {isPresente ? "Presente" : "Ausente"}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "fecha",
