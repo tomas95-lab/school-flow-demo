@@ -12,7 +12,6 @@ import {
   Users, 
   UserCheck, 
   UserX, 
-  Calendar,
   BookOpen,
   TrendingDown,
   Download,
@@ -40,24 +39,32 @@ export default function DetalleAsistencia() {
     const totalSubjects = subjectsInCourse.length
     
     // Calcular estadísticas de asistencia por materia
-    const subjectStats = subjectsInCourse.map(subject => {
-      const attendanceRecords = asistencias.filter(
-        a => a.courseId === id && a.subject === subject.nombre
+  const subjectStats = subjectsInCourse.map(subject => {
+    // Contamos cuántos alumnos del curso están presentes en ESTE registro
+    const presentCount = studentsInCourse.reduce((acc, student) => {
+      const rec = asistencias.find(a =>
+        a.studentId === student.firestoreId &&
+        a.courseId  === id &&
+        a.subject   === subject.nombre
       )
-      
-      const present = attendanceRecords.filter(a => a.presente).length
-      const absent = attendanceRecords.filter(a => !a.presente).length
-      const total = present + absent
-      const percentage = total > 0 ? Math.round((present / total) * 100) : 0
-      
-      return {
-        subject: subject.nombre,
-        present,
-        absent,
-        total,
-        percentage
-      }
-    })
+      return acc + (rec?.presente ? 1 : 0)
+    }, 0)
+
+    const totalStudents = studentsInCourse.length
+    const absentCount  = totalStudents - presentCount
+    const percentage   = totalStudents > 0
+      ? Math.round((presentCount / totalStudents) * 100)
+      : 0
+
+    return {
+      subject:  subject.nombre,
+      present:  presentCount,
+      absent:   absentCount,
+      total:    totalStudents,
+      percentage
+    }
+})
+
 
     const overallPresent = subjectStats.reduce((acc, s) => acc + s.present, 0)
     const overallTotal = subjectStats.reduce((acc, s) => acc + s.total, 0)
@@ -111,10 +118,6 @@ export default function DetalleAsistencia() {
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               Exportar
-            </Button>
-            <Button variant="outline" size="sm">
-              <Calendar className="h-4 w-4 mr-2" />
-              Rango de fechas
             </Button>
           </div>
         </div>
