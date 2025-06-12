@@ -1,3 +1,4 @@
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 // import { Link } from "react-router-dom"; // Comentado para el demo
 import { SchoolSpinner } from "@/components/SchoolSpinner";
