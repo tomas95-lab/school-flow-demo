@@ -69,7 +69,7 @@ export default function DetalleAsistencia() {
           return {
             id: student.firestoreId,
             Nombre: `${student.nombre} ${student.apellido}`,
-            presente: asistencia?.presente ?? "pene",
+            presente: asistencia?.presente ?? false,
             fecha: asistencia?.fecha ?? new Date().toISOString(),
           }
         })
