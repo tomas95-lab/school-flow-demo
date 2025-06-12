@@ -12,50 +12,51 @@ import { AuthContext } from "../context/AuthContext";
 async function signInWithEmailAndPassword(auth: Auth, email: string, password: string) {
   return firebaseSignInWithEmailAndPassword(auth, email, password);
 }
+
 export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const navigate = useNavigate()
-  const { user } = useContext(AuthContext)
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      console.log("Login successful")
-      navigate("/dashboard")
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log("Inicio de sesión exitoso");
+      navigate("/dashboard");
     } catch (err: any) {
-      console.error("Firebase error:", err.code, err.message)
-      setError("Invalid credentials")
+      console.error("Error de Firebase:", err.code, err.message);
+      setError("Credenciales inválidas");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    console.log("User from context:", user)
+    console.log("Usuario desde contexto:", user);
     if (user) {
-      navigate("/dashboard")
+      navigate("/dashboard");
     }
-  }, [user, navigate])
+  }, [user, navigate]);
 
   return (
-    <div className="grid lg:grid-cols-2 md:grid-cols-1 h-screen ">
+    <div className="grid lg:grid-cols-2 md:grid-cols-1 h-screen">
       <div className="flex justify-center items-center flex-col bg-white">
         <img
           src={logo}
-          alt="EduFlow Logo"
-          className="w-24 "
+          alt="Logo de EduFlow"
+          className="w-24"
         />
         <ReutilizableCard
-          title="Login"
+          title="Iniciar sesión"
           full={false}
-          description="Please enter your credentials"
+          description="Por favor ingresa tus credenciales"
           action={
             <Button
               className="w-full mt-4 cursor-pointer"
@@ -64,14 +65,14 @@ export default function Login() {
               disabled={loading}
               form="login-form"
             >
-              {loading ? "Loading..." : "Login"}
+              {loading ? "Cargando..." : "Iniciar sesión"}
             </Button>
           }
           footer={
             <p className="text-center text-sm text-gray-500">
-              Don't have an account?{" "}
+              ¿No tienes una cuenta?{" "}
               <a href="/register" className="text-blue-500 hover:underline">
-                Register
+                Regístrate
               </a>
             </p>
           }
@@ -84,7 +85,7 @@ export default function Login() {
             <input
               type="email"
               className="p-2 border rounded"
-              placeholder="Enter your email"
+              placeholder="Ingresa tu correo electrónico"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -93,7 +94,7 @@ export default function Login() {
             <input
               type="password"
               className="p-2 border rounded"
-              placeholder="Enter your password"
+              placeholder="Ingresa tu contraseña"
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -108,26 +109,27 @@ export default function Login() {
         className="relative bg-cover bg-center"
         style={{ backgroundImage: `url(${backgound})` }}
       >
-        <div className="absolute inset-0 bg-blue-900/30 " />
+        <div className="absolute inset-0 bg-blue-900/30" />
         <div className="relative z-10 flex flex-col justify-center items-center text-white text-center px-12 h-full animate-fade-in">
           <h1 className="text-4xl font-bold drop-shadow-lg">
-            Welcome to <span className="text-yellow-400">EduFlow</span>
+            Bienvenido a <span className="text-yellow-400">EduFlow</span>
           </h1>
           <p className="mt-4 text-lg max-w-md drop-shadow-sm">
-            A{" "}
+            Una{" "}
             <span className="text-yellow-400 font-semibold">
-              modern platform
+              plataforma moderna
             </span>{" "}
-            to simplify school management — from{" "}
-            <span className="text-yellow-400 font-semibold">grades</span> to{" "}
-            <span className="text-yellow-400 font-semibold">smart alerts</span>
-            , everything in one place. Powered by{" "}
-            <span className="text-yellow-400 font-semibold">AI</span>.
+            para simplificar la gestión escolar — desde{" "}
+            <span className="text-yellow-400 font-semibold">calificaciones</span>{" "}
+            hasta{" "}
+            <span className="text-yellow-400 font-semibold">
+              alertas inteligentes
+            </span>
+            , todo en un solo lugar. Impulsado por{" "}
+            <span className="text-yellow-400 font-semibold">IA</span>.
           </p>
         </div>
       </div>
     </div>
   );
 }
-
-

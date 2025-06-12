@@ -7,12 +7,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import {
   SidebarInset,
   SidebarProvider,
@@ -21,31 +16,28 @@ import {
 import { useNavigate, useLocation } from "react-router-dom"
 import React from "react"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
 
-const validRoutes = {
-  dashboard: true,
-  projects: {
-    all: true,
-    planner: true,
-  },
-  financials: {
-    expenses: true,
-    invoices: true,
-  },
-  suppliers: {
-    all: true,
-    orders: true,
-  },
-  settings: {
-    general: true,
-    users: true,
-  },
-};
+// Lista de rutas válidas reales extraídas del sidebar
+const validRoutes = [
+  "/dashboard",
+  "/academic",
+  "/asistencias",
+  "/calificaciones",
+  "/boletines",
+  "/comunicacion",
+  "/mensajes",
+  "/alertas",
+  "/gestion",
+  "/usuarios",
+  "/cursos",
+  "/inscripciones",
+  "/ia",
+  "/reportes",
+  "/boletines/explicacion",
+  "/configuracion",
+  "/configuracion/general",
+  "/configuracion/bot"
+];
 
 export default function SideBarComponent({ children }: { children: React.ReactNode }) {
   const location = useLocation() 
@@ -56,18 +48,9 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
 
   const navigate = useNavigate()
 
-  const LogOut = () => {
-    localStorage.setItem("isAuthenticated", "false")
-    navigate("/")
-  }
-
   const isValidRoute = (path: string[]) => {
-    let current: any = validRoutes;
-    for (const part of path) {
-      if (!current[part.toLowerCase()]) return false;
-      current = current[part.toLowerCase()];
-    }
-    return true;
+    const route = "/" + path.join("/");
+    return validRoutes.includes(route);
   };
 
   const getBreadcrumbPath = (index: number) => {
@@ -83,10 +66,6 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
       navigate(path);
     }
   };
-
-  if (localStorage.getItem("isAuthenticated") == "false") {
-    navigate("/")
-  }
 
   return (
     <SidebarProvider>
@@ -130,19 +109,6 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            <div className="flex">
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" className="cursor-pointer" alt="@shadcn" />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={LogOut}>Logout</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-20">

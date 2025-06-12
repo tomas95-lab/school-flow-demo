@@ -191,20 +191,20 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ alumnos: 0, docentes: 0, cursos: 0, alertas: 0 })
   const [latestAlerts, setLatestAlerts] = useState<Alert[]>([])
 
+
+  console.log("User data:", user)
   useEffect(() => {
     async function fetchData() {
-      const [studentsSnap, usersSnap, coursesSnap, notificationsSnap] = await Promise.all([
+      const [studentsSnap, coursesSnap, notificationsSnap, docentesSnaps] = await Promise.all([
         getDocs(collection(db, "students")),
-        getDocs(collection(db, "users")),
         getDocs(collection(db, "courses")),
-        getDocs(collection(db, "notifications"))
+        getDocs(collection(db, "notifications")),
+        getDocs(collection(db, "teachers"))
       ])
-
-      const teacherCount = usersSnap.docs.filter(doc => doc.data().role === "docente").length
-
+      console.log(coursesSnap)
       setStats({
         alumnos: studentsSnap.size,
-        docentes: teacherCount,
+        docentes: docentesSnaps.size,
         cursos: coursesSnap.size,
         alertas: notificationsSnap.size
       })
