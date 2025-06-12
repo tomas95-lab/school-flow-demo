@@ -228,11 +228,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-4">Bienvenido, {user?.name ?? "Guest"}!</h1>
-      <p className="text-gray-600 mb-8">
-        Aquí puedes visualizar un resumen general de la actividad y estado de tu institución educativa.
-      </p>
-
+      <WelcomeMessage user={user} />
       <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
         {statsByRole[role as keyof typeof statsByRole]?.map(key => {
           const kpiKey = key as keyof typeof kpiMeta
@@ -261,6 +257,28 @@ export default function Dashboard() {
           </ReutilizableCard>
         </div>
       </div>
+    </div>
+  )
+}
+
+
+function WelcomeMessage({ user }: { user: any }) {
+  const currentHour = new Date().getHours()
+  let greeting = ""
+
+  if (currentHour < 6) greeting = "Buenas noches"
+  else if (currentHour < 12) greeting = "Buenos días"
+  else if (currentHour < 18) greeting = "Buenas tardes"
+  else greeting = "Buenas noches"
+
+  return (
+    <div className="mb-8">
+      <h1 className="text-4xl font-bold text-gray-800 mb-2">
+        {greeting}, {user?.name || "Invitado"}! 👋
+      </h1>
+      <p className="text-gray-600 text-lg"> 
+        Aquí tienes un resumen de la actividad de tu institución educativa.
+      </p>
     </div>
   )
 }

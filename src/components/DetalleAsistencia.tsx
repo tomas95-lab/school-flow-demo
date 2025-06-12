@@ -2,7 +2,7 @@ import { DataTable } from "@/app/asistencias/data-table"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 import { columnsDetalle } from "@/app/asistencias/columns"
 import type { AttendanceRow } from "@/app/asistencias/columns"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
 import { SchoolSpinner } from "./SchoolSpinner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,7 +23,7 @@ export default function DetalleAsistencia() {
   const [searchParams] = useSearchParams()
   const [id] = useState(searchParams.get("id"))
   const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set())
-  
+
   const { data: courses } = useFirestoreCollection("courses")
   const { data: students } = useFirestoreCollection("students")
   const { data: subjects } = useFirestoreCollection("subjects")
@@ -33,42 +33,96 @@ export default function DetalleAsistencia() {
   const studentsInCourse = students.filter((s) => s.cursoId === id)
   const subjectsInCourse = subjects.filter((s) => s.cursoId === id)
 
+  // Por defecto: colapsar todas las materias al cargar
+  useEffect(() => {
+    if (subjectsInCourse.length > 0 && collapsedSubjects.size === 0) {
+      const allIds = subjectsInCourse
+        .map(s => s.firestoreId)
+        .filter((sid): sid is string => Boolean(sid))
+      setCollapsedSubjects(new Set(allIds))
+    }
+  }, [subjectsInCourse, collapsedSubjects])
+
+  // Función para exportar CSV
+  const exportToCSV = () => {
+    if (!course) return
+
+    const csvData: string[][] = []
+    const headers = ['Alumno','Materia','Estado','Fecha']
+    csvData.push(headers)
+
+    subjectsInCourse.forEach(subject => {
+      studentsInCourse.forEach(student => {
+        const asistencia = asistencias.find(
+          (a) =>
+            a.studentId === student.firestoreId &&
+            a.courseId === course.firestoreId &&
+            a.subject === subject.nombre
+        )
+        
+        const row = [
+          `${student.nombre} ${student.apellido}`,
+          subject.nombre,
+          asistencia?.presente ? 'Presente' : 'Ausente',
+          asistencia?.fecha ? new Date(asistencia.fecha).toLocaleDateString() : 'N/A'
+        ]
+        csvData.push(row)
+      })
+    })
+
+    const csvContent = csvData
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', `asistencias_${course.nombre}_division_${course.division}.csv`)
+    link.style.visibility = 'hidden'
+    
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    URL.revokeObjectURL(url)
+  }
+
   // Estadísticas generales del curso
   const courseStats = useMemo(() => {
     const totalStudents = studentsInCourse.length
     const totalSubjects = subjectsInCourse.length
     
-    // Calcular estadísticas de asistencia por materia
-  const subjectStats = subjectsInCourse.map(subject => {
-    // Contamos cuántos alumnos del curso están presentes en ESTE registro
-    const presentCount = studentsInCourse.reduce((acc, student) => {
-      const rec = asistencias.find(a =>
-        a.studentId === student.firestoreId &&
-        a.courseId  === id &&
-        a.subject   === subject.nombre
-      )
-      return acc + (rec?.presente ? 1 : 0)
-    }, 0)
+    const subjectStats = subjectsInCourse.map(subject => {
+      const presentCount = studentsInCourse.reduce((acc, student) => {
+        const rec = asistencias.find(a =>
+          a.studentId === student.firestoreId &&
+          a.courseId  === id &&
+          a.subject   === subject.nombre
+        )
+        return acc + (rec?.presente ? 1 : 0)
+      }, 0)
 
-    const totalStudents = studentsInCourse.length
-    const absentCount  = totalStudents - presentCount
-    const percentage   = totalStudents > 0
-      ? Math.round((presentCount / totalStudents) * 100)
-      : 0
+      const absentCount  = totalStudents - presentCount
+      const percentage   = totalStudents > 0
+        ? Math.round((presentCount / totalStudents) * 100)
+        : 0
 
-    return {
-      subject:  subject.nombre,
-      present:  presentCount,
-      absent:   absentCount,
-      total:    totalStudents,
-      percentage
-    }
-})
-
+      return {
+        subject:  subject.nombre,
+        present:  presentCount,
+        absent:   absentCount,
+        total:    totalStudents,
+        percentage
+      }
+    })
 
     const overallPresent = subjectStats.reduce((acc, s) => acc + s.present, 0)
     const overallTotal = subjectStats.reduce((acc, s) => acc + s.total, 0)
-    const overallPercentage = overallTotal > 0 ? Math.round((overallPresent / overallTotal) * 100) : 0
+    const overallPercentage = overallTotal > 0
+      ? Math.round((overallPresent / overallTotal) * 100)
+      : 0
 
     return {
       totalStudents,
@@ -88,7 +142,7 @@ export default function DetalleAsistencia() {
     setCollapsedSubjects(newCollapsed)
   }
 
-  if (!course) {
+  if (!course || !students || !asistencias ) {
     return (
       <div className="flex items-center justify-center h-screen">
         <SchoolSpinner text="Cargando Asistencias..." />
@@ -99,7 +153,7 @@ export default function DetalleAsistencia() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header mejorado */}
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -115,9 +169,14 @@ export default function DetalleAsistencia() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={exportToCSV}
+              disabled={!course || studentsInCourse.length === 0}
+            >
               <Download className="h-4 w-4 mr-2" />
-              Exportar
+              Exportar CSV
             </Button>
           </div>
         </div>
@@ -175,7 +234,7 @@ export default function DetalleAsistencia() {
           </Card>
         </div>
 
-        {/* Vista por materias mejorada */}
+        {/* Vista por materias */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -201,7 +260,9 @@ export default function DetalleAsistencia() {
               })
 
               const subjectStat = courseStats.subjectStats.find(s => s.subject === subject.nombre)
-              const isCollapsed = subject.firestoreId ? collapsedSubjects.has(subject.firestoreId) : false
+              const isCollapsed = subject.firestoreId
+                ? collapsedSubjects.has(subject.firestoreId)
+                : false
 
               return (
                 <div key={subject.firestoreId} className="space-y-4">
@@ -233,7 +294,6 @@ export default function DetalleAsistencia() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* Estadísticas rápidas */}
                       <div className="flex items-center gap-2 text-sm">
                         <UserCheck className="h-4 w-4 text-green-600" />
                         <span className="font-medium text-green-700">
