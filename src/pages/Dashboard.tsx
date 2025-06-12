@@ -5,7 +5,10 @@ import {
   AlertCircle,
   PlusCircle,
   Settings,
-  Book
+  Book,
+  Sunrise, 
+  Sun, 
+  Moon 
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState } from "react"
@@ -245,13 +248,13 @@ export default function Dashboard() {
         })}
       </div>
 
-      <div className="mt-8 grid grid-cols-3 gap-4">
+      <div className="mt-8 grid lg:grid-cols-3 md:grid-cols-1 gap-4">
         <div className="col-span-1">
           <ReutilizableCard full title="Acceso Rápido" description="Enlaces rápidos a secciones importantes">
             <QuickAccessList role={role as keyof typeof quickAccessByRole} />
           </ReutilizableCard>
         </div>
-        <div className="col-span-2 h-full">
+        <div className="lg:col-span-2 h-full">
           <ReutilizableCard full title="Últimas Alertas" description="Alertas recientes generadas por IA">
             <AlertsList alerts={latestAlerts} />
           </ReutilizableCard>
@@ -263,22 +266,36 @@ export default function Dashboard() {
 
 
 function WelcomeMessage({ user }: { user: any }) {
-  const currentHour = new Date().getHours()
-  let greeting = ""
+  const currentHour = new Date().getHours();
+  let greeting = "";
+  let IconComponent = Sun;
 
-  if (currentHour < 6) greeting = "Buenas noches"
-  else if (currentHour < 12) greeting = "Buenos días"
-  else if (currentHour < 18) greeting = "Buenas tardes"
-  else greeting = "Buenas noches"
+  if (currentHour < 6) {
+    greeting = "Buenas noches";
+    IconComponent = Moon;
+  } else if (currentHour < 12) {
+    greeting = "Buenos días";
+    IconComponent = Sunrise;
+  } else if (currentHour < 18) {
+    greeting = "Buenas tardes";
+    IconComponent = Sun;
+  } else {
+    greeting = "Buenas noches";
+    IconComponent = Moon;
+  }
 
   return (
-    <div className="mb-8">
-      <h1 className="text-4xl font-bold text-gray-800 mb-2">
-        {greeting}, {user?.name || "Invitado"}! 👋
-      </h1>
-      <p className="text-gray-600 text-lg"> 
-        Aquí tienes un resumen de la actividad de tu institución educativa.
-      </p>
+    <div className="mb-8 flex items-center gap-2">
+      <IconComponent className="w-10 h-10 text-yellow-500" />
+      <div>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          {greeting}, {user?.name || "Invitado"}!
+        </h1>
+        <p className="text-gray-600 text-lg">
+          Aquí tienes un resumen de la actividad de tu institución educativa.
+        </p>
+      </div>
     </div>
-  )
+  );
 }
+

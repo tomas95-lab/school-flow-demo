@@ -87,7 +87,6 @@ export function DataTable<TData, TValue>({
 
   const hasActiveFilters = globalFilter !== "" || columnFilters.length > 0
   const sortedRows = table.getSortedRowModel().rows
-  const totalRowCount = table.getCoreRowModel().rows.length
 
   const clearAllFilters = () => {
     setGlobalFilter("")
@@ -95,6 +94,8 @@ export function DataTable<TData, TValue>({
     table.resetSorting()
   }
 
+
+  console.log(columnFilters)
   return (
     <div className={cn("space-y-4", className)}>
       {(title || description) && (
@@ -188,7 +189,44 @@ export function DataTable<TData, TValue>({
                 return null
               })}
             </div>
+            
           )}
+          {hasActiveFilters && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {/* Global filter */}
+            {globalFilter && (
+              <Badge
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => setGlobalFilter("")}
+              >
+                Buscar: {globalFilter} <X className="inline-block w-3 h-3 ml-1" />
+              </Badge>
+            )}
+            {/* Column filters */}
+            {table.getState().columnFilters.map(cf => {
+              const col = table.getColumn(cf.id)
+              // convierte el valor a string, y si es boolean usa Sí/No
+              const raw = cf.value
+              const displayValue =
+                typeof raw === "boolean" ? (raw ? "Sí" : "No") : String(raw)
+
+              return (
+                <Badge
+                  key={cf.id}
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() => col?.setFilterValue(undefined)}
+                >
+                  {`${cf.id}: ${displayValue}`}{" "}
+                  <X className="inline-block w-3 h-3 ml-1" />
+                </Badge>
+              )
+            })}
+
+          </div>
+        )}
+
         </div>
 
         <UiTable>
