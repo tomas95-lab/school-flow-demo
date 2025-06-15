@@ -19,6 +19,32 @@ import {
   EyeClosed
 } from "lucide-react"
 
+
+type AdminStatsCardProps = {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  subtitle?: string;
+  color?: string;
+};
+
+const DetallesStatsCard = ({ icon: Icon, label, value, subtitle, color = "indigo" }: AdminStatsCardProps) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-600">{label}</p>
+        <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+        {subtitle && (
+          <p className="text-sm text-gray-500 mt-1 mr-2">{subtitle}</p>
+        )}
+      </div>
+      <div className={`p-4 rounded-xl bg-${color}-100`}>
+        <Icon className={`h-8 w-8 text-${color}-600`} />
+      </div>
+    </div>
+  </div>
+)
+
 export default function DetalleAsistencia() {
   const [searchParams] = useSearchParams()
   const [id] = useState(searchParams.get("id"))
@@ -120,8 +146,27 @@ export default function DetalleAsistencia() {
     const overallPercentage = overallTotal > 0
       ? Math.round((overallPresent / overallTotal) * 100)
       : 0
+    
+    // Total de ausencias
+    const totalAbsences = subjectStats.reduce((sum, s) => sum + s.absent, 0)
+    
+    // Materias con baja asistencia
+    const lowAttendanceSubjects = subjectStats.filter(s => s.percentage < 80).length
+    
+    // Mejor y peor materia por asistencia
+    const bestSubject = subjectStats.reduce((max, s) => s.percentage > max.percentage ? s : max, subjectStats[0] || { percentage: 0 })
+    const worstSubject = subjectStats.reduce((min, s) => s.percentage < min.percentage ? s : min, subjectStats[0] || { percentage: 100 })
 
-    return { totalStudents, totalSubjects, overallPercentage, subjectStats }
+    return { 
+      totalStudents, 
+      totalSubjects, 
+      overallPercentage, 
+      subjectStats,
+      totalAbsences,
+      lowAttendanceSubjects,
+      bestSubject,
+      worstSubject
+    }
   }, [studentsInCourse, subjectsInCourse, asistencias, id])
 
   const toggleSubjectCollapse = (subjectId: string) => {
@@ -147,7 +192,7 @@ export default function DetalleAsistencia() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <BookOpen className="h-6 w-6 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">{course.nombre}</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{course.nombre}</h1>
               <Badge variant="secondary" className="ml-2">
                 División {course.division}
               </Badge>
@@ -169,44 +214,33 @@ export default function DetalleAsistencia() {
 
         {/* Estadísticas generales */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm">Total Estudiantes</p>
-                <p className="text-2xl font-bold">{courseStats.totalStudents}</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-200" />
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Asistencia General</p>
-                <p className="text-2xl font-bold">{courseStats.overallPercentage}%</p>
-              </div>
-              <UserCheck className="h-8 w-8 text-green-200" />
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm">Materias</p>
-                <p className="text-2xl font-bold">{courseStats.totalSubjects}</p>
-              </div>
-              <BookOpen className="h-8 w-8 text-orange-200" />
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-red-100 text-sm">Alertas</p>
-                <p className="text-2xl font-bold">
-                  {courseStats.subjectStats.filter(s => s.percentage < 80).length}
-                </p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-red-200" />
-            </CardContent>
-          </Card>
+          <DetallesStatsCard 
+            label="Total Estudiantes" 
+            icon={Users} 
+            value={courseStats.totalStudents} 
+            subtitle={`Registrados en ${courseStats.totalSubjects} materias`}
+            color="blue"
+          />
+          <DetallesStatsCard 
+            label="Asistencia General" 
+            icon={UserCheck} 
+            value={courseStats.overallPercentage + "%"} 
+            subtitle={courseStats.bestSubject?.subject ? `Mejor: ${courseStats.bestSubject.subject} (${courseStats.bestSubject.percentage}%)` : "Sin datos"}
+            color="green"
+          />
+          <DetallesStatsCard 
+            label="Materias" 
+            icon={BookOpen} 
+            value={courseStats.totalSubjects} 
+            color="purple"
+          />
+          <DetallesStatsCard 
+            label="Alertas" 
+            icon={TrendingDown} 
+            value={courseStats.lowAttendanceSubjects} 
+            subtitle={courseStats.lowAttendanceSubjects > 0 ? `Materias con menos del 80%` : "Todas las materias en buen nivel"}
+            color="red"
+          />
         </div>
 
         {/* Vista por materias */}

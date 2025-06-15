@@ -28,7 +28,6 @@ import {
   X,
   RotateCcw,
   Download,
-  Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -62,7 +61,6 @@ export function DataTable<TData, TValue>({
   data,
   placeholder = "elemento",
   filters = [],
-  showStats = true,
   exportable = false,
   title,
   description, 
