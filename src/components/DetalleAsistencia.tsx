@@ -1,339 +1,409 @@
-import { DataTable } from "@/app/asistencias/data-table"
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
-import { columnsDetalle } from "@/app/asistencias/columns"
-import type { AttendanceRow } from "@/app/asistencias/columns"
-import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "react-router-dom"
-import { SchoolSpinner } from "./SchoolSpinner"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
+import { AuthContext } from "@/context/AuthContext";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useContext, useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { DataTable } from "@/app/asistencias/data-table";
+import { columnsDetalle } from "@/app/asistencias/columns";
+import type { AttendanceRow } from "@/app/asistencias/columns";
+import { SchoolSpinner } from "./SchoolSpinner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Users,
+  UserCheck,
+  UserX,
   BookOpen,
-  TrendingDown,
   Download,
   Eye,
-  EyeClosed
-} from "lucide-react"
+  EyeClosed,
+  Target,
+  Award,
+  AlertTriangle,
+} from "lucide-react";
 
-
-type AdminStatsCardProps = {
+type DetallesStatsCardProps = {
   icon: React.ElementType;
   label: string;
   value: string | number;
   subtitle?: string;
   color?: string;
+  trend?: "up" | "down" | "neutral";
+  percentage?: number;
 };
 
-const DetallesStatsCard = ({ icon: Icon, label, value, subtitle, color = "indigo" }: AdminStatsCardProps) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-600">{label}</p>
-        <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-        {subtitle && (
-          <p className="text-sm text-gray-500 mt-1 mr-2">{subtitle}</p>
-        )}
-      </div>
-      <div className={`p-4 rounded-xl bg-${color}-100`}>
-        <Icon className={`h-8 w-8 text-${color}-600`} />
+const DetallesStatsCard = ({
+  icon: Icon,
+  label,
+  value,
+  subtitle,
+  color = "blue",
+  trend
+}: DetallesStatsCardProps) => {
+  const colorVariants = {
+    blue: {
+      bg: "bg-blue-50",
+      icon: "text-blue-600",
+      accent: "border-l-blue-500",
+      progressBg: "bg-blue-200",
+      progressFill: "bg-blue-500"
+    },
+    green: {
+      bg: "bg-green-50",
+      icon: "text-green-600",
+      accent: "border-l-green-500",
+      progressBg: "bg-green-200",
+      progressFill: "bg-green-500"
+    },
+    orange: {
+      bg: "bg-orange-50",
+      icon: "text-orange-600",
+      accent: "border-l-orange-500",
+      progressBg: "bg-orange-200",
+      progressFill: "bg-orange-500"
+    },
+    red: {
+      bg: "bg-red-50",
+      icon: "text-red-600",
+      accent: "border-l-red-500",
+      progressBg: "bg-red-200",
+      progressFill: "bg-red-500"
+    },
+    purple: {
+      bg: "bg-purple-50",
+      icon: "text-purple-600",
+      accent: "border-l-purple-500",
+      progressBg: "bg-purple-200",
+      progressFill: "bg-purple-500"
+    }
+  };
+
+  const colors = colorVariants[color as keyof typeof colorVariants] || colorVariants.blue;
+
+  return (
+    <div className={`bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-200`}>
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm font-medium text-gray-600">{label}</p>
+            {trend && (
+              <div className={`text-xs px-2 py-1 rounded-full ${
+                trend === 'up' ? 'bg-green-100 text-green-700' :
+                trend === 'down' ? 'bg-red-100 text-red-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {trend === 'up' ? '↗' : trend === 'down' ? '↘' : '→'}
+              </div>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-gray-500">{subtitle}</p>
+          )}
+        </div>
+        <div className={`p-3 rounded-full ${colors.bg}`}>
+          <Icon className={`h-6 w-6 ${colors.icon}`} />
+        </div>
       </div>
     </div>
-  </div>
-)
+  );
+};
 
 export default function DetalleAsistencia() {
-  const [searchParams] = useSearchParams()
-  const [id] = useState(searchParams.get("id"))
-  
-  // Estado de colapsado por materia
-  const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set())
-  const [didInitCollapse, setDidInitCollapse] = useState(false)
+  const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const [id] = useState(searchParams.get("id") || "");
 
-  const { data: courses } = useFirestoreCollection("courses")
-  const { data: students } = useFirestoreCollection("students")
-  const { data: subjects } = useFirestoreCollection("subjects")
-  const { data: asistencias } = useFirestoreCollection("attendances")
+  const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set());
+  const [didInitCollapse, setDidInitCollapse] = useState(false);
 
-  const course = courses.find(c => c.firestoreId === id)
-  const studentsInCourse = students.filter(s => s.cursoId === id)
-  const subjectsInCourse = subjects.filter(s => s.cursoId === id)
+  const { data: courses } = useFirestoreCollection("courses");
+  const { data: teachers } = useFirestoreCollection("teachers");
+  const { data: students } = useFirestoreCollection("students");
+  const { data: subjects } = useFirestoreCollection("subjects");
+  const { data: asistencias } = useFirestoreCollection("attendances");
 
-  // ⏳ Inicializar colapsado UNA sola vez al llegar subjectsInCourse
+  const course = courses.find(c => c.firestoreId === id);
+  const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
+
+  // si es admin: todas las materias del curso; si es docente: solo las propias
+  const subjectsInCourse = useMemo(() => {
+    const base = subjects.filter(s => s.cursoId === id);
+    if (user?.role === "admin") return base;
+    return base.filter(s => s.teacherId === teacher?.firestoreId);
+  }, [subjects, id, user, teacher]);
+
+  const studentsInCourse = students.filter(s => s.cursoId === id);
+
   useEffect(() => {
-    if (!didInitCollapse && subjectsInCourse.length > 0) {
-      const allIds = subjectsInCourse
-        .map(s => s.firestoreId)
-        .filter((sid): sid is string => Boolean(sid))
-      setCollapsedSubjects(new Set(allIds))
-      setDidInitCollapse(true)
+    if (!didInitCollapse && subjectsInCourse.length) {
+      setCollapsedSubjects(
+        new Set(subjectsInCourse.map(s => s.firestoreId!).filter(Boolean))
+      );
+      setDidInitCollapse(true);
     }
-  }, [subjectsInCourse, didInitCollapse])
+  }, [subjectsInCourse, didInitCollapse]);
 
-  // Exportar CSV
   const exportToCSV = () => {
-    if (!course) return
-
-    const csvData: string[][] = []
-    csvData.push(['Alumno','Materia','Estado','Fecha'])
-
-    subjectsInCourse.forEach(subject => {
+    if (!course) return;
+    const rows = [["Alumno", "Materia", "Estado", "Fecha"]];
+    subjectsInCourse.forEach(subject =>
       studentsInCourse.forEach(student => {
         const rec = asistencias.find(a =>
           a.studentId === student.firestoreId &&
-          a.courseId === course.firestoreId &&
+          a.courseId === id &&
           a.subject === subject.nombre
-        )
-        csvData.push([
+        );
+        rows.push([
           `${student.nombre} ${student.apellido}`,
           subject.nombre,
-          rec?.presente ? 'Presente' : 'Ausente',
-          rec?.fecha 
-            ? new Date(rec.fecha).toLocaleDateString() 
-            : 'N/A'
-        ])
+          rec?.presente ? "Presente" : "Ausente",
+          rec?.fecha || "N/A"
+        ]);
       })
-    })
+    );
+    const csv = rows.map(r => r.map(f => `"${f}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `asistencias_${course.nombre}_div_${course.division}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-    const csvContent = csvData
-      .map(row => row.map(f => `"${f}"`).join(','))
-      .join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.href = url
-    link.download = `asistencias_${course.nombre}_division_${course.division}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
-  // Stats generales
   const courseStats = useMemo(() => {
-    const totalStudents = studentsInCourse.length
-    const totalSubjects = subjectsInCourse.length
+    const totalStudents = studentsInCourse.length;
+    const totalSubjects = subjectsInCourse.length;
 
     const subjectStats = subjectsInCourse.map(subject => {
-      const presentCount = studentsInCourse.reduce((acc, student) => {
+      const present = studentsInCourse.reduce((acc, student) => {
         const rec = asistencias.find(a =>
           a.studentId === student.firestoreId &&
-          a.courseId  === id &&
-          a.subject   === subject.nombre
-        )
-        return acc + (rec?.presente ? 1 : 0)
-      }, 0)
-      const absentCount = totalStudents - presentCount
-      const percentage = totalStudents > 0
-        ? Math.round((presentCount / totalStudents) * 100)
-        : 0
+          a.courseId === id &&
+          a.subject === subject.nombre
+        );
+        return acc + (rec?.presente ? 1 : 0);
+      }, 0);
+      const percentage = totalStudents
+        ? Math.round((present / totalStudents) * 100)
+        : 0;
+      return { subject: subject.nombre, present, absent: totalStudents - present, total: totalStudents, percentage };
+    });
 
-      return {
-        subject: subject.nombre,
-        present: presentCount,
-        absent: absentCount,
-        total: totalStudents,
-        percentage
-      }
-    })
-
-    const overallPresent = subjectStats.reduce((sum, s) => sum + s.present, 0)
-    const overallTotal   = subjectStats.reduce((sum, s) => sum + s.total, 0)
-    const overallPercentage = overallTotal > 0
+    const overallPresent = subjectStats.reduce((sum, s) => sum + s.present, 0);
+    const overallTotal = subjectStats.reduce((sum, s) => sum + s.total, 0);
+    const overallPercentage = overallTotal
       ? Math.round((overallPresent / overallTotal) * 100)
-      : 0
-    
-    // Total de ausencias
-    const totalAbsences = subjectStats.reduce((sum, s) => sum + s.absent, 0)
-    
-    // Materias con baja asistencia
-    const lowAttendanceSubjects = subjectStats.filter(s => s.percentage < 80).length
-    
-    // Mejor y peor materia por asistencia
-    const bestSubject = subjectStats.reduce((max, s) => s.percentage > max.percentage ? s : max, subjectStats[0] || { percentage: 0 })
-    const worstSubject = subjectStats.reduce((min, s) => s.percentage < min.percentage ? s : min, subjectStats[0] || { percentage: 100 })
+      : 0;
+    const lowAttendanceSubjects = subjectStats.filter(s => s.percentage < 80).length;
+    const best = subjectStats.sort((a, b) => b.percentage - a.percentage)[0] || { percentage: 0, subject: "" };
+    const worst = subjectStats.sort((a, b) => a.percentage - b.percentage)[0] || { percentage: 0, subject: "" };
 
-    return { 
-      totalStudents, 
-      totalSubjects, 
-      overallPercentage, 
-      subjectStats,
-      totalAbsences,
-      lowAttendanceSubjects,
-      bestSubject,
-      worstSubject
-    }
-  }, [studentsInCourse, subjectsInCourse, asistencias, id])
+    return { totalStudents, totalSubjects, overallPercentage, subjectStats, lowAttendanceSubjects, bestSubject: best, worstSubject: worst };
+  }, [studentsInCourse, subjectsInCourse, asistencias, id]);
 
-  const toggleSubjectCollapse = (subjectId: string) => {
-    const copy = new Set(collapsedSubjects)
-    if (copy.has(subjectId)) copy.delete(subjectId)
-    else copy.add(subjectId)
-    setCollapsedSubjects(copy)
-  }
+  const toggleSubjectCollapse = (sid: string) => {
+    const c = new Set(collapsedSubjects);
+    c.has(sid) ? c.delete(sid) : c.add(sid);
+    setCollapsedSubjects(c);
+  };
 
-  if (!course || !students || !asistencias) {
+  // Funciones para determinar colores y tendencias
+  const getAttendanceColor = (percentage: number) => {
+    if (percentage >= 90) return "green";
+    if (percentage >= 80) return "blue";
+    if (percentage >= 70) return "orange";
+    return "red";
+  };
+
+  const getAttendanceTrend = (percentage: number) => {
+    if (percentage >= 85) return "up";
+    if (percentage < 75) return "down";
+    return "neutral";
+  };
+
+  if (!course) {
     return (
       <div className="flex items-center justify-center h-screen">
         <SchoolSpinner text="Cargando Asistencias..." />
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{course.nombre}</h1>
-              <Badge variant="secondary" className="ml-2">
-                División {course.division}
-              </Badge>
+        {/* Header mejorado */}
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">{course.nombre}</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      División {course.division}
+                    </Badge>
+                    <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                      Año {course.año}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <p className="text-gray-600 ml-12">
+                Gestión completa de asistencias • {courseStats.totalStudents} estudiantes
+              </p>
             </div>
-            <p className="text-gray-600">
-              Gestión de asistencias • Año {course.año}
-            </p>
+            <div className="flex items-start">
+              <Button 
+                onClick={exportToCSV} 
+                disabled={!studentsInCourse.length}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Download className="h-4 w-4 mr-2" /> 
+                Exportar CSV
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={exportToCSV}
-            disabled={studentsInCourse.length === 0}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
         </div>
 
-        {/* Estadísticas generales */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <DetallesStatsCard 
-            label="Total Estudiantes" 
-            icon={Users} 
-            value={courseStats.totalStudents} 
-            subtitle={`Registrados en ${courseStats.totalSubjects} materias`}
+        {/* Stats Cards Mejoradas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <DetallesStatsCard
+            icon={Users}
+            label="Total Estudiantes"
+            value={courseStats.totalStudents}
+            subtitle={`En ${courseStats.totalSubjects} materias`}
             color="blue"
           />
-          <DetallesStatsCard 
-            label="Asistencia General" 
-            icon={UserCheck} 
-            value={courseStats.overallPercentage + "%"} 
-            subtitle={courseStats.bestSubject?.subject ? `Mejor: ${courseStats.bestSubject.subject} (${courseStats.bestSubject.percentage}%)` : "Sin datos"}
+          
+          <DetallesStatsCard
+            icon={Target}
+            label="Asistencia General"
+            value={`${courseStats.overallPercentage}%`}
+            subtitle="Promedio del curso"
+            color={getAttendanceColor(courseStats.overallPercentage)}
+            trend={getAttendanceTrend(courseStats.overallPercentage)}
+            percentage={courseStats.overallPercentage}
+          />
+          
+          <DetallesStatsCard
+            icon={Award}
+            label="Mejor Materia"
+            value={`${courseStats.bestSubject.percentage}%`}
+            subtitle={courseStats.bestSubject.subject || "N/A"}
             color="green"
+            trend="up"
           />
-          <DetallesStatsCard 
-            label="Materias" 
-            icon={BookOpen} 
-            value={courseStats.totalSubjects} 
-            color="purple"
-          />
-          <DetallesStatsCard 
-            label="Alertas" 
-            icon={TrendingDown} 
-            value={courseStats.lowAttendanceSubjects} 
-            subtitle={courseStats.lowAttendanceSubjects > 0 ? `Materias con menos del 80%` : "Todas las materias en buen nivel"}
-            color="red"
+          
+          <DetallesStatsCard
+            icon={AlertTriangle}
+            label="Materias en Riesgo"
+            value={courseStats.lowAttendanceSubjects}
+            subtitle="Asistencia < 80%"
+            color={courseStats.lowAttendanceSubjects === 0 ? "green" : courseStats.lowAttendanceSubjects <= 2 ? "orange" : "red"}
           />
         </div>
 
-        {/* Vista por materias */}
-        <Card>
+        {/* Detalle por materia */}
+        <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Asistencia por Materia
+              <BookOpen className="h-5 w-5 text-blue-600" /> 
+              Detalle por Materia
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {subjectsInCourse.map(subject => {
-              const dataPorMateria: AttendanceRow[] = studentsInCourse.map(student => {
+              const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre);
+              const isCollapsed = collapsedSubjects.has(subject.firestoreId!);
+              const data: AttendanceRow[] = studentsInCourse.map(student => {
                 const rec = asistencias.find(a =>
                   a.studentId === student.firestoreId &&
                   a.courseId === course.firestoreId &&
                   a.subject === subject.nombre
-                )
+                );
                 return {
                   id: student.firestoreId,
                   Nombre: `${student.nombre} ${student.apellido}`,
                   presente: Boolean(rec?.presente),
-                  fecha: rec?.fecha ?? new Date().toISOString(),
-                }
-              })
+                  fecha: rec?.fecha || ""
+                };
+              });
 
-              const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre)
-              const isCollapsed = subject.firestoreId
-                ? collapsedSubjects.has(subject.firestoreId)
-                : false
+              const subjectColor = stat ? getAttendanceColor(stat.percentage) : "gray";
 
               return (
                 <div key={subject.firestoreId} className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                  <div className={`flex items-center justify-between p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow border-l-${subjectColor === 'green' ? 'green' : subjectColor === 'red' ? 'red' : subjectColor === 'orange' ? 'orange' : 'blue'}-500`}>
                     <div className="flex items-center gap-4">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => subject.firestoreId && toggleSubjectCollapse(subject.firestoreId)}
-                        className="p-1"
-                        disabled={!subject.firestoreId}
+                        onClick={() => toggleSubjectCollapse(subject.firestoreId!)}
+                        className="hover:bg-gray-100"
                       >
-                        {isCollapsed ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {isCollapsed ? (
+                          <EyeClosed className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </Button>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">{subject.nombre}</h3>
-                        <p className="text-sm text-gray-600">{stat?.total || 0} registros</p>
+                        <p className="text-sm text-gray-500">{stat?.total || 0} estudiantes registrados</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <UserCheck className="h-4 w-4 text-green-600" />
-                        <span className="font-medium text-green-700">{stat?.present || 0}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <UserX className="h-4 w-4 text-red-600" />
-                        <span className="font-medium text-red-700">{stat?.absent || 0}</span>
-                      </div>
-                      <Badge
+                    <div className="flex items-center gap-4">
+                      <Badge 
                         variant={stat && stat.percentage >= 80 ? "default" : "destructive"}
-                        className="ml-2"
+                        className="text-sm px-3 py-1"
                       >
                         {stat?.percentage || 0}% asistencia
                       </Badge>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <UserCheck className="h-4 w-4 text-green-600" />
+                          <span className="font-medium text-green-700">{stat?.present || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <UserX className="h-4 w-4 text-red-600" />
+                          <span className="font-medium text-red-700">{stat?.absent || 0}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   {!isCollapsed && (
-                    <div className="bg-white rounded-lg border shadow-sm">
+                    <div className="bg-gray-50 rounded-lg p-4">
                       <DataTable<AttendanceRow, any>
                         columns={columnsDetalle}
-                        data={dataPorMateria}
-                        placeholder="Buscar alumno..."
+                        data={data}
+                        placeholder="Buscar estudiante..."
                         filters={[
-                          {
-                            type: "button",
-                            label: "Solo presentes",
-                            onClick: table => table.getColumn("presente")?.setFilterValue(true),
+                          { 
+                            type: "button", 
+                            label: "Solo presentes", 
+                            onClick: t => t.getColumn("presente")?.setFilterValue(true) 
                           },
-                          {
-                            type: "button",
-                            label: "Solo ausentes",
-                            onClick: table => table.getColumn("presente")?.setFilterValue(false),
-                          },
+                          { 
+                            type: "button", 
+                            label: "Solo ausentes", 
+                            onClick: t => t.getColumn("presente")?.setFilterValue(false) 
+                          }
                         ]}
                       />
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

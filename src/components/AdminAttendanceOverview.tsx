@@ -1,35 +1,11 @@
 "use client";
 
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { BookOpen, Users, GraduationCap, TrendingUp, Calendar, Plus } from "lucide-react";
+import { BookOpen, Users, GraduationCap, TrendingUp, Plus } from "lucide-react";
 import { CourseCard } from "@/components/CourseCard";
 import type { Course } from "@/components/CourseCard";
+import { StatsCard } from "./StatCards";
 
-// Componente de estadísticas para admin
-type AdminStatsCardProps = {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  subtitle?: string;
-  color?: string;
-};
-
-const AdminStatsCard = ({ icon: Icon, label, value, subtitle, color = "indigo" }: AdminStatsCardProps) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-600">{label}</p>
-        <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-        {subtitle && (
-          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-        )}
-      </div>
-      <div className={`p-4 rounded-xl bg-${color}-100`}>
-        <Icon className={`h-8 w-8 text-${color}-600`} />
-      </div>
-    </div>
-  </div>
-)
 
 // Componente de estado vacío mejorado
 const EmptyState = () => (
@@ -71,57 +47,27 @@ export default function AdminAttendanceOverview() {
   const avgAttendance = Math.round((totalAsistencia / presentes) * 100);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-8">
-        {/* Header del Dashboard */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Panel Administrativo
-              </h1>
-              <p className="text-gray-600 text-lg">
-                Gestión integral de cursos y asistencias
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="bg-white px-6 py-3 rounded-lg shadow-sm border">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-indigo-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Período Actual</p>
-                    <p className="font-semibold text-gray-900">2025 - Semestre I</p>
-                  </div>
-                </div>
-              </div>
-              <button className="bg-indigo-600 text-white px-6 py-5 rounded-lg font-medium hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Nuevo Curso
-              </button>
-            </div>
-          </div>
-        </div>
-
+      <div>
         {courses.length === 0 ? (
           <EmptyState />
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <AdminStatsCard 
+              <StatsCard 
                 icon={BookOpen}
                 label="Total Cursos"
                 value={totalCourses}
                 subtitle="Cursos activos"
                 color="indigo"
               />
-              <AdminStatsCard 
+              <StatsCard 
                 icon={Users}
                 label="Estudiantes"
                 value={totalStudents}
                 subtitle="Total matriculados"
                 color="green"
               />
-              <AdminStatsCard 
+              <StatsCard 
                 icon={GraduationCap}
                 label="Docentes"
                 value={totalTeachers}
@@ -129,7 +75,7 @@ export default function AdminAttendanceOverview() {
                 subtitle="Profesores activos"
                 color="purple"
               />
-              <AdminStatsCard 
+              <StatsCard 
                 icon={TrendingUp}
                 label="Asistencia"
                 value={`${avgAttendance}%`}
@@ -191,6 +137,5 @@ export default function AdminAttendanceOverview() {
           </>
         )}
       </div>
-    </div>
   );
 }

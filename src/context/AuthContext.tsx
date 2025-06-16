@@ -11,6 +11,7 @@ type AppUser = {
   email: string | null;
   name: string | null;
   role: Role;
+  teacherId: string;
 };
 
 type AuthContextType = {
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             role,
+            teacherId: userDoc.exists() ? userDoc.data().teacherId : "",
             name: userDoc.exists() ? userDoc.data().name : null
           });
         } else {

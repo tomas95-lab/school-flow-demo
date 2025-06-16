@@ -3,6 +3,8 @@ import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
+import { Calendar, Plus } from "lucide-react";
+import TeacherAttendanceOverview from "@/components/TeacherAttendanceOverview";
 
 export default function Asistencias() {
   // Mock data para el demo
@@ -21,33 +23,68 @@ export default function Asistencias() {
   }
 
   return (
-    <div className="min-h-screen">
+  <div className="min-h-screen">
+      <div className="min-h-screen bg-gray-50">
+        <div className="p-8">
+          {/* Header del Dashboard */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  Panel de Asistencias
+                </h1>
+                <p className="text-gray-600 text-lg">
+                   Marca y revisa la asistencia de tus alumnos
+                </p>
+              </div>
+                <div className="flex items-center gap-4">
+                  <div className="bg-white px-6 py-3 rounded-lg shadow-sm border">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-indigo-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Período Actual</p>
+                        <p className="font-semibold text-gray-900">2025 - Semestre I</p>
+                      </div>
+                    </div>
+                  </div>
+              {user?.role === "admin" ? (
+                  <button className="bg-indigo-600 text-white px-6 py-5 rounded-lg font-medium hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Nuevo Curso
+                  </button>
+              ): (null)}
+                </div>
+              
+            </div>
+          </div>
 
-      {user?.role === "admin" ? (
-          <AdminAttendanceOverview></AdminAttendanceOverview>
-      ): (
-        <h1>Construyendo para tu rol {user?.role}</h1>
-      )}
-      {/* Custom Styles */}
-      <style>{`
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
+        {user?.role === "admin" ? (
+            <AdminAttendanceOverview></AdminAttendanceOverview>
+        ): (
+            <TeacherAttendanceOverview></TeacherAttendanceOverview>
+        )}
+        {/* Custom Styles */}
+        <style>{`
+          @keyframes slideInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          
+          .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
-        }
-        
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
+  </div>
   );
 }
