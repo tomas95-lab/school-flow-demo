@@ -20,10 +20,11 @@ import {
   Target,
   Award,
   AlertTriangle,
+  Plus,
 } from "lucide-react";
 import ReutilizableDialog from "./DialogReutlizable";
-import { doc, setDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+
+import { AttendanceModal } from "./AttendanceFormModal";
 type DetallesStatsCardProps = {
   icon: React.ElementType;
   label: string;
@@ -125,6 +126,8 @@ export default function DetalleAsistencia() {
   const { data: students } = useFirestoreCollection("students");
   const { data: subjects } = useFirestoreCollection("subjects");
   const { data: asistencias } = useFirestoreCollection("attendances");
+  const [modalOpen, setModalOpen] = useState(false);
+
 
   const course = courses.find(c => c.firestoreId === id);
   const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
@@ -161,7 +164,7 @@ export default function DetalleAsistencia() {
         rows.push([
           `${student.nombre} ${student.apellido}`,
           subject.nombre,
-          rec?.presente ? "Presente" : "Ausente",
+          rec?.present ? "Presente" : "Ausente",
           rec?.fecha || "N/A"
         ]);
       })
@@ -179,38 +182,70 @@ export default function DetalleAsistencia() {
   const courseStats = useMemo(() => {
     const totalStudents = studentsInCourse.length;
     const totalSubjects = subjectsInCourse.length;
-
-    console.table(asistencias[0])
-    console.table(subjects[0])
-    console.table(students[0])
-
+    
     const subjectStats = subjectsInCourse.map(subject => {
-      const present = studentsInCourse.reduce((acc, student) => {
-        const recs = asistencias.filter(a =>
-          a.studentId === student.firestoreId &&
-          a.cursoId === id &&
-          a.subject === subject.nombre
-        );
-        // Sum the number of present records for this student and subject
-        const presentCount = recs.filter(r => r.presente).length;
-        return acc + presentCount;
-      }, 0);
-      const percentage = totalStudents
-        ? Math.round((present / totalStudents) * 100)
+      // Obtener TODOS los registros de asistencia para esta materia
+      const subjectAttendances = asistencias.filter(a =>
+        a.courseId === id &&
+        a.subject === subject.nombre
+      );
+      
+      // Contar presentes y ausentes directamente de los registros
+      const presentRecords = subjectAttendances.filter(a => a.present === true).length;
+      const absentRecords = subjectAttendances.filter(a => a.present === false).length;
+      const totalRecords = subjectAttendances.length;
+      
+      // El porcentaje es: registros presentes / total de registros
+      const percentage = totalRecords > 0 
+        ? Math.round((presentRecords / totalRecords) * 100)
         : 0;
-      return { subject: subject.nombre, present, absent: totalStudents - present, total: totalStudents, percentage };
+      
+      // Para mostrar en las cards, podemos mostrar el promedio por clase
+      const uniqueDates = [...new Set(subjectAttendances.map(a => a.fecha).filter(Boolean))];
+      const totalClasses = uniqueDates.length;
+      const avgPresentPerClass = totalClasses > 0 ? Math.round(presentRecords / totalClasses) : 0;
+      const avgAbsentPerClass = totalClasses > 0 ? Math.round(absentRecords / totalClasses) : 0;
+      
+      return {
+        subject: subject.nombre,
+        present: presentRecords,           // Total de registros presentes
+        absent: absentRecords,             // Total de registros ausentes
+        total: totalRecords,               // Total de registros
+        percentage,                        // Porcentaje real de asistencia
+        totalClasses,                      // Número de clases registradas
+        avgPresentPerClass,                // Promedio de presentes por clase
+        avgAbsentPerClass,                 // Promedio de ausentes por clase
+        studentsCount: totalStudents       // Para referencia
+      };
     });
 
-    const overallPresent = subjectStats.reduce((sum, s) => sum + s.present, 0);
-    const overallTotal = subjectStats.reduce((sum, s) => sum + s.total, 0);
-    const overallPercentage = overallTotal
-      ? Math.round((overallPresent / overallTotal) * 100)
+    // Estadísticas generales basadas en el total de registros
+    const totalPresentRecords = subjectStats.reduce((sum, s) => sum + s.present, 0);
+    const totalAllRecords = subjectStats.reduce((sum, s) => sum + s.total, 0);
+    
+    const overallPercentage = totalAllRecords > 0
+      ? Math.round((totalPresentRecords / totalAllRecords) * 100)
       : 0;
-    const lowAttendanceSubjects = subjectStats.filter(s => s.percentage < 80).length;
-    const best = subjectStats.sort((a, b) => b.percentage - a.percentage)[0] || { percentage: 0, subject: "" };
-    const worst = subjectStats.sort((a, b) => a.percentage - b.percentage)[0] || { percentage: 0, subject: "" };
 
-    return { totalStudents, totalSubjects, overallPercentage, subjectStats, lowAttendanceSubjects, bestSubject: best, worstSubject: worst };
+    const lowAttendanceSubjects = subjectStats.filter(s => s.percentage < 80).length;
+    
+    // Ordenar por porcentaje para encontrar mejor y peor
+    const sortedByPercentage = [...subjectStats].sort((a, b) => b.percentage - a.percentage);
+    const bestSubject = sortedByPercentage[0] || { percentage: 0, subject: "N/A" };
+    const worstSubject = sortedByPercentage[sortedByPercentage.length - 1] || { percentage: 0, subject: "N/A" };
+
+    return {
+      totalStudents,
+      totalSubjects,
+      overallPercentage,
+      subjectStats,
+      lowAttendanceSubjects,
+      bestSubject,
+      worstSubject,
+      // Agregar datos adicionales para debug
+      totalRecordsProcessed: totalAllRecords,
+      totalPresentRecords
+    };
   }, [studentsInCourse, subjectsInCourse, asistencias, id]);
 
   const toggleSubjectCollapse = (sid: string) => {
@@ -277,6 +312,42 @@ export default function DetalleAsistencia() {
                 <Download className="h-4 w-4 mr-2" /> 
                 Exportar CSV
               </Button>
+              <ReutilizableDialog
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                triger={
+                  <div className="flex items-center justify-between">
+                    <Plus size={12} className="h-4 w-4 mr-2" />
+                    Registrar Asistencias
+                  </div>
+                }             
+                title="Registro de Asistencia del Curso"
+                content={
+                  <AttendanceModal
+                    subjects={subjectsInCourse.map(s => ({
+                      ...s,
+                      id: s.firestoreId ?? "",
+                      name: s.nombre ?? ""
+                    }))}
+                    students={studentsInCourse.map(s => ({
+                      ...s,
+                      id: s.firestoreId ?? "",
+                      firstName: s.nombre ?? "",
+                      lastName: s.apellido ?? ""
+                    }))}
+                    attendances={asistencias.map(a => ({
+                      id: a.firestoreId ?? "",
+                      studentId: a.studentId,
+                      courseId: a.cursoId,
+                      subject: a.subject,
+                      present: a.present,
+                      date: a.fecha
+                    }))}
+                    courseId={id}
+                    onClose={() => {setModalOpen(false)}}
+                  />
+                }
+              />
             </div>
           </div>
         </div>
@@ -334,11 +405,9 @@ export default function DetalleAsistencia() {
 
             // 1) Filtramos *todos* los registros de ese alumno + curso + materia
             const data: AttendanceRow[] = studentsInCourse.flatMap(student => {
-
-
               const recs = asistencias.filter(a =>
                 a.studentId === student.firestoreId &&
-                a.cursoId  === id &&
+                a.courseId  === id &&
                 a.subject   === subject.nombre
               );
 
@@ -346,8 +415,8 @@ export default function DetalleAsistencia() {
               return recs.map(rec => ({
                 id:           student.firestoreId!,
                 Nombre:       `${student.nombre} ${student.apellido}`,
-                presente:     Boolean(rec.presente),
-                fecha:        rec.fecha,
+                present:      Boolean(rec.present),
+                fecha:        rec.date,
                 idAsistencia: rec.firestoreId ?? ""
               }));
             });
@@ -372,7 +441,7 @@ export default function DetalleAsistencia() {
                       </Button>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">{subject.nombre}</h3>
-                        <p className="text-sm text-gray-500">{stat?.total || 0} estudiantes registrados</p>
+                        <p className="text-sm text-gray-500">{stat?.total || 0} Asistencias registrados</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -404,12 +473,12 @@ export default function DetalleAsistencia() {
                           { 
                             type: "button", 
                             label: "Solo presentes", 
-                            onClick: t => t.getColumn("presente")?.setFilterValue(true) 
+                            onClick: t => t.getColumn("present")?.setFilterValue(true) 
                           },
                           { 
                             type: "button", 
                             label: "Solo ausentes", 
-                            onClick: t => t.getColumn("presente")?.setFilterValue(false) 
+                            onClick: t => t.getColumn("present")?.setFilterValue(false) 
                           }
                         ]}
                       />

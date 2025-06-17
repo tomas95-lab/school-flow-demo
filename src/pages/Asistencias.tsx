@@ -3,7 +3,7 @@ import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
-import { Calendar, Plus } from "lucide-react";
+import { Calendar } from "lucide-react";
 import TeacherAttendanceOverview from "@/components/TeacherAttendanceOverview";
 
 export default function Asistencias() {
@@ -47,14 +47,7 @@ export default function Asistencias() {
                       </div>
                     </div>
                   </div>
-              {user?.role === "admin" ? (
-                  <button className="bg-indigo-600 text-white px-6 py-5 rounded-lg font-medium hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    Nuevo Curso
-                  </button>
-              ): (null)}
                 </div>
-              
             </div>
           </div>
 

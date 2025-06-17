@@ -7,7 +7,7 @@ import { db } from "@/firebaseConfig"
 export interface AttendanceRow {
   id: string | undefined;  // firestoreId
   Nombre: string;
-  presente: boolean;
+  present: boolean;
   fecha: string;
   idAsistencia: string;
 }
@@ -18,10 +18,10 @@ export const columnsDetalle: ColumnDef<AttendanceRow>[] = [
     header: "Nombre",
   },
   {
-    accessorKey: "presente",
+    accessorKey: "present",
     header: "Presente",
     cell: ({ row }) => {
-      const value = row.getValue<boolean>("presente");
+      const value = row.getValue<boolean>("present");
       return (
         <span className={value ? "text-green-500" : "text-red-500"}>
           {value ? "Presente" : "Ausente"}
@@ -38,16 +38,16 @@ export const columnsDetalle: ColumnDef<AttendanceRow>[] = [
     header: "Acción",
     cell: ({ row }) => {
       const attendanceId = row.original.idAsistencia;
-      const current = row.original.presente;
+      const current = row.original.present;
 
       const toggle = async () => {
+        console.log(current)
         if (!attendanceId) return;
         const ref = doc(db, "attendances", attendanceId);
         await updateDoc(ref, {
-          presente: !current,
+          present: !current,
           fecha: formatISO(new Date(), { representation: "date" }),
         });
-        // No refetch: la actualización en Firestore se refleja automáticamente si tu hook está suscrito en tiempo real
       };
 
       return (

@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -11,26 +10,41 @@ import {
 import type { ReactNode } from "react";
 
 interface ReutilizableDialogProps {
-    triger:string,
+    triger?: ReactNode,
     title: string,
     description?: string,
-    content: ReactNode
+    content: ReactNode,
     footer?: ReactNode,
+    open?: boolean, // NUEVO
+    onOpenChange?: (open: boolean) => void // NUEVO
 }
-export default function ReutilizableDialog ({triger,title,description,content,footer}:ReutilizableDialogProps) {
-    return(
-            <Dialog>
-                <DialogTrigger className="bg-primary cursor-pointer text-primary-foreground rounded-md shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3">{triger}</DialogTrigger>
-                <DialogContent>
+export default function ReutilizableDialog ({
+    triger,
+    title,
+    description,
+    content,
+    footer,
+    open,
+    onOpenChange
+}: ReutilizableDialogProps) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            {/* Trigger solo si se pasa */}
+            {triger && (
+                <DialogTrigger className="bg-primary cursor-pointer text-primary-foreground rounded-md shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3">
+                    {triger}
+                </DialogTrigger>
+            )}
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
-                    {description}
+                        {description}
                     </DialogDescription>
                 </DialogHeader>
-                    {content}
+                {content}
                 <DialogFooter>{footer}</DialogFooter>
-                </DialogContent>
-            </Dialog>
+            </DialogContent>
+        </Dialog>
     )
 }

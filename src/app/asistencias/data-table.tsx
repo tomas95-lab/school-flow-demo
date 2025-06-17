@@ -1,7 +1,6 @@
 "use client"
-
 import { useState } from "react"
-import type { ColumnDef, Table, SortingState, ColumnFiltersState } from "@tanstack/react-table"
+import type { ColumnDef, Table, SortingState, ColumnFiltersState, PaginationState } from "@tanstack/react-table"
 import {
   flexRender,
   getCoreRowModel,
@@ -71,16 +70,25 @@ export function DataTable<TData, TValue>({
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [pageIndex, setPageIndex] = useState(0)
-  const [pageSize, setPageSize] = useState(10)
+  // Usar PaginationState en lugar de estados separados
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 5,
+  })
 
   const table = useReactTable<TData>({
     data,
     columns,
-    state: { globalFilter, sorting, columnFilters, pagination: { pageIndex, pageSize } },
+    state: { 
+      globalFilter, 
+      sorting, 
+      columnFilters, 
+      pagination // Usar el estado de paginación correcto
+    },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: setPagination, // Agregar el handler de paginación
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -145,7 +153,6 @@ export function DataTable<TData, TValue>({
                 <Filter className="h-4 w-4" />
                 Filtros:
               </div>
-
               {filters.map((filter, i) => {
                 if (filter.type === "input" && filter.columnId) {
                   const col = table.getColumn(filter.columnId)
@@ -206,7 +213,6 @@ export function DataTable<TData, TValue>({
                 const col = table.getColumn(cf.id)
                 const raw = cf.value
                 const displayValue = typeof raw === "boolean" ? (raw ? "Sí" : "No") : String(raw)
-
                 return (
                   <Badge
                     key={cf.id}
@@ -257,7 +263,6 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-
           <TableBody>
             {rows.length > 0 ? (
               rows.map(row => (
@@ -288,33 +293,54 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </UiTable>
 
-        {/* Paginación */}
-        <div className="flex items-center justify-between py-2 px-4">
+        {/* Paginación corregida */}
+        <div className="flex items-center justify-between py-3 px-4 border-t bg-gray-50/30">
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-              « Primera
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => table.previousPage()} 
+              disabled={!table.getCanPreviousPage()}
+            >
+              ‹ Anterior
             </Button>
-            <Button size="sm" variant="outline" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>‹ Anterior</Button>
-            <Button size="sm" variant="outline" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Siguiente ›</Button>
-            <Button size="sm" variant="outline" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
-              Última »
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => table.nextPage()} 
+              disabled={!table.getCanNextPage()}
+            >
+              Siguiente ›
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <span>
-              Página <strong>{table.getState().pagination.pageIndex + 1} de {table.getPageCount()}</strong>
+          
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">
+              Página <strong>{table.getState().pagination.pageIndex + 1}</strong> de{" "}
+              <strong>{table.getPageCount()}</strong>
             </span>
-            <select
-              value={pageSize}
-              onChange={e => { setPageSize(Number(e.target.value)); setPageIndex(0) }}
-              className="border rounded p-1"
-            >
-              {[5, 10, 20, 50].map(size => (
-                <option key={size} value={size}>
-                  Mostrar {size}
-                </option>
-              ))}
-            </select>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Filas por página:</span>
+              <select
+                value={table.getState().pagination.pageSize}
+                onChange={e => {
+                  table.setPageSize(Number(e.target.value))
+                }}
+                className="border rounded px-2 py-1 text-sm bg-white"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            Mostrando {table.getRowModel().rows.length} de{" "}
+            {table.getFilteredRowModel().rows.length} resultados
           </div>
         </div>
       </div>

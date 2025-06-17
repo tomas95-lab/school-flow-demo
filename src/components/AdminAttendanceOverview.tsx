@@ -31,20 +31,20 @@ export default function AdminAttendanceOverview() {
   const { data: courses = []} = useFirestoreCollection<Course>("courses");
   const {data: students} = useFirestoreCollection("students");
   const {data: teachers} = useFirestoreCollection("teachers");
-  const {data: subjects} = useFirestoreCollection("subjects");
   const {data: attendances} = useFirestoreCollection("attendances")
-
-
 
   // Calcular estadísticas para el dashboard
   const totalCourses = courses.length;
   const totalTeachers = teachers.length;
   const totalStudents = students.length
-  const totalAsistencia = subjects.length
-  
-  let presentes = (attendances.filter((attendance) => attendance.presente == true)).length
+  const totalAsistencia = attendances.length
+  const presentes      = attendances.filter(a => a.present).length
 
-  const avgAttendance = Math.round((totalAsistencia / presentes) * 100);
+  // porcentaje de presentes sobre el total
+  const avgAttendance = totalAsistencia > 0
+    ? Math.round((presentes / totalAsistencia) * 100)
+    : 0
+
 
   return (
       <div>
