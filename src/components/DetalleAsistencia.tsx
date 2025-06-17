@@ -1,7 +1,7 @@
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { DataTable } from "@/app/asistencias/data-table";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import type { AttendanceRow } from "@/app/asistencias/columns";
@@ -274,6 +274,10 @@ export default function DetalleAsistencia() {
         <SchoolSpinner text="Cargando Asistencias..." />
       </div>
     );
+  }
+
+  if(user?.role === "alumno"){
+    return <Navigate to="/asistencias" replace />;
   }
 
   return (
