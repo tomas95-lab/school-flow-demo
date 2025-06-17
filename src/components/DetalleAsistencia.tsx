@@ -21,7 +21,9 @@ import {
   Award,
   AlertTriangle,
 } from "lucide-react";
-
+import ReutilizableDialog from "./DialogReutlizable";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 type DetallesStatsCardProps = {
   icon: React.ElementType;
   label: string;
@@ -109,6 +111,7 @@ const DetallesStatsCard = ({
   );
 };
 
+
 export default function DetalleAsistencia() {
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
@@ -125,6 +128,7 @@ export default function DetalleAsistencia() {
 
   const course = courses.find(c => c.firestoreId === id);
   const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
+
 
   // si es admin: todas las materias del curso; si es docente: solo las propias
   const subjectsInCourse = useMemo(() => {
@@ -176,14 +180,20 @@ export default function DetalleAsistencia() {
     const totalStudents = studentsInCourse.length;
     const totalSubjects = subjectsInCourse.length;
 
+    console.table(asistencias[0])
+    console.table(subjects[0])
+    console.table(students[0])
+
     const subjectStats = subjectsInCourse.map(subject => {
       const present = studentsInCourse.reduce((acc, student) => {
-        const rec = asistencias.find(a =>
+        const recs = asistencias.filter(a =>
           a.studentId === student.firestoreId &&
-          a.courseId === id &&
+          a.cursoId === id &&
           a.subject === subject.nombre
         );
-        return acc + (rec?.presente ? 1 : 0);
+        // Sum the number of present records for this student and subject
+        const presentCount = recs.filter(r => r.presente).length;
+        return acc + presentCount;
       }, 0);
       const percentage = totalStudents
         ? Math.round((present / totalStudents) * 100)
@@ -258,11 +268,11 @@ export default function DetalleAsistencia() {
                 Gestión completa de asistencias • {courseStats.totalStudents} estudiantes
               </p>
             </div>
-            <div className="flex items-start">
+            <div className="flex items-center justify-between gap-4 ">
               <Button 
-                onClick={exportToCSV} 
+                onClick={exportToCSV}
+                variant={"default"} 
                 disabled={!studentsInCourse.length}
-                className="bg-blue-600 hover:bg-blue-700"
               >
                 <Download className="h-4 w-4 mr-2" /> 
                 Exportar CSV
@@ -319,21 +329,28 @@ export default function DetalleAsistencia() {
           </CardHeader>
           <CardContent className="space-y-6">
             {subjectsInCourse.map(subject => {
-              const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre);
-              const isCollapsed = collapsedSubjects.has(subject.firestoreId!);
-              const data: AttendanceRow[] = studentsInCourse.map(student => {
-                const rec = asistencias.find(a =>
-                  a.studentId === student.firestoreId &&
-                  a.courseId === course.firestoreId &&
-                  a.subject === subject.nombre
-                );
-                return {
-                  id: student.firestoreId,
-                  Nombre: `${student.nombre} ${student.apellido}`,
-                  presente: Boolean(rec?.presente),
-                  fecha: rec?.fecha || ""
-                };
-              });
+            const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre);
+            const isCollapsed = collapsedSubjects.has(subject.firestoreId!);
+
+            // 1) Filtramos *todos* los registros de ese alumno + curso + materia
+            const data: AttendanceRow[] = studentsInCourse.flatMap(student => {
+
+
+              const recs = asistencias.filter(a =>
+                a.studentId === student.firestoreId &&
+                a.cursoId  === id &&
+                a.subject   === subject.nombre
+              );
+
+              // 3) Si tiene registros, devolvemos UNA fila por cada fecha
+              return recs.map(rec => ({
+                id:           student.firestoreId!,
+                Nombre:       `${student.nombre} ${student.apellido}`,
+                presente:     Boolean(rec.presente),
+                fecha:        rec.fecha,
+                idAsistencia: rec.firestoreId ?? ""
+              }));
+            });
 
               const subjectColor = stat ? getAttendanceColor(stat.percentage) : "gray";
 

@@ -7,6 +7,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 import {
@@ -51,7 +52,7 @@ interface DataTableProps<TData, TValue> {
   showStats?: boolean
   exportable?: boolean
   title?: string
-  description?: string 
+  description?: string
   emptyMessage?: string
   className?: string
 }
@@ -63,28 +64,31 @@ export function DataTable<TData, TValue>({
   filters = [],
   exportable = false,
   title,
-  description, 
+  description,
   emptyMessage = "No se encontraron resultados.",
   className
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
 
   const table = useReactTable<TData>({
     data,
     columns,
-    state: { globalFilter, sorting, columnFilters },
+    state: { globalFilter, sorting, columnFilters, pagination: { pageIndex, pageSize } },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   })
 
   const hasActiveFilters = globalFilter !== "" || columnFilters.length > 0
-  const sortedRows = table.getSortedRowModel().rows
+  const rows = table.getRowModel().rows
 
   const clearAllFilters = () => {
     setGlobalFilter("")
@@ -92,8 +96,6 @@ export function DataTable<TData, TValue>({
     table.resetSorting()
   }
 
-
-  console.log(columnFilters)
   return (
     <div className={cn("space-y-4", className)}>
       {(title || description) && (
@@ -143,7 +145,7 @@ export function DataTable<TData, TValue>({
                 <Filter className="h-4 w-4" />
                 Filtros:
               </div>
-              
+
               {filters.map((filter, i) => {
                 if (filter.type === "input" && filter.columnId) {
                   const col = table.getColumn(filter.columnId)
@@ -187,44 +189,37 @@ export function DataTable<TData, TValue>({
                 return null
               })}
             </div>
-            
           )}
-          {hasActiveFilters && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {/* Global filter */}
-            {globalFilter && (
-              <Badge
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => setGlobalFilter("")}
-              >
-                Buscar: {globalFilter} <X className="inline-block w-3 h-3 ml-1" />
-              </Badge>
-            )}
-            {/* Column filters */}
-            {table.getState().columnFilters.map(cf => {
-              const col = table.getColumn(cf.id)
-              // convierte el valor a string, y si es boolean usa Sí/No
-              const raw = cf.value
-              const displayValue =
-                typeof raw === "boolean" ? (raw ? "Sí" : "No") : String(raw)
 
-              return (
+          {hasActiveFilters && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {globalFilter && (
                 <Badge
-                  key={cf.id}
                   variant="outline"
                   className="cursor-pointer"
-                  onClick={() => col?.setFilterValue(undefined)}
+                  onClick={() => setGlobalFilter("")}
                 >
-                  {`${cf.id}: ${displayValue}`}{" "}
-                  <X className="inline-block w-3 h-3 ml-1" />
+                  Buscar: {globalFilter} <X className="inline-block w-3 h-3 ml-1" />
                 </Badge>
-              )
-            })}
+              )}
+              {table.getState().columnFilters.map(cf => {
+                const col = table.getColumn(cf.id)
+                const raw = cf.value
+                const displayValue = typeof raw === "boolean" ? (raw ? "Sí" : "No") : String(raw)
 
-          </div>
-        )}
-
+                return (
+                  <Badge
+                    key={cf.id}
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => col?.setFilterValue(undefined)}
+                  >
+                    {`${cf.id}: ${displayValue}`} <X className="inline-block w-3 h-3 ml-1" />
+                  </Badge>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <UiTable>
@@ -264,8 +259,8 @@ export function DataTable<TData, TValue>({
           </TableHeader>
 
           <TableBody>
-            {sortedRows.length > 0 ? (
-              sortedRows.map(row => (
+            {rows.length > 0 ? (
+              rows.map(row => (
                 <TableRow key={row.id} className="hover:bg-blue-50/50 transition-colors">
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className="py-3">
@@ -281,7 +276,7 @@ export function DataTable<TData, TValue>({
                     <Search className="h-8 w-8 text-gray-300" />
                     <p className="font-medium">{emptyMessage}</p>
                     {hasActiveFilters && (
-                      <Button variant="outline" size="sm" onClick={clearAllFilters} className="mt-2">
+                      <Button variant="outline" size="sm" onClick={() => clearAllFilters()} className="mt-2">
                         <RotateCcw className="h-4 w-4 mr-1" />
                         Limpiar filtros
                       </Button>
@@ -292,6 +287,36 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </UiTable>
+
+        {/* Paginación */}
+        <div className="flex items-center justify-between py-2 px-4">
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+              « Primera
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>‹ Anterior</Button>
+            <Button size="sm" variant="outline" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Siguiente ›</Button>
+            <Button size="sm" variant="outline" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+              Última »
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>
+              Página <strong>{table.getState().pagination.pageIndex + 1} de {table.getPageCount()}</strong>
+            </span>
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPageIndex(0) }}
+              className="border rounded p-1"
+            >
+              {[5, 10, 20, 50].map(size => (
+                <option key={size} value={size}>
+                  Mostrar {size}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   )
