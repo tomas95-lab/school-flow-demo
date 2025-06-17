@@ -4,7 +4,7 @@ import type { User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
-type Role = "admin" | "docente" | "familiar";
+type Role = "admin" | "docente" | "alumno";
 
 type AppUser = {
   uid: string;
@@ -12,6 +12,7 @@ type AppUser = {
   name: string | null;
   role: Role;
   teacherId: string;
+  studentId: string;
 };
 
 type AuthContextType = {
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: firebaseUser.email,
             role,
             teacherId: userDoc.exists() ? userDoc.data().teacherId : "",
+            studentId: userDoc.exists() ? userDoc.data().studentId : "",
             name: userDoc.exists() ? userDoc.data().name : null
           });
         } else {

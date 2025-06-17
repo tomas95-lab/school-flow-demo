@@ -17,6 +17,7 @@ import { collection, getDocs } from "firebase/firestore"
 import { db } from "@/firebaseConfig"
 import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
+import { StatsCard } from "@/components/StatCards"
 
 const quickAccessByRole = {
   admin: [
@@ -104,53 +105,28 @@ const statsByRole = {
 const kpiMeta = {
   alumnos: {
     icon: Users,
-    className: "text-yellow-500",
+    className: "yellow",
     title: "Alumnos",
     description: "Total de estudiantes activos"
   },
   docentes: {
     icon: GraduationCap,
-    className: "text-blue-500",
+    className: "blue",
     title: "Docentes",
     description: "Docentes registrados en el sistema"
   },
   cursos: {
     icon: BookOpen,
-    className: "text-green-500",
+    className: "green",
     title: "Cursos",
     description: "Cursos y materias activos"
   },
   alertas: {
     icon: AlertCircle,
-    className: "text-red-500",
+    className: "red",
     title: "Alertas activas",
     description: "Alertas generadas por IA"
   }
-}
-
-type StatsCardProps = {
-  IconComponent: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  value: number
-  title: string
-  description: string
-  className?: string
-}
-
-function StatsCard({
-  IconComponent,
-  value,
-  title,
-  description,
-  className
-}: StatsCardProps) {
-  return (
-    <ReutilizableCard full title={title} description={description}>
-      <div className="flex items-center gap-4">
-        <IconComponent className={`${className} w-8 h-8`} />
-        <span className="text-2xl font-bold">{value}</span>
-      </div>
-    </ReutilizableCard>
-  )
 }
 
 function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
@@ -235,13 +211,12 @@ export default function Dashboard() {
           const kpiKey = key as keyof typeof kpiMeta
           return (
             <StatsCard
-              key={kpiKey}
-              IconComponent={kpiMeta[kpiKey].icon}
-              className={kpiMeta[kpiKey].className}
               value={stats[kpiKey]}
-              title={kpiMeta[kpiKey].title}
-              description={kpiMeta[kpiKey].description}
-            />
+              icon={kpiMeta[kpiKey].icon}
+              label={kpiMeta[kpiKey].title}
+              color={kpiMeta[kpiKey].className}
+              subtitle={kpiMeta[kpiKey].description}
+              />
           )
         })}
       </div>

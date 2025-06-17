@@ -3,7 +3,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DataTable } from "@/app/asistencias/data-table";
-import { columnsDetalle } from "@/app/asistencias/columns";
+import { useColumnsDetalle } from "@/app/asistencias/columns";
 import type { AttendanceRow } from "@/app/asistencias/columns";
 import { SchoolSpinner } from "./SchoolSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -466,7 +466,7 @@ export default function DetalleAsistencia() {
                   {!isCollapsed && (
                     <div className="bg-gray-50 rounded-lg p-4">
                       <DataTable<AttendanceRow, any>
-                        columns={columnsDetalle}
+                        columns={useColumnsDetalle(user)}
                         data={data}
                         placeholder="Buscar estudiante..."
                         filters={[

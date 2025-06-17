@@ -42,7 +42,7 @@ export default function TeacherAttendanceOverview() {
       studentId: string;
       courseId: string;
       subject: string;
-      fecha: string;
+      date: string;
       presente: boolean;
     }>("attendances");
 
@@ -98,14 +98,14 @@ export default function TeacherAttendanceOverview() {
       subjectsTeacher.some((subj) => subj.nombre === a.subject)
   );
 
-  // fechas de referencia
+  // dates de referencia
   const today = startOfDay(new Date());
   const weekAgo = subDays(today, 7);
   const monthAgo = subDays(today, 30);
 
   // 7. Asistencia promedio últimos 7 días
   const lastWeek = teacherAttendances.filter((a) => {
-    const d = startOfDay(parseISO(a.fecha));
+    const d = startOfDay(parseISO(a.date));
     return (
       (isAfter(d, weekAgo) || d.getTime() === weekAgo.getTime()) &&
       (isBefore(d, today) || d.getTime() === today.getTime())
@@ -119,14 +119,14 @@ export default function TeacherAttendanceOverview() {
     absentNames: string[];
   };
 
-  const byDate = lastWeek.reduce((acc, { fecha, presente, studentId }) => {
+  const byDate = lastWeek.reduce((acc, { date, presente, studentId }) => {
     const alumno = teacherStudents.find((s) => s.firestoreId === studentId);
     const nombre = alumno
       ? `${alumno.nombre} ${alumno.apellido}`
       : studentId;
 
-    if (!acc[fecha]) {
-      acc[fecha] = {
+    if (!acc[date]) {
+      acc[date] = {
         total: 0,
         present: 0,
         presentNames: [],
@@ -134,12 +134,12 @@ export default function TeacherAttendanceOverview() {
       };
     }
 
-    acc[fecha].total++;
+    acc[date].total++;
     if (presente) {
-      acc[fecha].present++;
-      acc[fecha].presentNames.push(nombre);
+      acc[date].present++;
+      acc[date].presentNames.push(nombre);
     } else {
-      acc[fecha].absentNames.push(nombre);
+      acc[date].absentNames.push(nombre);
     }
 
     return acc;
@@ -155,7 +155,7 @@ export default function TeacherAttendanceOverview() {
 
   // 8. Ausencias últimos 30 días
   const absCount = teacherAttendances.filter((a) => {
-    const d = startOfDay(parseISO(a.fecha));
+    const d = startOfDay(parseISO(a.date));
     return !a.presente && (isAfter(d, monthAgo) || d.getTime() === monthAgo.getTime());
   }).length;
 
@@ -172,11 +172,11 @@ export default function TeacherAttendanceOverview() {
 
     const recent = records
       .filter((a) => {
-        const d = parseISO(a.fecha);
+        const d = parseISO(a.date);
         return isAfter(d, weekAgo);
       })
       .sort(
-        (a, b) => parseISO(b.fecha).getTime() - parseISO(a.fecha).getTime()
+        (a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()
       );
 
     let consAbs = 0;

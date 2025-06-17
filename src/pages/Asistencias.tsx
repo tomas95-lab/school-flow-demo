@@ -5,6 +5,7 @@ import { AuthContext } from "@/context/AuthContext";
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
 import { Calendar } from "lucide-react";
 import TeacherAttendanceOverview from "@/components/TeacherAttendanceOverview";
+import AlumnoAttendanceOverview from "@/components/AlumnoAttendanceOverview";
 
 export default function Asistencias() {
   // Mock data para el demo
@@ -53,9 +54,9 @@ export default function Asistencias() {
 
         {user?.role === "admin" ? (
             <AdminAttendanceOverview></AdminAttendanceOverview>
-        ): (
+        ): user?.role === "docente" ? (
             <TeacherAttendanceOverview></TeacherAttendanceOverview>
-        )}
+        ): <AlumnoAttendanceOverview></AlumnoAttendanceOverview>}
         {/* Custom Styles */}
         <style>{`
           @keyframes slideInUp {

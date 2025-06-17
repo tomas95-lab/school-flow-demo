@@ -117,8 +117,8 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                 {user?.role === 'admin'? 'Administrador'
                   : user?.role === 'docente'
                   ? 'Docente'
-                  : user?.role === 'familiar'
-                  ? 'Familiar'
+                  : user?.role === 'alumno'
+                  ? 'Alumno'
                   : 'Invitado'}
             </Badge>  
           </div>
