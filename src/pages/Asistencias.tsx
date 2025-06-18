@@ -12,6 +12,20 @@ export default function Asistencias() {
   const { user } = useContext(AuthContext)
   const { loading = false } =  useFirestoreCollection("courses");
 
+  // Función para obtener el mensaje según el rol
+  const getRoleMessage = (role: string | undefined) => {
+    switch (role) {
+      case "admin":
+        return "Gestiona y supervisa las asistencias de todos los cursos, docentes y estudiantes del sistema educativo.";
+      case "docente":
+        return "Registra y administra las asistencias de tus materias y cursos asignados.";
+      case "alumno":
+        return "Consulta tu historial de asistencias y mantente al día con tu rendimiento académico.";
+      default:
+        return "Panel de gestión de asistencias del sistema educativo.";
+    }
+  };
+
   if (loading) {
     return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -35,7 +49,7 @@ export default function Asistencias() {
                   Panel de Asistencias
                 </h1>
                 <p className="text-gray-600 text-lg">
-                   Marca y revisa la asistencia de tus alumnos
+                  {getRoleMessage(user?.role)}
                 </p>
               </div>
                 <div className="flex items-center gap-4">
@@ -57,6 +71,7 @@ export default function Asistencias() {
         ): user?.role === "docente" ? (
             <TeacherAttendanceOverview></TeacherAttendanceOverview>
         ): <AlumnoAttendanceOverview></AlumnoAttendanceOverview>}
+        
         {/* Custom Styles */}
         <style>{`
           @keyframes slideInUp {

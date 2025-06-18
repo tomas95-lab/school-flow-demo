@@ -8,10 +8,10 @@ export type Course = {
   firestoreId: string;
 };
 
-export function CourseCard({ course }: { course: Course }) {
+export function CourseCard({ course, link, descripcion }: { course: Course, link: string, descripcion: string }) {
   return (
               <Link
-                to={`/asistencias/detalles?id=${course.firestoreId}`}
+                to={link}
                 key={course.firestoreId }
                 className="group block transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer"
                 style={{
@@ -40,7 +40,7 @@ export function CourseCard({ course }: { course: Course }) {
                         {course.nombre} - {course.division}
                       </CardTitle>
                       <p className="text-gray-600 group-hover:text-gray-700 transition-colors duration-300">
-                        Ver y gestionar asistencias
+                        {descripcion}
                       </p>
                     </div>
                   </CardContent>

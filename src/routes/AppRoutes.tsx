@@ -4,6 +4,8 @@ import Dashboard from "../pages/Dashboard";
 import Layout from "@/pages/Layout";
 import Asistencias from "@/pages/Asistencias";
 import DetalleAsistencia from "@/components/DetalleAsistencia";
+import Calificaciones from "@/pages/Calificaciones";
+import DetallesCalificaciones from "@/pages/DetallesCalificaciones";
 
 export function AppRoutes() {
   return (
@@ -14,6 +16,8 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/asistencias" element={<Asistencias />} />
           <Route path="/asistencias/:id" element={<DetalleAsistencia />} />
+          <Route path="/calificaciones" element={<Calificaciones />} />
+          <Route path="/calificaciones/detalles" element={<DetallesCalificaciones />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
