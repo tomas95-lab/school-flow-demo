@@ -36,12 +36,20 @@ export default function DetallesCalificaciones () {
         value: firestoreId ?? ""
     }));
 
-    const calificacionesFiltradas = selectedStudentValue.trim() !== ""
-        ? calificaciones.filter(c => c.studentId === selectedStudentValue) : calificaciones.filter(c => 
-        students.map((student) => {
-            return student.firestoreId == c.studentId && student.cursoId == course?.firestoreId
-        })
-    )
+    const calificacionesFiltradas = (
+    selectedStudentValue.trim() !== ""
+        ? calificaciones.filter(c => c.studentId === selectedStudentValue)
+        : calificaciones.filter(c =>
+            students.some(student =>
+            student.firestoreId === c.studentId &&
+            student.cursoId === course?.firestoreId
+            )
+        )
+    ).sort((a, b) => {
+        const studentA = students.find(s => s.firestoreId === a.studentId);
+        const studentB = students.find(s => s.firestoreId === b.studentId);
+        return studentA?.nombre.localeCompare(studentB?.nombre);
+    });
 
     
     // 2) Mapear y agregar nombre de materia
