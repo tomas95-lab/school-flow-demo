@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useMemo } from "react";
 import { useColumnsDetalle, type AttendanceRow } from "@/app/asistencias/columns";
-import { DataTable } from "@/app/asistencias/data-table";
+import { DataTable } from "@/components/data-table";
 
 export default function AlumnoAttendanceOverview(){
     const { user } = useContext(AuthContext);
