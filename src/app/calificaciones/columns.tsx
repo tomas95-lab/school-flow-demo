@@ -1,8 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Check, X } from "lucide-react";
-import { doc, updateDoc } from "firebase/firestore";
-import { formatISO } from "date-fns";
-import { db } from "@/firebaseConfig"
+
 
 export interface CalificacionesRow {
   id: string | undefined;  // firestoreId
@@ -10,7 +7,7 @@ export interface CalificacionesRow {
   Nombre: string;
   Comentario: string;
   Valor: number;
-  SubjectNombre: string;
+  Materia: string;
   fecha: string;
 }
 
@@ -32,25 +29,46 @@ export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
     {
       accessorKey: "Valor",
       header: "Valor",
+      cell: ({ row }) => {
+        const v = row.getValue<number>("Valor");
+        return (
+          <span className={v < 7 ? "text-red-500" : "text-green-500"}>
+            {v}
+          </span>
+        );
+      },
+      filterFn: (row, id, filterValue) => {
+        const val = row.getValue<number>(id);
+        if (filterValue === "Aprobados")   return val >= 7;
+        if (filterValue === "Desaprobados") return val < 7;
+        return true; // cualquier otro caso muestra todo
+      },
     },
+
     {
-      accessorKey: "SubjectNombre",
+      accessorKey: "Materia",
       header: "Materia",
     },
     {
-      accessorKey: "fecha",
+      id: "fecha",
       header: "Fecha",
-      cell: ({ row }) => {
-        // forzamos a any para poder llamar toDate()
-        const raw = (row.original.fecha as any);
-        const date = raw?.toDate
-          ? raw.toDate()
-          : new Date(raw);
-        return date.toLocaleString("es-AR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
+      accessorFn: row => {
+        const raw = row.fecha as any;
+        return raw?.toDate ? raw.toDate() : new Date(raw);
+      },
+      cell: ({ getValue }) => {
+        const date = getValue() as Date;
+        return date.toLocaleDateString("es-AR");
+      },
+      // filtro rango entre dos fechas YYYY-MM-DD
+      filterFn: (row, id, filterValue) => {
+        if (!Array.isArray(filterValue) || filterValue.length !== 2) return true;
+        const [from, to] = filterValue as [string, string];
+        const date = row.getValue(id) as Date;
+        return (
+          date >= new Date(from + "T00:00:00") &&
+          date <= new Date(to + "T23:59:59")
+        );
       },
     },
   ];

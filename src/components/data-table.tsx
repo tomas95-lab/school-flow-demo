@@ -30,9 +30,11 @@ import {
   Download,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+
 
 interface ColumnFilter<TData> {
-  type: "input" | "button" | "badge"
+  type: "input" | "button" | "badge" | "select" | "custom"
   columnId?: string
   placeholder?: string
   size?: string
@@ -41,6 +43,8 @@ interface ColumnFilter<TData> {
   onClick?: (table: Table<TData>) => void
   value?: string | number
   color?: "blue" | "green" | "red" | "yellow" | "gray"
+  options?: { label: string; value: string | number }[]
+  element?: (table: Table<TData>) => React.ReactNode
 }
 
 interface DataTableProps<TData, TValue> {
@@ -193,6 +197,57 @@ export function DataTable<TData, TValue>({
                     </Badge>
                   )
                 }
+                if (filter.type === "select" && filter.columnId && filter.options) {
+                    const col = table.getColumn(filter.columnId)
+                    return (
+                      <div key={i} className="max-w-xs">
+                        <Select
+                          value={(col?.getFilterValue() as string) ?? ""}
+                          onValueChange={v => col?.setFilterValue(v)}
+                        >
+                          <SelectTrigger size="sm" className="w-full">
+                            <SelectValue placeholder={filter.placeholder || filter.label} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filter.options.map(o => (
+                              <SelectItem key={o.value} value={String(o.value)}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )
+                  }
+                if (filter.type === "select" && filter.columnId && filter.options) {
+                    const col = table.getColumn(filter.columnId)
+                    return (
+                      <div key={i} className="max-w-xs">
+                        <Select
+                          value={(col?.getFilterValue() as string) ?? ""}
+                          onValueChange={v => col?.setFilterValue(v)}
+                        >
+                          <SelectTrigger size="sm" className="w-full">
+                            <SelectValue placeholder={filter.placeholder || filter.label} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filter.options.map(o => (
+                              <SelectItem key={o.value} value={String(o.value)}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )
+                  }
+                  if (filter.type === "custom" && filter.element) {
+                    return (
+                      <div key={i} className="max-w-xs">
+                        {filter.element(table)}
+                      </div>
+                    )
+                  }
                 return null
               })}
             </div>

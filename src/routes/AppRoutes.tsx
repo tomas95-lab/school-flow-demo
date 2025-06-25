@@ -3,7 +3,7 @@ import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import Layout from "@/pages/Layout";
 import Asistencias from "@/pages/Asistencias";
-import DetalleAsistencia from "@/components/DetalleAsistencia";
+import DetalleAsistencia from "@/pages/DetalleAsistencia";
 import Calificaciones from "@/pages/Calificaciones";
 import DetallesCalificaciones from "@/pages/DetallesCalificaciones";
 

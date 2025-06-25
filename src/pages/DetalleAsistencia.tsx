@@ -5,7 +5,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import type { AttendanceRow } from "@/app/asistencias/columns";
-import { SchoolSpinner } from "./SchoolSpinner";
+import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,9 @@ import {
   AlertTriangle,
   Plus,
 } from "lucide-react";
-import ReutilizableDialog from "./DialogReutlizable";
+import ReutilizableDialog from "@/components/DialogReutlizable";
+import { AttendanceModal } from "@/components/AttendanceFormModal";
 
-import { AttendanceModal } from "./AttendanceFormModal";
 type DetallesStatsCardProps = {
   icon: React.ElementType;
   label: string;

@@ -38,7 +38,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   items,
   value,
   onChange,
-  placeholder = "Seleccionar...",
+  placeholder = "Mostrando Todo",
   searchPlaceholder = "Buscar...",
   emptyText = "No hay resultados.",
   className,
@@ -52,7 +52,7 @@ const Combobox: React.FC<ComboboxProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-[200px] justify-between", className)}
+          className={cn("w-full justify-between", className)}
         >
           {value
             ? items.find((item) => item.value === value)?.label
@@ -60,7 +60,7 @@ const Combobox: React.FC<ComboboxProps> = ({
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="h-9" />
           <CommandList>

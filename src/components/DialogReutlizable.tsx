@@ -35,7 +35,7 @@ export default function ReutilizableDialog ({
                     {triger}
                 </DialogTrigger>
             )}
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
