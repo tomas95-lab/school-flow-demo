@@ -2,7 +2,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock, Settings, RefreshCw } from 'lucide-react';
+import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock } from 'lucide-react';
 
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/calificaciones/columns";
