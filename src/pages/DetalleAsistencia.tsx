@@ -276,9 +276,6 @@ export default function DetalleAsistencia() {
     );
   }
 
-  if(user?.role === "alumno"){
-    return <Navigate to="/asistencias" replace />;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
@@ -317,6 +314,7 @@ export default function DetalleAsistencia() {
                 Exportar CSV
               </Button>
               <ReutilizableDialog
+                background
                 open={modalOpen}
                 onOpenChange={setModalOpen}
                 triger={

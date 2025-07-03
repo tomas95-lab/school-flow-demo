@@ -3,6 +3,7 @@ import { Check, X } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { formatISO } from "date-fns";
 import { db } from "@/firebaseConfig"
+import { Badge } from "@/components/ui/badge";
 
 export interface AttendanceRow {
   id: string | undefined;  // firestoreId
@@ -24,9 +25,9 @@ export function useColumnsDetalle(user: any): ColumnDef<AttendanceRow>[] {
       cell: ({ row }) => {
         const value = row.getValue<boolean>("present");
         return (
-          <span className={value ? "text-green-500" : "text-red-500"}>
+          <Badge  variant={value ? "success" : "destructive"} >
             {value ? "Presente" : "Ausente"}
-          </span>
+          </Badge>
         );
       },
     },

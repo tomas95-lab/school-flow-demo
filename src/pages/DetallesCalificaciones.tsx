@@ -1,8 +1,8 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock } from 'lucide-react';
+import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock, Plus, Check } from 'lucide-react';
 
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/calificaciones/columns";
@@ -20,34 +20,58 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
+import { AuthContext } from "@/context/AuthContext";
+import CrearCalificaion from "@/components/CalificacioneslForm";
+import CrearCalificacion from "@/components/CalificacioneslForm";
 
 export default function DetallesCalificaciones() {
+    const { user } = useContext(AuthContext);
     const [searchParams] = useSearchParams();
     const [id] = useState(searchParams.get("id") || "");
     const { data: courses } = useFirestoreCollection("courses");
     const { data: students } = useFirestoreCollection("students");
     const { data: subjects } = useFirestoreCollection("subjects");
+    const { data: teachers } = useFirestoreCollection("teachers")
     const { data: calificaciones, loading = false } = useFirestoreCollection("calificaciones");
     const [endDate, setEndDate] = useState<Date>();
     const [startDate, setStartDate] = useState<Date>();
+const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
-    const course = courses.find(c => c.firestoreId === id);
-    const studentsInCourse = students.filter(s => s.cursoId === id);
+    let course;
+    let studentsInCourse: typeof students = [];
+    let teacherSubjectId: string | undefined;
+    let teacher:any;
+    let subject: any;
+    if (user?.role === "admin"){
+        const teacher = teachers.find(t => t.firestoreId == user?.teacherId );
+        course = courses.find(c => c.firestoreId == teacher?.cursoId);
+        studentsInCourse = students.filter(s => s.cursoId === teacher?.cursoId);
+    } else if (user?.role === "docente") {
+        // DOCENTE: buscar curso y materia asignada
+        teacher = teachers.find(t => t.firestoreId == user?.teacherId );
+        course = courses.find(c => c.firestoreId == teacher?.cursoId);
+        studentsInCourse = students.filter(s => s.cursoId === teacher?.cursoId);
+        // Buscar materia asignada al docente
+        subject = subjects.find(s => s.teacherId === user.teacherId && s.cursoId === teacher?.cursoId);
+        teacherSubjectId = subject?.firestoreId;
+    } else {
+        course = courses.find(c => c.firestoreId === id);
+        studentsInCourse = students.filter(s => s.cursoId === id);
+    }
 
-
-    const calificacionesFiltradas = (calificaciones.filter(c =>
-            students.some(student =>
-                student.firestoreId === c.studentId &&
-                student.cursoId === course?.firestoreId
-            )
-        )
-    ).sort((a, b) => {
-            const studentA = students.find(s => s.firestoreId === a.studentId);
-            const studentB = students.find(s => s.firestoreId === b.studentId);
-            return studentA?.nombre.localeCompare(studentB?.nombre);
+    const calificacionesFiltradas = (calificaciones.filter(c => {
+        const student = students.find(student => student.firestoreId === c.studentId && student.cursoId === course?.firestoreId);
+        if (!student) return false;
+        if (user?.role === "docente" && teacherSubjectId) {
+            return c.subjectId === teacherSubjectId;
         }
-    );
+        return true;
+    })
+    ).sort((a, b) => {
+        const studentA = students.find(s => s.firestoreId === a.studentId);
+        const studentB = students.find(s => s.firestoreId === b.studentId);
+        return studentA?.nombre.localeCompare(studentB?.nombre);
+    });
 
     // 2) Mapear y agregar nombre de materia
     const resultado: CalificacionesRow[] = calificacionesFiltradas.map(c => {
@@ -66,7 +90,7 @@ export default function DetallesCalificaciones() {
             Comentario: c.Comentario ?? "Sin comentario", // ajusta según el nombre real del campo
             Valor: c.valor, // asegurar tipo number
             Materia: materia?.nombre || "—", // nombre correcto y mayúscula
-            fecha: c.creadoEn
+            fecha: c.fecha
         };
     });
 
@@ -134,7 +158,6 @@ export default function DetallesCalificaciones() {
         document.body.removeChild(link);
     };
 
-
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -146,315 +169,444 @@ export default function DetallesCalificaciones() {
         );
     }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-        <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
-            {/* Sección Izquierda - Info del Curso */}
-            <div className="space-y-2">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                <BookOpen className="h-6 w-6 text-blue-600" />
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+        <div className="p-6 max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
+              {/* Sección Izquierda - Info del Curso */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <BookOpen className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">{course?.nombre}</h1>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        División {course?.division}
+                      </Badge>
+                      <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                        Año {course?.año}
+                      </Badge>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        {studentsInCourse.length} Alumnos
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                <h1 className="text-3xl font-bold text-gray-900">{course?.nombre}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    División {course?.division}
-                    </Badge>
-                    <Badge variant="outline" className="bg-gray-50 text-gray-700">
-                    Año {course?.año}
-                    </Badge>
-                    {/* NUEVO: Badge con total de alumnos */}
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {studentsInCourse.length} Alumnos
-                    </Badge>
-                </div>
-                </div>
-            </div>
-            
-            {/* Descripción mejorada */}
-            <div className="ml-12 space-y-1">
-                <p className="text-gray-600">
-                Gestión completa de Calificaciones 
-                </p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    {calificaciones?.length || 0} Evaluaciones registradas
-                </span>
-                {calificaciones?.length > 0 && (
+                {/* Descripción mejorada */}
+                <div className="ml-12 space-y-1">
+                  <p className="text-gray-600">
+                    Gestión completa de Calificaciones 
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Promedio: {(calificaciones.reduce((sum, cal) => sum + cal.valor, 0) / calificaciones.length).toFixed(2)}
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      {calificacionesFiltradas?.length || 0} Evaluaciones registradas
                     </span>
-                )}
+                    {calificacionesFiltradas?.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Promedio: {(calificacionesFiltradas.reduce((sum, cal) => sum + cal.valor, 0) / calificacionesFiltradas.length).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-            </div>
-            </div>
-
-            {/* Sección Derecha - Acciones */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
-            {/* NUEVO: Indicadores de estado */}
-            <div className="flex items-center gap-2 lg:mr-4">
-                {/* Indicador de alumnos en riesgo */}
-                {calificaciones?.some(cal => cal.valor < 6) && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-full">
-                    <AlertTriangle className="h-3 w-3 text-red-600" />
-                    <span className="text-xs text-red-700 font-medium">
-                    {calificaciones.filter(cal => cal.valor < 6).length} En riesgo
+              </div>
+              {/* Sección Derecha - Acciones */}
+              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+                {/* NUEVO: Indicadores de estado */}
+                <div className="flex items-center gap-2 lg:mr-4">
+                  {/* Indicador de alumnos en riesgo */}
+                  {calificacionesFiltradas?.some(cal => cal.valor < 6) && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded-full">
+                      <AlertTriangle className="h-3 w-3 text-red-600" />
+                      <span className="text-xs text-red-700 font-medium">
+                        {calificacionesFiltradas.filter(cal => cal.valor < 6).length} En riesgo
+                      </span>
+                    </div>
+                  )}
+                  {/* Indicador de última actualización */}
+                  <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-full">
+                    <Clock className="h-3 w-3 text-gray-500" />
+                    <span className="text-xs text-gray-600">
+                      Actualizado hoy
                     </span>
+                  </div>
                 </div>
-                )}
-                
-                {/* Indicador de última actualización */}
-                <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-full">
-                <Clock className="h-3 w-3 text-gray-500" />
-                <span className="text-xs text-gray-600">
-                    Actualizado hoy
-                </span>
-                </div>
-            </div>
-            <div className="flex items-center gap-2">
-
-                <Button 
-                onClick={exportCalificacionesToCSV}
-                variant="default" 
-                disabled={!studentsInCourse.length}
-                >
-                <Download className="h-4 w-4 mr-2" /> 
-                Exportar CSV
-                </Button>
-            </div>
-            </div>
-        </div>
-
-        {calificaciones?.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                {/* Distribución rápida */}
-                <div className="flex items-center gap-6">
-                <span className="text-gray-600">Excelente (8-10):</span>
                 <div className="flex items-center gap-2">
-                    <div className="w-12 bg-gray-200 rounded-full h-2">
-                    <div 
-                        className="bg-green-500 h-2 rounded-full" 
-                        style={{
-                        width: `${(calificaciones.filter(cal => cal.valor >= 8).length / calificaciones.length) * 100}%`
-                        }}
-                    ></div>
-                    </div>
-                    <span className="text-green-600 font-medium">
-                    {calificaciones.filter(cal => cal.valor >= 8).length}
-                    </span>
+                  <Button 
+                    onClick={exportCalificacionesToCSV}
+                    variant="default" 
+                    disabled={!studentsInCourse.length}
+                  >
+                    <Download className="h-4 w-4 mr-2" /> 
+                    Exportar CSV
+                  </Button>
                 </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                <span className="text-gray-600">Bueno (6-7.9):</span>
-                <div className="flex items-center gap-2">
-                    <div className="w-12 bg-gray-200 rounded-full h-2">
-                    <div 
-                        className="bg-yellow-500 h-2 rounded-full" 
-                        style={{
-                        width: `${(calificaciones.filter(cal => cal.valor >= 6 && cal.valor < 8).length / calificaciones.length) * 100}%`
-                        }}
-                    ></div>
-                    </div>
-                    <span className="text-yellow-600 font-medium">
-                    {calificaciones.filter(cal => cal.valor >= 6 && cal.valor < 8).length}
-                    </span>
-                </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                <span className="text-gray-600">Necesita mejorar (&lt;6):</span>
-                <div className="flex items-center gap-2">
-                    <div className="w-12 bg-gray-200 rounded-full h-2">
-                    <div 
-                        className="bg-red-500 h-2 rounded-full" 
-                        style={{
-                        width: `${(calificaciones.filter(cal => cal.valor < 6).length / calificaciones.length) * 100}%`
-                        }}
-                    ></div>
-                    </div>
-                    <span className="text-red-600 font-medium">
-                    {calificaciones.filter(cal => cal.valor < 6).length}
-                    </span>
-                </div>
-                </div>
+              </div>
             </div>
-            </div>
-        )}
-        </div>
-
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            label="Promedio general"
-            icon={TrendingUp}
-            value={averageGrade}
-            color="blue"
-          />
-          <StatsCard
-            label="Total de evaluaciones registradas"
-            icon={ClipboardList}
-            value={calificacionesFiltradas.length}
-            color="purple"
-          />
-          <StatsCard
-            label="Tasa de aprobación"
-            icon={CheckCircle2}
-            value={`${pctAprob}%`}
-            color="green"
-          />
-          <StatsCard
-            label="Alumnos en riesgo"
-            icon={AlertTriangle}
-            value={desapCount}
-            color="red"
-          />
-        </div>
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 flex flex-col gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Evaluaciones Registradas</h1>
-
-            <DataTable
-                columns={useColumnsDetalle()}
-                data={resultado}
-                filters={[
-                {
-                    type: "select",
-                    columnId: "Nombre",
-                    label: "Alumno",
-                    options: alumnoFilterOptions
-                },
-                {
-                    type: "select",
-                    columnId: "Materia",
-                    label: "Materia",
-                    options: materiaOptions,
-                    onClick: t => t.getColumn("Materia")?.setFilterValue(true)
-                },
-                {
-                    type: "button",
-                    label: "Aprobados",
-                    onClick: table =>
-                        table.getColumn("Valor")?.setFilterValue("Aprobados"),
-                },
-                {
-                    type: "button",
-                    label: "Desaprobados",
-                    onClick: table =>
-                        table.getColumn("Valor")?.setFilterValue("Desaprobados"),
-                },
-                {
-                    type: "custom",
-                    element: table => (
-                    <div className="flex gap-2">
-                        {/* Fecha inicio */}
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant="outline"
-                            data-empty={!startDate}
-                            className="w-40 text-left"
-                            >
-                            <CalendarIcon />
-                            {startDate ? format(startDate, "PPP", { locale: es }) : "Desde"}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0">
-                            <Calendar
-                            mode="single"
-                            selected={startDate}
-                            // Limitar fechas máximas al endDate si existe
-                            toDate={endDate}
-                            onSelect={date => {
-                                // Si selecciona una fecha mayor que endDate, ajusta endDate
-                                if (endDate && date && date > endDate) {
-                                setStartDate(date);
-                                setEndDate(date);
-                                // Aplica filtro rango
-                                if (date) {
-                                    table
-                                    .getColumn("fecha")
-                                    ?.setFilterValue([
-                                        format(date, "yyyy-MM-dd"),
-                                        format(date, "yyyy-MM-dd"),
-                                    ]);
-                                }
-                                } else {
-                                setStartDate(date);
-                                if (date && endDate) {
-                                    table
-                                    .getColumn("fecha")
-                                    ?.setFilterValue([
-                                        format(date, "yyyy-MM-dd"),
-                                        format(endDate, "yyyy-MM-dd"),
-                                    ]);
-                                }
-                                }
-                            }}
-                            />
-                        </PopoverContent>
-                        </Popover>
-
-                        {/* Fecha fin */}
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant="outline"
-                            data-empty={!endDate}
-                            className="w-40 text-left"
-                            >
-                            <CalendarIcon />
-                            {endDate ? format(endDate, "PPP", { locale: es }) : "Hasta"}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0">
-                            <Calendar
-                            mode="single"
-                            selected={endDate}
-                            // Limitar fechas mínimas al startDate si existe
-                            fromDate={startDate}
-                            onSelect={date => {
-                                // Si selecciona una fecha menor que startDate, ajusta startDate
-                                if (startDate && date && date < startDate) {
-                                setEndDate(date);
-                                setStartDate(date);
-                                // Aplica filtro rango
-                                if (date) {
-                                    table
-                                    .getColumn("fecha")
-                                    ?.setFilterValue([
-                                        format(date, "yyyy-MM-dd"),
-                                        format(date, "yyyy-MM-dd"),
-                                    ]);
-                                }
-                                } else {
-                                setEndDate(date);
-                                if (startDate && date) {
-                                    table
-                                    .getColumn("fecha")
-                                    ?.setFilterValue([
-                                        format(startDate, "yyyy-MM-dd"),
-                                        format(date, "yyyy-MM-dd"),
-                                    ]);
-                                }
-                                }
-                            }}
-                            />
-                        </PopoverContent>
-                        </Popover>
+            {calificacionesFiltradas?.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  {/* Distribución rápida */}
+                  <div className="flex items-center gap-6">
+                    <span className="text-gray-600">Excelente (8-10):</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{
+                            width: `${(calificacionesFiltradas.filter(cal => cal.valor >= 8).length / calificacionesFiltradas.length) * 100}%`
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-green-600 font-medium">
+                        {calificacionesFiltradas.filter(cal => cal.valor >= 8).length}
+                      </span>
                     </div>
-                    )
-                },
-                ]}
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="text-gray-600">Bueno (6-7.9):</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-yellow-500 h-2 rounded-full" 
+                          style={{
+                            width: `${(calificacionesFiltradas.filter(cal => cal.valor >= 6 && cal.valor < 8).length / calificacionesFiltradas.length) * 100}%`
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-yellow-600 font-medium">
+                        {calificacionesFiltradas.filter(cal => cal.valor >= 6 && cal.valor < 8).length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="text-gray-600">Necesita mejorar (&lt;6):</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-red-500 h-2 rounded-full" 
+                          style={{
+                            width: `${(calificacionesFiltradas.filter(cal => cal.valor < 6).length / calificacionesFiltradas.length) * 100}%`
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-red-600 font-medium">
+                        {calificacionesFiltradas.filter(cal => cal.valor < 6).length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+            <StatsCard
+              label="Promedio general"
+              icon={TrendingUp}
+              value={averageGrade}
+              color="blue"
             />
+            <StatsCard
+              label="Total de evaluaciones registradas"
+              icon={ClipboardList}
+              value={calificacionesFiltradas.length}
+              color="purple"
+            />
+            <StatsCard
+              label="Tasa de aprobación"
+              icon={CheckCircle2}
+              value={`${pctAprob}%`}
+              color="green"
+            />
+            <StatsCard
+              label="Alumnos en riesgo"
+              icon={AlertTriangle}
+              value={desapCount}
+              color="red"
+            />
+          </div>
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 flex flex-col gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Evaluaciones Registradas {user?.role === "docente" ? (subject?.nombre) : ("")}
+            </h1>
+            <div className="flex flex-col gap-2 h-full">
+              {user?.role === "admin" ? (
+                <DataTable 
+                  columns={useColumnsDetalle(user ?? { role: "" })}
+                  data={resultado}
+                  filters={[
+                    {
+                      type: "select",
+                      columnId: "Nombre",
+                      label: "Alumno",
+                      options: alumnoFilterOptions
+                    },
+                    {
+                      type: "select",
+                      columnId: "Materia",
+                      label: "Materia",
+                      options: materiaOptions,
+                      onClick: t => t.getColumn("Materia")?.setFilterValue(true)
+                    },
+                    {
+                      type: "button",
+                      label: "Aprobados",
+                      onClick: table =>
+                        table.getColumn("Valor")?.setFilterValue("Aprobados"),
+                    },
+                    {
+                      type: "button",
+                      label: "Desaprobados",
+                      onClick: table =>
+                        table.getColumn("Valor")?.setFilterValue("Desaprobados"),
+                    },
+                    {
+                      type: "custom",
+                      element: table => (
+                        <div className="flex gap-2">
+                          {/* Fecha inicio */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                data-empty={!startDate}
+                                className="w-40 text-left"
+                              >
+                                <CalendarIcon />
+                                {startDate ? format(startDate, "PPP", { locale: es }) : "Desde"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                // Limitar fechas máximas al endDate si existe
+                                toDate={endDate}
+                                onSelect={date => {
+                                  // Si selecciona una fecha mayor que endDate, ajusta endDate
+                                  if (endDate && date && date > endDate) {
+                                    setStartDate(date);
+                                    setEndDate(date);
+                                    // Aplica filtro rango
+                                    if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  } else {
+                                    setStartDate(date);
+                                    if (date && endDate) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(endDate, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  }
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          {/* Fecha fin */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                data-empty={!endDate}
+                                className="w-40 text-left"
+                              >
+                                <CalendarIcon />
+                                {endDate ? format(endDate, "PPP", { locale: es }) : "Hasta"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0">
+                              <Calendar
+                                mode="single"
+                                selected={endDate}
+                                // Limitar fechas mínimas al startDate si existe
+                                fromDate={startDate}
+                                onSelect={date => {
+                                  // Si selecciona una fecha menor que startDate, ajusta startDate
+                                  if (startDate && date && date < startDate) {
+                                    setEndDate(date);
+                                    setStartDate(date);
+                                    // Aplica filtro rango
+                                    if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  } else {
+                                    setEndDate(date);
+                                    if (startDate && date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(startDate, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  }
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )
+                    },
+                  ]}
+                />
+              ): (
+                <DataTable
+                  columns={useColumnsDetalle(user ?? { role: "" })}
+                  data={resultado}
+                  filters={[
+                    {
+                      type: "select",
+                      columnId: "Nombre",
+                      label: "Alumno",
+                      options: alumnoFilterOptions
+                    },
+                    {
+                      type: "button",
+                      label: "Aprobados",
+                      onClick: table =>
+                        table.getColumn("Valor")?.setFilterValue("Aprobados"),
+                    },
+                    {
+                      type: "button",
+                      label: "Desaprobados",
+                      onClick: table =>
+                        table.getColumn("Valor")?.setFilterValue("Desaprobados"),
+                    },
+                    {
+                      type: "custom",
+                      element: table => (
+                        <div className="flex gap-2">
+                          {/* Fecha inicio */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                data-empty={!startDate}
+                                className="w-40 text-left"
+                              >
+                                <CalendarIcon />
+                                {startDate ? format(startDate, "PPP", { locale: es }) : "Desde"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                // Limitar fechas máximas al endDate si existe
+                                toDate={endDate}
+                                onSelect={date => {
+                                  // Si selecciona una fecha mayor que endDate, ajusta endDate
+                                  if (endDate && date && date > endDate) {
+                                    setStartDate(date);
+                                    setEndDate(date);
+                                    // Aplica filtro rango
+                                    if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  } else {
+                                    setStartDate(date);
+                                    if (date && endDate) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(endDate, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  }
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          {/* Fecha fin */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                data-empty={!endDate}
+                                className="w-40 text-left"
+                              >
+                                <CalendarIcon />
+                                {endDate ? format(endDate, "PPP", { locale: es }) : "Hasta"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="p-0">
+                              <Calendar
+                                mode="single"
+                                selected={endDate}
+                                // Limitar fechas mínimas al startDate si existe
+                                fromDate={startDate}
+                                onSelect={date => {
+                                  // Si selecciona una fecha menor que startDate, ajusta startDate
+                                  if (startDate && date && date < startDate) {
+                                    setEndDate(date);
+                                    setStartDate(date);
+                                    // Aplica filtro rango
+                                    if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  } else {
+                                    setEndDate(date);
+                                    if (startDate && date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(startDate, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    }
+                                  }
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )
+                    },
+                  ]}
+                />
+              )}
+
+            {user?.role === "docente" && teacherSubjectId && (
+              <CrearCalificacion
+                studentsInCourse={studentsInCourse}
+                selectedStudentIds={selectedStudentIds}
+                setSelectedStudentIds={setSelectedStudentIds}
+                subjectId={teacherSubjectId}
+              />
+            )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }

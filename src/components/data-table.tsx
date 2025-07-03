@@ -283,73 +283,76 @@ export function DataTable<TData, TValue>({
           )}
         </div>
 
-        <UiTable>
-          <TableHeader>
-            {table.getHeaderGroups().map(hg => (
-              <TableRow key={hg.id} className="hover:bg-transparent">
-                {hg.headers.map(header => (
-                  <TableHead
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    className={cn(
-                      "cursor-pointer select-none bg-gray-50/50 font-semibold",
-                      header.column.getCanSort() && "hover:bg-gray-100"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getCanSort() && (
-                        <div className="flex flex-col">
-                          {header.column.getIsSorted() === "asc" && <ArrowUp className="h-3 w-3 text-blue-600" />}
-                          {header.column.getIsSorted() === "desc" && <ArrowDown className="h-3 w-3 text-blue-600" />}
-                          {!header.column.getIsSorted() && (
-                            <div className="h-3 w-3 opacity-30">
-                              <ArrowUp className="h-2 w-2" />
-                              <ArrowDown className="h-2 w-2 -mt-1" />
-                            </div>
-                          )}
-                        </div>
+        {/* Tabla responsive */}
+        <div className="w-full overflow-x-auto">
+          <UiTable className="min-w-[600px]">
+            <TableHeader>
+              {table.getHeaderGroups().map(hg => (
+                <TableRow key={hg.id} className="hover:bg-transparent">
+                  {hg.headers.map(header => (
+                    <TableHead
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className={cn(
+                        "cursor-pointer select-none bg-gray-50/50 font-semibold",
+                        header.column.getCanSort() && "hover:bg-gray-100"
                       )}
-                    </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {rows.length > 0 ? (
-              rows.map(row => (
-                <TableRow key={row.id} className="hover:bg-blue-50/50 transition-colors">
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} className="py-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+                    >
+                      <div className="flex items-center gap-2">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getCanSort() && (
+                          <div className="flex flex-col">
+                            {header.column.getIsSorted() === "asc" && <ArrowUp className="h-3 w-3 text-blue-600" />}
+                            {header.column.getIsSorted() === "desc" && <ArrowDown className="h-3 w-3 text-blue-600" />}
+                            {!header.column.getIsSorted() && (
+                              <div className="h-3 w-3 opacity-30">
+                                <ArrowUp className="h-2 w-2" />
+                                <ArrowDown className="h-2 w-2 -mt-1" />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-32 text-center text-gray-500">
-                  <div className="flex flex-col items-center gap-2">
-                    <Search className="h-8 w-8 text-gray-300" />
-                    <p className="font-medium">{emptyMessage}</p>
-                    {hasActiveFilters && (
-                      <Button variant="outline" size="sm" onClick={() => clearAllFilters()} className="mt-2">
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Limpiar filtros
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </UiTable>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {rows.length > 0 ? (
+                rows.map(row => (
+                  <TableRow key={row.id} className="hover:bg-blue-50/50 transition-colors">
+                    {row.getVisibleCells().map(cell => (
+                      <TableCell key={cell.id} className="py-3">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-32 text-center text-gray-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <Search className="h-8 w-8 text-gray-300" />
+                      <p className="font-medium">{emptyMessage}</p>
+                      {hasActiveFilters && (
+                        <Button variant="outline" size="sm" onClick={() => clearAllFilters()} className="mt-2">
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Limpiar filtros
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </UiTable>
+        </div>
 
         {/* Paginación corregida */}
-        <div className="flex items-center justify-between py-3 px-4 border-t bg-gray-50/30">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-3 px-4 border-t bg-gray-50/30">
           <div className="flex items-center gap-2">
             <Button 
               size="sm" 
@@ -369,7 +372,7 @@ export function DataTable<TData, TValue>({
             </Button>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <span className="text-sm text-gray-600">
               Página <strong>{table.getState().pagination.pageIndex + 1}</strong> de{" "}
               <strong>{table.getPageCount()}</strong>

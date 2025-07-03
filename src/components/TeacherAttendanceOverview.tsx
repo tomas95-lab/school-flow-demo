@@ -43,7 +43,7 @@ export default function TeacherAttendanceOverview() {
       courseId: string;
       subject: string;
       date: string;
-      presente: boolean;
+      present: boolean;
     }>("attendances");
 
   if (
@@ -119,7 +119,7 @@ export default function TeacherAttendanceOverview() {
     absentNames: string[];
   };
 
-  const byDate = lastWeek.reduce((acc, { date, presente, studentId }) => {
+  const byDate = lastWeek.reduce((acc, { date, present, studentId }) => {
     const alumno = teacherStudents.find((s) => s.firestoreId === studentId);
     const nombre = alumno
       ? `${alumno.nombre} ${alumno.apellido}`
@@ -135,7 +135,7 @@ export default function TeacherAttendanceOverview() {
     }
 
     acc[date].total++;
-    if (presente) {
+    if (present) {
       acc[date].present++;
       acc[date].presentNames.push(nombre);
     } else {
@@ -156,7 +156,7 @@ export default function TeacherAttendanceOverview() {
   // 8. Ausencias últimos 30 días
   const absCount = teacherAttendances.filter((a) => {
     const d = startOfDay(parseISO(a.date));
-    return !a.presente && (isAfter(d, monthAgo) || d.getTime() === monthAgo.getTime());
+    return !a.present && (isAfter(d, monthAgo) || d.getTime() === monthAgo.getTime());
   }).length;
 
   // 9. Alumnos en riesgo
@@ -166,7 +166,7 @@ export default function TeacherAttendanceOverview() {
     );
     if (records.length === 0) return false;
 
-    const presentCount = records.filter((a) => a.presente).length;
+    const presentCount = records.filter((a) => a.present).length;
     const attendanceRate = (presentCount / records.length) * 100;
     const lowAttendance = attendanceRate < 75;
 
@@ -181,7 +181,7 @@ export default function TeacherAttendanceOverview() {
 
     let consAbs = 0;
     for (const rec of recent) {
-      if (!rec.presente) consAbs++;
+      if (!rec.present) consAbs++;
       else break;
     }
 
@@ -251,12 +251,11 @@ export default function TeacherAttendanceOverview() {
               </p>
             </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {teacherCourses.map((course) => (
-              <CourseCard
-                course={course as Course}
-                key={course.firestoreId}
-              />
-            ))}
+              {courses.map((course, index) => (
+                <div key={course.firestoreId || index} className="transform transition-all duration-200 hover:scale-105">
+                  <CourseCard course={course} link={`/asistencias/detalles?id=${course.firestoreId}`} descripcion="Ver y gestionar Asistencias"/>
+                </div>
+              ))}
           </div>
         </div>
       ) : (

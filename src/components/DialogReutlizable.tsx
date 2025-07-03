@@ -11,12 +11,13 @@ import type { ReactNode } from "react";
 
 interface ReutilizableDialogProps {
     triger?: ReactNode,
-    title: string,
+    title: ReactNode,
     description?: string,
     content: ReactNode,
     footer?: ReactNode,
-    open?: boolean, // NUEVO
-    onOpenChange?: (open: boolean) => void // NUEVO
+    open?: boolean, 
+    onOpenChange?: (open: boolean) => void
+    background?:boolean
 }
 export default function ReutilizableDialog ({
     triger,
@@ -25,13 +26,14 @@ export default function ReutilizableDialog ({
     content,
     footer,
     open,
-    onOpenChange
+    onOpenChange,
+    background
 }: ReutilizableDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             {/* Trigger solo si se pasa */}
             {triger && (
-                <DialogTrigger className="bg-primary cursor-pointer text-primary-foreground rounded-md shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3">
+                <DialogTrigger className={`${background ? "bg-primary cursor-pointer text-primary-foreground hover:bg-primary/90": "" } rounded-md shadow-xs h-9 px-4 py-2 has-[>svg]:px-3`}>
                     {triger}
                 </DialogTrigger>
             )}
