@@ -1,8 +1,8 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock, Plus, Check } from 'lucide-react';
+import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock } from 'lucide-react';
 
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/calificaciones/columns";
@@ -21,7 +21,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { AuthContext } from "@/context/AuthContext";
-import CrearCalificaion from "@/components/CalificacioneslForm";
 import CrearCalificacion from "@/components/CalificacioneslForm";
 
 export default function DetallesCalificaciones() {
@@ -167,6 +166,10 @@ const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
                 </div>
             </div>
         );
+    }
+
+    if (user?.role == "alumno"){
+        return <Navigate to="/calificaciones" replace />;
     }
 
     return (
@@ -337,7 +340,7 @@ const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
             <div className="flex flex-col gap-2 h-full">
               {user?.role === "admin" ? (
                 <DataTable 
-                  columns={useColumnsDetalle(user ?? { role: "" })}
+                  columns={useColumnsDetalle()}
                   data={resultado}
                   filters={[
                     {
@@ -470,7 +473,7 @@ const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
                 />
               ): (
                 <DataTable
-                  columns={useColumnsDetalle(user ?? { role: "" })}
+                  columns={useColumnsDetalle()}
                   data={resultado}
                   filters={[
                     {
@@ -536,6 +539,13 @@ const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
                                           format(date, "yyyy-MM-dd"),
                                           format(endDate, "yyyy-MM-dd"),
                                         ]);
+                                    } else if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
                                     }
                                   }
                                 }}
@@ -597,12 +607,28 @@ const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
               )}
 
             {user?.role === "docente" && teacherSubjectId && (
-              <CrearCalificacion
-                studentsInCourse={studentsInCourse}
-                selectedStudentIds={selectedStudentIds}
-                setSelectedStudentIds={setSelectedStudentIds}
-                subjectId={teacherSubjectId}
-              />
+              <div className="mt-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <BookOpen className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Cargar nueva calificación</h2>
+                    <p className="text-gray-500 text-sm">
+                      Selecciona los estudiantes y completa los datos de la evaluación.
+                    </p>
+                  </div>
+                </div>
+                <div className="border-t border-gray-100 mb-6" />
+                <div className="bg-blue-50/40 rounded-xl shadow-inner p-4">
+                  <CrearCalificacion
+                    studentsInCourse={studentsInCourse}
+                    selectedStudentIds={selectedStudentIds}
+                    setSelectedStudentIds={setSelectedStudentIds}
+                    subjectId={teacherSubjectId}
+                  />
+                </div>
+              </div>
             )}
             </div>
           </div>

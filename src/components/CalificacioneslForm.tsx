@@ -40,11 +40,21 @@ export default function CrearCalificacion({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [estudiante, setEstudiante] = useState<string | null>(null);
   const [studentSearchTerm, setStudentSearchTerm] = useState<string>("");
+  const [absentStudentIds, setAbsentStudentIds] = useState<string[]>([]); // NUEVO
 
   const toggleStudent = (id: string) => {
     setSelectedStudentIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id]
+    );
+    // Si se deselecciona, también quitar de ausentes
+    setAbsentStudentIds((prev) => prev.filter((x) => x !== id));
+  };
+
+  const toggleAbsent = (id: string) => {
+    setAbsentStudentIds((prev) =>
       prev.includes(id)
         ? prev.filter((x) => x !== id)
         : [...prev, id]
@@ -54,10 +64,12 @@ export default function CrearCalificacion({
   const selectAllStudents = () => {
     const allIds = studentsInCourse.map(s => s.firestoreId!);
     setSelectedStudentIds(allIds);
+    // No marcar ausentes por defecto
   };
 
   const deselectAllStudents = () => {
     setSelectedStudentIds([]);
+    setAbsentStudentIds([]);
   };
 
   const validateForm = (): boolean => {
@@ -108,7 +120,8 @@ export default function CrearCalificacion({
         addDoc(collection(db, "calificaciones"), {
           studentId,
           Actividad: formData.actividad,
-          valor: parseFloat(formData.valor),
+          valor: absentStudentIds.includes(studentId) ? null : parseFloat(formData.valor),
+          ausente: absentStudentIds.includes(studentId) ? true : false,
           creadoEn: serverTimestamp(),
           Comentario: formData.comentario,
           fecha: formData.fecha,
@@ -120,6 +133,7 @@ export default function CrearCalificacion({
       // Limpia el formulario y selección
       setFormData({ actividad: '', valor: '', fecha: '', comentario: '' });
       setSelectedStudentIds([]);
+      setAbsentStudentIds([]);
       if (onSubmit) onSubmit(formData, selectedStudentIds);
     } catch (err) {
       console.log(err)
@@ -199,29 +213,43 @@ export default function CrearCalificacion({
               })
               .map((student) => {
                 const selected = selectedStudentIds.includes(student.firestoreId!);
+                const absent = absentStudentIds.includes(student.firestoreId!);
                 return (
-                  <button
-                    key={student.firestoreId}
-                    type="button"
-                    onClick={() => toggleStudent(student.firestoreId!)}
-                    aria-pressed={selected}
-                    aria-label={`${selected ? 'Deseleccionar' : 'Seleccionar'} ${student.nombre} ${student.apellido}`}
-                    className={`
-                      w-full flex items-center justify-between p-3 border-2 rounded-lg
-                      transition-all duration-200 hover:shadow-sm cursor-pointer
-                      ${selected
-                        ? "border-blue-500 bg-blue-50 shadow-md"
-                        : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"}
-                    `}
-                  >
-                    <span className="font-medium text-gray-900">
-                      {student.nombre} {student.apellido}
-                    </span>
-
+                  <div key={student.firestoreId} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleStudent(student.firestoreId!)}
+                      aria-pressed={selected}
+                      aria-label={`${selected ? 'Deseleccionar' : 'Seleccionar'} ${student.nombre} ${student.apellido}`}
+                      className={`
+                        w-full flex items-center justify-between p-3 border-2 rounded-lg
+                        transition-all duration-200 hover:shadow-sm cursor-pointer
+                        ${selected
+                          ? "border-blue-500 bg-blue-50 shadow-md"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"}
+                      `}
+                    >
+                      <span className="font-medium text-gray-900">
+                        {student.nombre} {student.apellido}
+                      </span>
                       <div className={`w-6 h-6 rounded-full ${selected ? "bg-blue-500" : "bg-white border-2 border-gray-500"} flex items-center justify-center`}>
                         <Check className={`w-4 h-4 ${selected ? "text-white" : "hidden"}`} />
                       </div>
-                  </button>
+                    </button>
+                    {selected && (
+                      <button
+                        type="button"
+                        onClick={() => toggleAbsent(student.firestoreId!)}
+                        className={`ml-2 px-2 py-1 rounded text-xs font-medium border transition
+                          ${absent ? "bg-yellow-400 text-white border-yellow-500" : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-yellow-100"}
+                        `}
+                        aria-pressed={absent}
+                        aria-label={absent ? "Quitar ausencia" : "Marcar como ausente"}
+                      >
+                        {absent ? "Ausente" : "Marcar ausente"}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
           </div>

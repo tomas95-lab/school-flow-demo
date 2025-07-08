@@ -1,10 +1,9 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useContext, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock, Plus, Check } from 'lucide-react';
+import { useContext, useState } from "react";
+import { BookOpen, TrendingUp, Clock, Check } from 'lucide-react';
 
 import { DataTable } from "@/components/data-table";
-import { useColumnsDetalle } from "@/app/calificaciones/columns";
+import { useColumnsDetalle } from "@/app/calificaciones/alumnoColumns";
 import type { CalificacionesRow } from "@/app/calificaciones/columns";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { StatsCard } from "@/components/StatCards";
@@ -127,7 +126,7 @@ export default function AlumnoCalificacionesOverview() {
                 />
             </div>
             <DataTable 
-                  columns={useColumnsDetalle(user ?? { role: "" })}
+                  columns={useColumnsDetalle()}
                   data={calificacionesAlumno as CalificacionesRow[]}
                   filters={[{
                     type: "select",
@@ -168,14 +167,11 @@ export default function AlumnoCalificacionesOverview() {
                               <Calendar
                                 mode="single"
                                 selected={startDate}
-                                // Limitar fechas máximas al endDate si existe
                                 toDate={endDate}
                                 onSelect={date => {
-                                  // Si selecciona una fecha mayor que endDate, ajusta endDate
                                   if (endDate && date && date > endDate) {
                                     setStartDate(date);
                                     setEndDate(date);
-                                    // Aplica filtro rango
                                     if (date) {
                                       table
                                         .getColumn("fecha")
@@ -192,6 +188,13 @@ export default function AlumnoCalificacionesOverview() {
                                         ?.setFilterValue([
                                           format(date, "yyyy-MM-dd"),
                                           format(endDate, "yyyy-MM-dd"),
+                                        ]);
+                                    } else if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
                                         ]);
                                     }
                                   }
@@ -215,14 +218,11 @@ export default function AlumnoCalificacionesOverview() {
                               <Calendar
                                 mode="single"
                                 selected={endDate}
-                                // Limitar fechas mínimas al startDate si existe
                                 fromDate={startDate}
                                 onSelect={date => {
-                                  // Si selecciona una fecha menor que startDate, ajusta startDate
                                   if (startDate && date && date < startDate) {
                                     setEndDate(date);
                                     setStartDate(date);
-                                    // Aplica filtro rango
                                     if (date) {
                                       table
                                         .getColumn("fecha")
@@ -238,6 +238,13 @@ export default function AlumnoCalificacionesOverview() {
                                         .getColumn("fecha")
                                         ?.setFilterValue([
                                           format(startDate, "yyyy-MM-dd"),
+                                          format(date, "yyyy-MM-dd"),
+                                        ]);
+                                    } else if (date) {
+                                      table
+                                        .getColumn("fecha")
+                                        ?.setFilterValue([
+                                          format(date, "yyyy-MM-dd"),
                                           format(date, "yyyy-MM-dd"),
                                         ]);
                                     }

@@ -1,7 +1,7 @@
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useMemo, useEffect } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import type { AttendanceRow } from "@/app/asistencias/columns";

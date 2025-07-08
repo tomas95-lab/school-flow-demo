@@ -17,8 +17,7 @@ export interface CalificacionesRow {
   fecha: string;
 }
 
-// Acepta user como argumento
-export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: string, newValor: number) => void }): ColumnDef<CalificacionesRow>[] {
+export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
   const columns: ColumnDef<CalificacionesRow>[] = [
     {
       accessorKey: "Nombre",
@@ -41,7 +40,7 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
         // Si no es docente, solo muestra el valor
         return (
           <span className={v < 7 ? "text-red-500" : "text-green-500"}>
-            {v}
+            {v ?? "Ausente"}
           </span>
         );
       },
@@ -60,18 +59,39 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
     {
       accessorKey: "fecha",
       header: "Fecha",
+      filterFn: (row, id, filterValue) => {
+        // filterValue: [start, end] en formato "yyyy-MM-dd"
+        if (!Array.isArray(filterValue) || filterValue.length !== 2) return true;
+        const [start, end] = filterValue;
+        if (!start || !end) return true;
+        // Convierte la fecha de la fila y los filtros a Date
+        // Asume que row.getValue(id) puede venir en formato "yyyy-MM-dd" o similar
+        const rowDateStr = row.getValue<string>(id);
+        // Intenta parsear la fecha de la fila
+        let rowDate: Date | null = null;
+        if (rowDateStr) {
+          // Si ya viene en formato yyyy-MM-dd
+          if (/^\d{4}-\d{2}-\d{2}$/.test(rowDateStr)) {
+            rowDate = new Date(rowDateStr + "T00:00:00");
+          } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(rowDateStr)) {
+            // Si viene en formato dd/MM/yyyy
+            const [d, m, y] = rowDateStr.split("/");
+            rowDate = new Date(`${y}-${m}-${d}T00:00:00`);
+          } else {
+            // Intenta parsear como Date normal
+            rowDate = new Date(rowDateStr);
+          }
+        }
+        const startDate = new Date(start + "T00:00:00");
+        const endDate = new Date(end + "T23:59:59");
+        if (!rowDate || isNaN(rowDate.getTime())) return false;
+        return rowDate >= startDate && rowDate <= endDate;
+      },
     },
-  ];
-
-  if (user.role === "teacher") {
-    columns.push({
+    {
       accessorKey: "id",
       header: "Acción",
       cell: ({ row }) => {
-        // Solo permitir edición si el usuario es teacher
-        if (user.role !== "teacher") {
-          return null;
-        }
         // Local state for dialog form
         const [formData, setFormData] = React.useState({
           student: row.original.Nombre,
@@ -84,6 +104,9 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
         const [errors, setErrors] = React.useState<{ [key: string]: string | null }>({ grade: null, date: null, comment: null });
         const [loading, setLoading] = React.useState(false);
         const [submitError, setSubmitError] = React.useState<string | null>(null);
+
+        // Estado para controlar el diálogo
+        const [open, setOpen] = React.useState(false);
 
         // Handlers for form fields
         const handleGradeChange = (value: string) => {
@@ -125,6 +148,7 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
               Nombre: formData.student,
             });
             setLoading(false);
+            setOpen(false); // Cierra el diálogo al guardar
             // Opcional: feedback visual, cerrar modal, refrescar datos, etc.
           } catch (err: any) {
             setLoading(false);
@@ -132,12 +156,13 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
           }
         };
         const handleCancel = () => {
-          // Implement cancel logic here
+          setOpen(false); // Cierra el diálogo al cancelar
         };
 
         return (
           <div className="pl-4">
             <ReutilizableDialog 
+              open={open}
               title={
                 <div className="flex items-center gap-2">
                   <Edit className="h-6 w-6 text-blue-600" />
@@ -150,7 +175,6 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
                   <EditCalificaciones
                     formData={formData}
                     errors={errors}
-
                     handleGradeChange={handleGradeChange}
                     handleDateChange={handleDateChange}
                     handleCommentChange={handleCommentChange}
@@ -166,13 +190,19 @@ export function useColumnsDetalle(user: { role: string; onValorEdit?: (id: strin
                   )}
                 </>
               }
-              triger={<Pencil className="h-4 w-4 cursor-pointer"></Pencil>}
-            ></ReutilizableDialog>
+              triger={
+                <Pencil
+                  className="h-4 w-4 cursor-pointer"
+                  onClick={() => setOpen(true)}
+                />
+              }
+            />
           </div>
         );
       },
-    });
-  }
+    }
+  ];
 
   return columns;
 }
+
