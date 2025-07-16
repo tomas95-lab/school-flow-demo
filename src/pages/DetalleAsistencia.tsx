@@ -317,6 +317,7 @@ export default function DetalleAsistencia() {
                 background
                 open={modalOpen}
                 onOpenChange={setModalOpen}
+                small
                 triger={
                   <div className="flex items-center justify-between">
                     <Plus size={12} className="h-4 w-4 mr-2" />

@@ -6,6 +6,8 @@ import Asistencias from "@/pages/Asistencias";
 import DetalleAsistencia from "@/pages/DetalleAsistencia";
 import Calificaciones from "@/pages/Calificaciones";
 import DetallesCalificaciones from "@/pages/DetallesCalificaciones";
+import Boletines from "@/pages/Boletin";
+import BoletinesCurso from "@/pages/BoletinesCurso";
 
 export function AppRoutes() {
   return (
@@ -18,6 +20,8 @@ export function AppRoutes() {
           <Route path="/asistencias/:id" element={<DetalleAsistencia />} />
           <Route path="/calificaciones" element={<Calificaciones />} />
           <Route path="/calificaciones/detalles" element={<DetallesCalificaciones />} />
+          <Route path="/boletines" element={<Boletines />} />
+          <Route path="/boletines/cursos" element={<BoletinesCurso />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

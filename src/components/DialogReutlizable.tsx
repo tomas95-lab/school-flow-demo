@@ -17,7 +17,8 @@ interface ReutilizableDialogProps {
     footer?: ReactNode,
     open?: boolean, 
     onOpenChange?: (open: boolean) => void
-    background?:boolean
+    background?:boolean,
+    small: boolean
 }
 export default function ReutilizableDialog ({
     triger,
@@ -27,7 +28,8 @@ export default function ReutilizableDialog ({
     footer,
     open,
     onOpenChange,
-    background
+    background,
+    small,
 }: ReutilizableDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -37,7 +39,7 @@ export default function ReutilizableDialog ({
                     {triger}
                 </DialogTrigger>
             )}
-            <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden">
+            <DialogContent small={small} className={`overflow-y-auto overflow-x-hidden`}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>
