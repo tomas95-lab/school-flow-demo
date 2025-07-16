@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function EditCalificaciones({
   formData,
@@ -109,13 +108,6 @@ export default function EditCalificaciones({
           </div>
         </div>
 
-        {/* Alert con información importante */}
-        <Alert className="bg-blue-50 border-blue-200">
-          <AlertDescription className="text-blue-800">
-            <strong>Nota:</strong> Los cambios en las calificaciones quedarán registrados en el historial académico. 
-            Asegúrate de verificar todos los datos antes de guardar.
-          </AlertDescription>
-        </Alert>
 
         {/* Botones de acción */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">

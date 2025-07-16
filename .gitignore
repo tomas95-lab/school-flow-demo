@@ -25,4 +25,5 @@ dist-ssr
 
 # Firebase config
 firebaseConfig.js
-logo2.png
+logo2.png.specstory/
+.cursorindexingignore

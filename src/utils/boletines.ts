@@ -1,0 +1,313 @@
+// Devuelve el periodo actual (trimestre)
+export function getPeriodoActual(fecha = new Date()) {
+  const year = fecha.getFullYear();
+  const mes = fecha.getMonth();
+  let trimestre;
+  if (mes >= 3 && mes < 6) trimestre = 1;
+  else if (mes >= 6 && mes < 9) trimestre = 2;
+  else if (mes >= 9 && mes < 12) trimestre = 3;
+  return `${year}-T${trimestre}`;
+}
+
+// Devuelve el inicio del trimestre actual
+export function getInicioTrimestre(fecha = new Date()) {
+  const mes = fecha.getMonth();
+  const year = fecha.getFullYear();
+  let mesInicio = 0;
+  if (mes >= 3 && mes < 6) mesInicio = 3;
+  else if (mes >= 6 && mes < 9) mesInicio = 6;
+  else if (mes >= 9) mesInicio = 9;
+  return new Date(year, mesInicio, 1);
+}
+
+// Calcula el promedio de un array de números
+export function calcPromedio(arr: number[]) {
+  if (!arr.length) return 0;
+  const suma = arr.reduce((a, b) => a + b, 0);
+  return Number((suma / arr.length).toFixed(2));
+}
+
+// Filtra calificaciones del trimestre actual
+export function filtrarCalificacionesTrimestre(calificaciones: any[], fechaRef?: Date) {
+  const inicioTrimestre = getInicioTrimestre(fechaRef);
+  return calificaciones.filter((c) => {
+    if (!c.fecha) return false;
+    const fechaCalif = new Date(c.fecha);
+    return fechaCalif >= inicioTrimestre;
+  });
+}
+
+
+
+export function getPromedioPorMateriaPorTrimestre(
+  calificaciones: any[],
+  subjects: any[],
+  alumnoId: string
+) {
+  return subjects.map((materia) => {
+    const califsMateria = calificaciones.filter(
+      (c) =>
+        c.studentId === alumnoId &&
+        c.subjectId === materia.firestoreId &&
+        typeof c.valor === "number"
+    );
+
+    const trimestres: { T1: number[]; T2: number[]; T3: number[] } = {
+      T1: [],
+      T2: [],
+      T3: [],
+    };
+
+    califsMateria.forEach((c) => {
+      const fecha = new Date(c.fecha);
+      const mes = fecha.getMonth();
+
+      if (mes >= 3 && mes < 6) trimestres.T1.push(c.valor);
+      else if (mes >= 6 && mes < 9) trimestres.T2.push(c.valor);
+      else if (mes >= 9 && mes < 12) trimestres.T3.push(c.valor);
+    });
+
+    return {
+      nombre: materia.nombre,
+      T1: calcPromedio(trimestres.T1),
+      T2: calcPromedio(trimestres.T2),
+      T3: calcPromedio(trimestres.T3),
+    };
+  });
+}
+
+// Agrupa calificaciones por materia para un alumno dado
+export function getPromedioPorMateria(
+  calificaciones: any[],
+  subjects: any[],
+  alumnoId: string
+) {
+  return subjects.map((materia) => {
+    const califs = calificaciones.filter(
+      (c) =>
+        c.studentId === alumnoId &&
+        c.subjectId === materia.firestoreId &&
+        typeof c.valor === "number"
+    );
+    const promedio = califs.length > 0
+      ? califs.reduce((sum, c) => sum + c.valor, 0) / califs.length
+      : 0;
+    return {
+      nombre: materia.nombre,
+      promedio: Number(promedio.toFixed(2)),
+    };
+  });
+}
+
+const OBSERVACIONES = {
+  muyMalo: [
+    "El rendimiento ha sido muy bajo, necesita un cambio urgente en su actitud.",
+    "Debe comprometerse mucho más.",
+    "No alcanzó los objetivos mínimos, es fundamental mayor esfuerzo.",
+    "Debe replantear su dedicación para avanzar."
+  ],
+  aMejorar: [
+    "Hay dificultades importantes, pero puede revertir la situación con constancia.",
+    "Debe mejorar la dedicación para lograr mejores resultados.",
+    "Se observa poco compromiso, puede y debe superarse.",
+    "Los resultados no son satisfactorios, se recomienda mayor esfuerzo."
+  ],
+  bien: [
+    "Ha tenido un desempeño aceptable, aunque puede aspirar a más.",
+    "Se nota progreso, pero aún puede superarse.",
+    "Cumple con lo esperado, se recomienda seguir trabajando.",
+    "Buena base, podría buscar la excelencia con más dedicación."
+  ],
+  excelente: [
+    "Excelente desempeño, felicitaciones.",
+    "Superó ampliamente los objetivos, siga así.",
+    "Actitud destacada, esfuerzo ejemplar.",
+    "Resultados sobresalientes, demuestra gran compromiso."
+  ]
+};
+
+function randomFrom(arr: string[]): string {
+  const idx = Math.floor(Math.random() * arr.length);
+  return arr[idx];
+}
+
+export function observacionPorPromedio(prom: number): string {
+  if (prom > 0 && prom <= 3) {
+    return randomFrom(OBSERVACIONES.muyMalo);
+  } else if (prom > 3 && prom <= 6) {
+    return randomFrom(OBSERVACIONES.aMejorar);
+  } else if (prom > 6 && prom <= 8) {
+    return randomFrom(OBSERVACIONES.bien);
+  } else if (prom > 8 && prom <= 10) {
+    return randomFrom(OBSERVACIONES.excelente);
+  } else {
+    return "Sin datos suficientes para generar una observación.";
+  }
+}
+
+// Calcula el promedio total de un boletín (de un array de promedios por materia)
+export function getPromedioTotal(materias: any[]) {
+  let totalNotas = 0;
+  let cantidadNotas = 0;
+
+  materias.forEach((m) => {
+    if (typeof m.T1 === "number") {
+      totalNotas += m.T1;
+      cantidadNotas++;
+    }
+    if (typeof m.T2 === "number") {
+      totalNotas += m.T2;
+      cantidadNotas++;
+    }
+    if (typeof m.T3 === "number") {
+      totalNotas += m.T3;
+      cantidadNotas++;
+    }
+  });
+
+  return cantidadNotas > 0 ? Number((totalNotas / cantidadNotas).toFixed(2)) : 0;
+}
+
+// Función para generar y descargar el PDF del boletín
+export async function generarPDFBoletin(row: any) {
+  // Importar dinámicamente para evitar problemas de SSR
+  const jsPDF = (await import('jspdf')).default;
+  const autoTable = (await import('jspdf-autotable')).default;
+
+  const doc = new jsPDF();
+  
+  // Configuración de fuentes y colores
+  const primaryColor: [number, number, number] = [75, 85, 99]; // slate-600
+  const secondaryColor: [number, number, number] = [156, 163, 175]; // gray-400
+  const successColor: [number, number, number] = [34, 197, 94]; // green-500
+  const dangerColor: [number, number, number] = [239, 68, 68]; // red-500
+
+  // Título principal
+  doc.setFontSize(24);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFont('helvetica', 'bold');
+  doc.text('BOLETÍN DE CALIFICACIONES', 105, 25, { align: 'center' });
+
+  // Subtítulo
+  doc.setFontSize(12);
+  doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Período: ${row.periodo || 'Académico'}`, 105, 35, { align: 'center' });
+
+  // Información del estudiante
+  doc.setFontSize(14);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFont('helvetica', 'bold');
+  doc.text('INFORMACIÓN DEL ESTUDIANTE', 20, 55);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Nombre: ${row.Nombre}`, 20, 65);
+  doc.text(`Promedio General: ${row.promediototal.toFixed(1)}`, 20, 75);
+  doc.text(`Estado: ${row.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}`, 20, 85);
+  doc.text(`Alertas: ${row.alertas}`, 20, 95);
+
+  // Datos de asistencia si están disponibles
+  if (row.asistencia) {
+    doc.text(`Asistencia: ${row.asistencia.porcentaje}%`, 20, 105);
+    doc.text(`Clases: ${row.asistencia.presentes}/${row.asistencia.total}`, 20, 115);
+  }
+
+  // Estadísticas
+  const stats = {
+    totalMaterias: row.materias?.length || 0,
+    materiasAprobadas: row.materias?.filter((m: any) => {
+      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      return promedio >= 7.0;
+    }).length || 0,
+    materiasDestacadas: row.materias?.filter((m: any) => {
+      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      return promedio >= 9.0;
+    }).length || 0,
+    materiasEnRiesgo: row.materias?.filter((m: any) => {
+      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      return promedio < 7.0;
+    }).length || 0
+  };
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ESTADÍSTICAS GENERALES', 20, 135);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Total Materias: ${stats.totalMaterias}`, 20, 145);
+  doc.text(`Aprobadas: ${stats.materiasAprobadas}`, 20, 155);
+  doc.text(`Destacadas: ${stats.materiasDestacadas}`, 20, 165);
+  doc.text(`En Riesgo: ${stats.materiasEnRiesgo}`, 20, 175);
+
+  // Tabla de calificaciones
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CALIFICACIONES POR MATERIA', 20, 195);
+
+  // Preparar datos para la tabla
+  const tableData = row.materias?.map((materia: any) => {
+    const promedio = (materia.t1 + materia.t2 + materia.t3) / 3;
+    return [
+      materia.nombre,
+      materia.t1.toFixed(1),
+      materia.t2.toFixed(1),
+      materia.t3.toFixed(1),
+      promedio.toFixed(1),
+      promedio >= 7.0 ? 'Aprobada' : 'Reprobada'
+    ];
+  }) || [];
+
+  // Generar tabla
+  autoTable(doc, {
+    head: [['Materia', 'T1', 'T2', 'T3', 'Promedio', 'Estado']],
+    body: tableData,
+    startY: 205,
+    headStyles: {
+      fillColor: primaryColor,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold'
+    },
+    styles: {
+      fontSize: 9,
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 50 },
+      1: { halign: 'center', cellWidth: 20 },
+      2: { halign: 'center', cellWidth: 20 },
+      3: { halign: 'center', cellWidth: 20 },
+      4: { halign: 'center', cellWidth: 25 },
+      5: { halign: 'center', cellWidth: 30 }
+    }
+  });
+
+  // Comentario general si existe
+  if (row.comentario) {
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('COMENTARIO GENERAL', 20, finalY);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    // Dividir el comentario en líneas si es muy largo
+    const maxWidth = 170;
+    const lines = doc.splitTextToSize(row.comentario, maxWidth);
+    doc.text(lines, 20, finalY + 10);
+  }
+
+  // Footer
+  const pageHeight = doc.internal.pageSize.height;
+  doc.setFontSize(8);
+  doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Documento generado automáticamente - Sistema de Gestión Escolar', 105, pageHeight - 20, { align: 'center' });
+  doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 105, pageHeight - 15, { align: 'center' });
+
+  // Descargar el PDF
+  const fileName = `Boletin_${row.Nombre.replace(/\s+/g, '_')}_${row.periodo || 'Academico'}.pdf`;
+  doc.save(fileName);
+}

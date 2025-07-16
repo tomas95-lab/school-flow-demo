@@ -162,6 +162,7 @@ export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
         return (
           <div className="pl-4">
             <ReutilizableDialog 
+              small
               open={open}
               title={
                 <div className="flex items-center gap-2">
