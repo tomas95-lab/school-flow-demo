@@ -8,6 +8,7 @@ import Calificaciones from "@/pages/Calificaciones";
 import DetallesCalificaciones from "@/pages/DetallesCalificaciones";
 import Boletines from "@/pages/Boletin";
 import BoletinesCurso from "@/pages/BoletinesCurso";
+import Alertas from "@/pages/Alertas";
 
 export function AppRoutes() {
   return (
@@ -22,6 +23,7 @@ export function AppRoutes() {
           <Route path="/calificaciones/detalles" element={<DetallesCalificaciones />} />
           <Route path="/boletines" element={<Boletines />} />
           <Route path="/boletines/cursos" element={<BoletinesCurso />} />
+          <Route path="/alertas" element={<Alertas />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

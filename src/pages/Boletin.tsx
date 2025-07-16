@@ -20,7 +20,8 @@ export default function Boletines() {
     );
   }
 
-
+  console.log("Boletin page - User role:", user?.role);
+  console.log("Boletin page - User:", user);  
   return (
       <div className="min-h-screen">
           <div className="min-h-screen bg-gray-50">
@@ -40,8 +41,10 @@ export default function Boletines() {
                   </div>
                 </div>
               </div>
-            {user?.role === "admin" || user?.role === "docente" && (
+            {(user?.role === "admin" || user?.role === "docente") && (
+              <>
                 <AdminBoletinesOverview  />
+              </>
             )}
             {user?.role === "alumno" && (
                 <AlumnoBoletinesOverview />

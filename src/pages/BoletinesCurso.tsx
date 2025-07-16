@@ -75,8 +75,7 @@ export default function BoletinesCurso() {
 	};
 	});
 
-	console.log("Boletines del curso:", boletinesCurso);
-  return (
+	return (
 		<div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
 			<div className="p-6 max-w-7xl mx-auto space-y-6">
 				{/* Header mejorado */}
