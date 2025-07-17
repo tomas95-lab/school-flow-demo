@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   UserX,
   Calendar,
+  Users,
 } from "lucide-react";
 import {
   subDays,
@@ -102,6 +103,7 @@ export default function TeacherAttendanceOverview() {
   const today = startOfDay(new Date());
   const weekAgo = subDays(today, 7);
   const monthAgo = subDays(today, 30);
+  const twoWeeksAgo = subDays(today, 14);
 
   // 7. Asistencia promedio últimos 7 días
   const lastWeek = teacherAttendances.filter((a) => {
@@ -109,6 +111,15 @@ export default function TeacherAttendanceOverview() {
     return (
       (isAfter(d, weekAgo) || d.getTime() === weekAgo.getTime()) &&
       (isBefore(d, today) || d.getTime() === today.getTime())
+    );
+  });
+
+  // 7b. Asistencia promedio semana anterior para comparar tendencia
+  const previousWeek = teacherAttendances.filter((a) => {
+    const d = startOfDay(parseISO(a.date));
+    return (
+      (isAfter(d, twoWeeksAgo) || d.getTime() === twoWeeksAgo.getTime()) &&
+      (isBefore(d, weekAgo) || d.getTime() === weekAgo.getTime())
     );
   });
 
@@ -153,6 +164,49 @@ export default function TeacherAttendanceOverview() {
       ? dailyPercents.reduce((sum, p) => sum + p, 0) / dailyPercents.length
       : 0;
 
+  // Calcular tendencia comparando con semana anterior
+  const previousByDate = previousWeek.reduce((acc, { date, present, studentId }) => {
+    const alumno = teacherStudents.find((s) => s.firestoreId === studentId);
+    const nombre = alumno
+      ? `${alumno.nombre} ${alumno.apellido}`
+      : studentId;
+
+    if (!acc[date]) {
+      acc[date] = {
+        total: 0,
+        present: 0,
+        presentNames: [],
+        absentNames: []
+      };
+    }
+
+    acc[date].total++;
+    if (present) {
+      acc[date].present++;
+      acc[date].presentNames.push(nombre);
+    } else {
+      acc[date].absentNames.push(nombre);
+    }
+
+    return acc;
+  }, {} as Record<string, DayStats>);
+
+  const previousDailyPercents = Object.values(previousByDate).map(
+    ({ present, total }) => (present / total) * 100
+  );
+  const avgPreviousWeekAttendance =
+    previousDailyPercents.length > 0
+      ? previousDailyPercents.reduce((sum, p) => sum + p, 0) / previousDailyPercents.length
+      : 0;
+
+  // Determinar tendencia
+  const getAttendanceTrend = () => {
+    if (avgPreviousWeekAttendance === 0) return "neutral";
+    if (avgWeeklyAttendance > avgPreviousWeekAttendance + 2) return "up";
+    if (avgWeeklyAttendance < avgPreviousWeekAttendance - 2) return "down";
+    return "neutral";
+  };
+
   // 8. Ausencias últimos 30 días
   const absCount = teacherAttendances.filter((a) => {
     const d = startOfDay(parseISO(a.date));
@@ -188,23 +242,40 @@ export default function TeacherAttendanceOverview() {
     return lowAttendance || consAbs >= 3;
   }).length;
 
-  // Determinar tendencias (opcional - podrías comparar con período anterior)
-  const getAttendanceTrend = () => {
-    if (avgWeeklyAttendance >= 90) return "up";
-    if (avgWeeklyAttendance < 75) return "down";
-    return "neutral";
+  // Función para obtener estadísticas por curso
+  const getCourseStats = (courseId: string) => {
+    const courseStudents = students.filter(s => s.cursoId === courseId);
+    const courseAttendances = teacherAttendances.filter(a => a.courseId === courseId);
+    
+    const totalAbsences = courseAttendances.filter(a => !a.present).length;
+    const totalRecords = courseAttendances.length;
+    const attendancePercentage = totalRecords > 0 ? Math.round(((totalRecords - totalAbsences) / totalRecords) * 100) : 0;
+    
+    return {
+      studentCount: courseStudents.length,
+      absences: totalAbsences,
+      attendancePercentage
+    };
   };
 
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard
           icon={GraduationCap}
-          label="Mis Cursos"
+          label="Cursos"
           value={teacherCourses.length}
-          subtitle={`${teacherStudents.length} estudiantes total`}
+          subtitle="Asignados"
           color="blue"
+        />
+        
+        <StatsCard
+          icon={Users}
+          label="Estudiantes"
+          value={teacherStudents.length}
+          subtitle="A cargo"
+          color="purple"
         />
         
         <StatsCard
@@ -251,11 +322,16 @@ export default function TeacherAttendanceOverview() {
               </p>
             </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {courses.map((course, index) => (
-                <div key={course.firestoreId || index} className="transform transition-all duration-200 hover:scale-105">
-                  <CourseCard course={course} link={`/asistencias/detalles?id=${course.firestoreId}`} descripcion="Ver y gestionar Asistencias"/>
-                </div>
-              ))}
+              {courses.map((course, index) => {
+                const stats = getCourseStats(course.firestoreId);
+                const courseDescription = `${stats.studentCount} estudiantes - ${stats.absences} faltas - Asistencia ${stats.attendancePercentage}%`;
+                
+                return (
+                  <div key={course.firestoreId || index} className="transform transition-all duration-200 hover:scale-105">
+                    <CourseCard course={course} link={`/asistencias/detalles?id=${course.firestoreId}`} descripcion={courseDescription}/>
+                  </div>
+                );
+              })}
           </div>
         </div>
       ) : (

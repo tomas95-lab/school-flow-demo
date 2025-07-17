@@ -41,21 +41,21 @@ export default function TeacherCalificacionesOverview() {
                 label="Promedio de calificaciones"
                 value={averageGrade}
                 icon={Percent}
-                subtitle="Promedio general de todas las calificaciones"
+                subtitle="Promedio general de todas las calificaciones • Escala: 0-10"
                 />
             <StatsCard
                 label="% Aprobados"
                 value={pctAprob}
                 icon={Percent}
                 color="green"
-                subtitle="Porcentaje de estudiantes aprobados"
+                subtitle="Porcentaje de estudiantes aprobados (nota ≥ 7)"
                 />
             <StatsCard
                 label="% Reprobados"
                 value={pctReprob}
                 icon={Percent}
                 color="red"
-                subtitle="Porcentaje de estudiantes reprobados"
+                subtitle="Porcentaje de estudiantes reprobados (nota < 7)"
                 />
             <StatsCard
                 label="Materias en Riesgo"

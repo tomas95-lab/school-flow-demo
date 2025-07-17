@@ -71,7 +71,7 @@ export default function AlumnoCalificacionesOverview() {
                             ).toFixed(2)
                             : "0.00"
                     }
-                    subtitle="Promedio de todas tus calificaciones registradas."
+                    subtitle="Promedio de todas tus calificaciones registradas • Escala: 0-10"
                     icon={BookOpen}
                     color="blue"
                 />
@@ -84,7 +84,7 @@ export default function AlumnoCalificacionesOverview() {
                             ).toFixed(2) + "%"
                             : "0.00%"
                     }
-                    subtitle="Porcentaje de materias aprobadas (nota ≥ 7)."
+                    subtitle="Porcentaje de materias aprobadas (nota ≥ 7)"
                     icon={Check}
                     color="green"
                 />
@@ -104,7 +104,7 @@ export default function AlumnoCalificacionesOverview() {
                             return porcentaje.toFixed(2) + "%";
                         })()
                     }
-                    subtitle="Diferencia porcentual respecto al promedio del curso."
+                    subtitle="Diferencia porcentual respecto al promedio del curso"
                     icon={TrendingUp}
                     color="purple"
                 />
@@ -120,7 +120,7 @@ export default function AlumnoCalificacionesOverview() {
                             ).toFixed(2)
                             : "0.00"
                     }
-                    subtitle="Estimación de tu calificación final si mantienes el ritmo actual."
+                    subtitle="Estimación de tu calificación final si mantienes el ritmo actual • Escala: 0-10"
                     icon={Clock}
                     color="yellow"
                 />

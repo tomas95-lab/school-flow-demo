@@ -14,6 +14,7 @@ import {
   UserX
 } from 'lucide-react';
 import { generarPDFBoletin } from '@/utils/boletines';
+import { Button } from './ui/button';
 
 export function BoletinComponent({ row }: { row: any }) {
   const [showComments, setShowComments] = useState(true);
@@ -121,19 +122,15 @@ export function BoletinComponent({ row }: { row: any }) {
               </p>
             </div>
           </div>
-          <button 
+          <Button 
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className={`px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
-              isDownloading 
-                ? 'bg-gray-400 text-white cursor-not-allowed' 
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-            }`}
+            className={`px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2`}
           >
             <Download className={`w-4 h-4 ${isDownloading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isDownloading ? 'Generando...' : 'Descargar'}</span>
             <span className="sm:hidden">{isDownloading ? '...' : 'PDF'}</span>
-          </button>
+          </Button>
         </div>
       </div>
 

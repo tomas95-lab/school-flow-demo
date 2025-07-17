@@ -166,12 +166,31 @@ export default function AlumnoBoletinesOverview() {
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                 {boletinActual.periodo || 'Período Actual'}
               </Badge>
-              <Badge 
-                variant={boletinActual.estado === 'abierto' ? 'default' : 'secondary'}
-                className={boletinActual.estado === 'abierto' ? 'bg-green-100 text-green-700' : ''}
-              >
-                {boletinActual.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
-              </Badge>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  boletinActual.estado === "leido" ? "bg-green-500" :
+                  boletinActual.estado === "generado" ? "bg-blue-500" :
+                  boletinActual.estado === "abierto" ? "bg-emerald-500" :
+                  boletinActual.estado === "cerrado" ? "bg-red-500" :
+                  "bg-yellow-500"
+                }`}></div>
+                <Badge 
+                  variant={boletinActual.estado === 'abierto' || boletinActual.estado === 'leido' ? 'default' : 'secondary'}
+                  className={
+                    boletinActual.estado === 'leido' ? 'bg-green-100 text-green-700' :
+                    boletinActual.estado === 'generado' ? 'bg-blue-100 text-blue-700' :
+                    boletinActual.estado === 'abierto' ? 'bg-emerald-100 text-emerald-700' :
+                    boletinActual.estado === 'cerrado' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }
+                >
+                  {boletinActual.estado === 'leido' ? 'Leído' :
+                   boletinActual.estado === 'generado' ? 'Generado' :
+                   boletinActual.estado === 'abierto' ? 'Abierto' :
+                   boletinActual.estado === 'cerrado' ? 'Cerrado' :
+                   'Pendiente'}
+                </Badge>
+              </div>
             </div>
           </div>
         </CardHeader>
