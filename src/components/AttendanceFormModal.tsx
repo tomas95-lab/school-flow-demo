@@ -43,7 +43,6 @@ export function AttendanceModal({
   const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [showHistory, setShowHistory] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 

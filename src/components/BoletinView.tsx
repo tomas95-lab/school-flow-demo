@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Eye, CheckCircle, Clock, FileText, AlertCircle } from "lucide-react";
 import { BoletinComponent } from "./BoletinComponent";
 import { Button } from "./ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { db } from "@/firebaseConfig";
 import { updateDoc, doc } from "firebase/firestore";
 
@@ -14,7 +14,7 @@ interface BoletinViewProps {
 }
 
 // Función para obtener el estado visual del boletín
-const getBoletinStatus = (estado: string, leido?: boolean) => {
+const getBoletinStatus = (estado: string) => {
   switch (estado) {
     case "generado":
       return {
@@ -86,7 +86,7 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
     }
   };
 
-  const status = getBoletinStatus(currentStatus, row.leido);
+  const status = getBoletinStatus(currentStatus);
   const Icon = status.icon;
 
   const defaultTrigger = (

@@ -14,7 +14,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { StatsCard } from "./StatCards";
-import { getPeriodoActual, getPromedioTotal, observacionPorPromedio, generarPDFBoletin } from "@/utils/boletines";
+import { getPromedioTotal, observacionPorPromedio, generarPDFBoletin } from "@/utils/boletines";
 import { BoletinView } from "./BoletinView";
 import { SchoolSpinner } from "./SchoolSpinner";
 

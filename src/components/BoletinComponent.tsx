@@ -11,7 +11,6 @@ import {
   FileText,
   Calendar,
   UserCheck,
-  UserX
 } from 'lucide-react';
 import { generarPDFBoletin } from '@/utils/boletines';
 import { Button } from './ui/button';
@@ -41,13 +40,6 @@ export function BoletinComponent({ row }: { row: any }) {
     if (grade >= 7.0) return 'text-amber-600';
     if (grade >= 6.0) return 'text-orange-600';
     return 'text-red-600';
-  };
-
-  // Función para obtener el estado
-  const getStatusColor = (grade: number) => {
-    return grade >= 7.0 
-      ? 'text-emerald-700 bg-emerald-100' 
-      : 'text-red-700 bg-red-100';
   };
 
   // Función para obtener el color de asistencia
