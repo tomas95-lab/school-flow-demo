@@ -11,14 +11,9 @@ import {
   Moon,
   TrendingUp,
   Calendar,
-  MessageSquare,
   FileText,
-  Target,
   Award,
-  Clock,
   CheckCircle,
-  XCircle,
-  Activity
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState } from "react"
@@ -28,7 +23,6 @@ import { db } from "@/firebaseConfig"
 import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
@@ -123,13 +117,13 @@ const kpiMeta = {
     icon: TrendingUp,
     className: "emerald",
     title: "Asistencia Promedio",
-    description: "Promedio general de asistencia"
+    description: "Promedio general de asistencia (%)"
   },
   avgGrades: {
     icon: Award,
     className: "yellow",
     title: "Promedio General",
-    description: "Promedio de calificaciones"
+    description: "Promedio de calificaciones (0-10)"
   },
   criticalAlerts: {
     icon: AlertCircle,
@@ -155,13 +149,13 @@ const kpiMeta = {
     icon: TrendingUp,
     className: "emerald",
     title: "Asistencia Promedio",
-    description: "Promedio de mis cursos"
+    description: "Promedio de mis cursos (%)"
   },
   myGrades: {
     icon: Award,
     className: "yellow",
     title: "Promedio General",
-    description: "Promedio de mis materias"
+    description: "Promedio de mis materias (0-10)"
   },
   
   // Alumno KPIs
@@ -169,13 +163,13 @@ const kpiMeta = {
     icon: Award,
     className: "blue",
     title: "Mi Promedio",
-    description: "Promedio general actual"
+    description: "Promedio general actual (0-10)"
   },
   myAttendance: {
     icon: TrendingUp,
     className: "green",
     title: "Mi Asistencia",
-    description: "Porcentaje de asistencia"
+    description: "Porcentaje de asistencia (%)"
   },
   approvedSubjects: {
     icon: CheckCircle,
@@ -273,8 +267,8 @@ export default function Dashboard() {
           : "0.0"
 
         const avgAttendance = asistencias.length > 0
-          ? Math.round((asistencias.filter((a: any) => a.present).length / asistencias.length) * 100)
-          : 0
+          ? `${Math.round((asistencias.filter((a: any) => a.present).length / asistencias.length) * 100)}%`
+          : "0%"
 
         // Calcular estadísticas específicas por rol
         const roleStats: any = {
@@ -290,19 +284,21 @@ export default function Dashboard() {
         // Estadísticas específicas por rol del usuario
         if (user?.role === 'docente' && user?.teacherId) {
           // Filtrar datos del docente actual
-          const teacherCourses = courses.filter(c => c.teacherId === user.teacherId)
-          const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId)
+          const teacherInfo = teachers.find(t => t.firestoreId === user.teacherId)
+          const teacherCourses = courses.filter(c => c.id === teacherInfo?.cursoId)
+          const teacherSubjects = subjects.filter(s => s.cursoId === teacherInfo?.cursoId)
           const teacherStudents = students.filter(s => 
-            teacherCourses.some(c => c.firestoreId === s.cursoId)
+            teacherCourses.some(c => c.id === s.cursoId)
           )
           
           // Calcular asistencia del docente
           const teacherAsistencias = asistencias.filter(a => 
-            teacherSubjects.some(s => s.firestoreId === a.subjectId)
+            teacherSubjects.some(s => s.cursoId === a.courseId)
           )
+          console.log(teacherSubjects)
           const teacherAttendance = teacherAsistencias.length > 0
-            ? Math.round((teacherAsistencias.filter(a => a.present).length / teacherAsistencias.length) * 100)
-            : 0
+            ? `${Math.round((teacherAsistencias.filter(a => a.present).length / teacherAsistencias.length) * 100)}%`
+            : "0%"
 
           // Calcular calificaciones del docente
           const teacherCalificaciones = calificaciones.filter(c => 
@@ -346,8 +342,8 @@ export default function Dashboard() {
 
           // Calcular asistencia del alumno
           const myAttendance = studentAsistencias.length > 0
-            ? Math.round((studentAsistencias.filter(a => a.present).length / studentAsistencias.length) * 100)
-            : 0
+            ? `${Math.round((studentAsistencias.filter(a => a.present).length / studentAsistencias.length) * 100)}%`
+            : "0%"
 
           // Materias del curso del alumno
           const studentSubjects = subjects.filter(s => s.cursoId === studentInfo?.cursoId)
@@ -471,8 +467,8 @@ export default function Dashboard() {
                 <span className="text-2xl font-bold text-red-600 mt-2">{alertStats.total || 0}</span>
                 <span className="text-gray-500 text-sm mt-1">Alertas</span>
                 <div className="mt-4 text-sm text-gray-600">
-                  <p>Gestiona y revisa</p>
-                  <p>las alertas</p>
+                  <p>Inasistencias, calificaciones</p>
+                  <p>bajas y eventos del sistema</p>
                 </div>
                 <Link to="/alertas" className="w-full">
                   <Button variant={"destructive"} className="mt-4 w-full">Ver Alertas</Button>
