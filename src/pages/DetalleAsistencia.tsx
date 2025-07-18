@@ -1,11 +1,11 @@
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useMemo, useEffect, useCallback } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import type { AttendanceRow } from "@/app/asistencias/columns";
-import { LoadingState } from "@/components/LoadingState";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +21,7 @@ import {
   Target,
   Award,
   AlertTriangle,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle,
-  XCircle
+  Plus
 } from "lucide-react";
 import ReutilizableDialog from "@/components/DialogReutlizable";
 import { AttendanceModal } from "@/components/AttendanceFormModal";

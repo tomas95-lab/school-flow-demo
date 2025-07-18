@@ -8,7 +8,7 @@ import { LoadingState } from "@/components/LoadingState";
 
 export default function Calificaciones() {
   const { user, loading: userLoading } = useContext(AuthContext)
-  const { data:courses, loading: coursesLoading } =  useFirestoreCollection("courses");
+  const { loading: coursesLoading } =  useFirestoreCollection("courses");
 
   // Mostrar spinner si el usuario está cargando o si los cursos están cargando
   if (userLoading || coursesLoading) {

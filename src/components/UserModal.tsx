@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AuthContext } from '../context/AuthContext';
-import { setDoc, doc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { setDoc, doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
 import { UserPlus, Edit, Loader2 } from 'lucide-react';

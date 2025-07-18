@@ -16,7 +16,7 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
-import { useContext, useEffect, useState, useMemo, useCallback } from "react"
+import { useContext, useEffect, useState, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "@/firebaseConfig"
@@ -24,7 +24,7 @@ import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
-import { useFirestoreCollection, useFirestoreCollectionOnce } from "@/hooks/useFireStoreCollection"
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -204,33 +204,10 @@ function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
   )
 }
 
-type Alert = { 
-  id: string; 
-  titulo?: string; 
-  descripcion?: string; 
-  tipo?: 'critica' | 'importante' | 'informativa';
-  fecha?: any;
-  [key: string]: any 
-}
-
-// Función para obtener el mensaje según el rol
-const getRoleMessage = (role: string | undefined) => {
-  switch (role) {
-    case "admin":
-      return "Gestiona y supervisa las asistencias de todos los cursos, docentes y estudiantes del sistema educativo.";
-    case "docente":
-      return "Registra y administra las asistencias de tus materias y cursos asignados.";
-    case "alumno":
-      return "Consulta tu historial de asistencias y mantente al día con tu rendimiento académico.";
-    default:
-      return "Panel de gestión de asistencias del sistema educativo.";
-  }
-};
 
 export default function Dashboard() {
   const { user, loading } = useContext(AuthContext)
   const [stats, setStats] = useState<any>({})
-  const [latestAlerts, setLatestAlerts] = useState<Alert[]>([])
   const [alertStats, setAlertStats] = useState({
     total: 0,
     critical: 0,
@@ -280,9 +257,7 @@ export default function Dashboard() {
     if (user?.role === 'docente' && user?.teacherId) {
       // Crear maps para búsqueda más rápida
       const teacherMap = new Map(teachers.map(t => [t.firestoreId || '', t]));
-      const courseMap = new Map(courses.map(c => [c.firestoreId || '', c]));
-      const subjectMap = new Map(subjects.map(s => [s.firestoreId || '', s]));
-      
+
       const teacherInfo = teacherMap.get(user.teacherId);
       if (teacherInfo) {
         const teacherCourses = courses.filter(c => c.firestoreId === teacherInfo.cursoId);
@@ -345,7 +320,6 @@ export default function Dashboard() {
     if (user?.role === 'alumno' && user?.studentId) {
       // Crear maps para búsqueda más rápida
       const studentMap = new Map(students.map(s => [s.firestoreId || '', s]));
-      const subjectMap = new Map(subjects.map(s => [s.firestoreId || '', s]));
       
       const studentInfo = studentMap.get(user.studentId);
       if (studentInfo) {

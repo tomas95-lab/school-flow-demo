@@ -8,7 +8,7 @@ import AlumnoBoletinesOverview from "@/components/AlumnoBoletinesOverview";
 
 export default function Boletines() {
   const { user, loading: userLoading } = useContext(AuthContext)
-  const { data:courses, loading: coursesLoading, error: coursesError } =  useFirestoreCollection("courses");
+  const { loading: coursesLoading, error: coursesError } =  useFirestoreCollection("courses");
 
   // Mostrar spinner si el usuario está cargando o si los cursos están cargando
   if (userLoading || coursesLoading) {

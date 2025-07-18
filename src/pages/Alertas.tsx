@@ -1,15 +1,15 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import AdminAlertasOverview from "@/components/AdminAlertasOverview";
 import TeacherAlertasOverview from "@/components/TeacherAlertasOverview";
 import AlumnoAlertasOverview from "@/components/AlumnoAlertasOverview";
 import { Bell } from "lucide-react";
+import { LoadingState } from "@/components/LoadingState";
 
 export default function Alertas() {
   const { user, loading: userLoading } = useContext(AuthContext)
-  const { data:courses, loading: coursesLoading } =  useFirestoreCollection("courses");
+  const { loading: coursesLoading } =  useFirestoreCollection("courses");
 
   // Función para obtener el mensaje según el rol
   const getRoleMessage = (role: string | undefined) => {
@@ -28,12 +28,11 @@ export default function Alertas() {
   // Mostrar spinner si el usuario está cargando o si los cursos están cargando
   if (userLoading || coursesLoading) {
     return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <SchoolSpinner text="Cargando panel de alertas..." />
-        <p className="text-gray-500 mt-4">Preparando información del sistema</p>
-      </div>
-    </div>
+      <LoadingState 
+        text="Cargando panel de alertas..."
+        timeout={8000}
+        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+      />
     );
   }
 

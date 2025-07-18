@@ -248,8 +248,6 @@ export async function generarPDFBoletin(row: any) {
   // Configuración de fuentes y colores
   const primaryColor: [number, number, number] = [75, 85, 99]; // slate-600
   const secondaryColor: [number, number, number] = [156, 163, 175]; // gray-400
-  const successColor: [number, number, number] = [34, 197, 94]; // green-500
-  const dangerColor: [number, number, number] = [239, 68, 68]; // red-500
 
   // Título principal
   doc.setFontSize(24);
