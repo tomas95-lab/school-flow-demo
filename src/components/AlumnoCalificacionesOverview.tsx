@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { useContext, useState } from "react";
 import { BookOpen, TrendingUp, Clock, Check } from 'lucide-react';
 
@@ -51,7 +51,7 @@ export default function AlumnoCalificacionesOverview() {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <SchoolSpinner text="Cargando calificaciones..." />
+                    <SchoolSpinner text="Cargando calificaciones..." fullScreen={true} />
                 </div>
             </div>
         );

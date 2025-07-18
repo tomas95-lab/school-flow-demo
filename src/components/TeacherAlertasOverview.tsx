@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { StatsCard } from "./StatCards";
 import { AlertTriangle, Bell, CheckCircle, Search } from "lucide-react";
 import { useContext, useState } from "react";

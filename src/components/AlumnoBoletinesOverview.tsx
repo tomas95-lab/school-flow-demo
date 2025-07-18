@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { 
   BookOpen, 
@@ -85,7 +85,7 @@ export default function AlumnoBoletinesOverview() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <SchoolSpinner text="Cargando tu boletín..." />
+          <SchoolSpinner text="Cargando tu boletín..." fullScreen={true} />
           <p className="text-gray-500 mt-4">Preparando información académica</p>
         </div>
       </div>

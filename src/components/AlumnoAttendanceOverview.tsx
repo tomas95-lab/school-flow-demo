@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { BookOpen,EyeClosed, Eye, UserCheck, UserX } from "lucide-react";
 import { Button } from "./ui/button";

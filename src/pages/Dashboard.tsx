@@ -24,7 +24,7 @@ import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -420,7 +420,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <SchoolSpinner text="Cargando datos del dashboard..." />
+        <SchoolSpinner text="Cargando datos del dashboard..." fullScreen={true} />
       </div>
     );
   }

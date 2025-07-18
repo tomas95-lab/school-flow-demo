@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { useContext } from "react";

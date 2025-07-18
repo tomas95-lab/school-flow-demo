@@ -29,7 +29,7 @@ export function LoadingState({
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
-        <SchoolSpinner text={text} />
+        <SchoolSpinner text={text} fullScreen={true} />
         <p className="text-gray-500 mt-4">Preparando información del sistema</p>
         {showTimeout && showTimeoutMessage && (
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">

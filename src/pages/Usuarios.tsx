@@ -60,29 +60,17 @@ export default function Usuarios() {
     setShowDeleteModal(true);
   };
 
-  if (loading) {
+  if (user === null) {
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <SchoolSpinner text="Cargando usuarios..." />
+            <SchoolSpinner text="Cargando usuarios..." fullScreen={true} />
             <p className="text-gray-500 mt-4">Preparando información de usuarios</p>
           </div>
         </div>
       );
     }
-    
-  if (user?.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h2>
-          <p className="text-gray-600">No tienes permisos para acceder a esta sección.</p>
-        </div>
-      </div>
-    );
-  }
-
+  
   // Stats calculadas con datos reales
   const userStats = [
     {

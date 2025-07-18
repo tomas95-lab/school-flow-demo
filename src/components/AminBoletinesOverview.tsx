@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { CourseCard } from "./CourseCard";
 import { StatsCard } from "./StatCards";
 import { Percent, TriangleAlert } from "lucide-react";

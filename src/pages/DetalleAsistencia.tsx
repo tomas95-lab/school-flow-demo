@@ -1,5 +1,5 @@
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { useContext, useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -321,10 +321,17 @@ export default function DetalleAsistencia() {
   }, []);
 
 
-  if (!course || asistenciasLoading) {
+  // Verifica que todos los datos necesarios estén cargados antes de renderizar
+  if (
+    !course ||
+    asistenciasLoading ||
+    studentsInCourse.length === 0 ||
+    subjectsInCourse.length === 0 ||
+    asistencias.length === 0
+  ) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <SchoolSpinner text="Cargando Asistencias..." />
+        <SchoolSpinner text="Cargando Asistencias..." fullScreen={true} />
       </div>
     );
   }

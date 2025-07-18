@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table";
 import { StatsCard } from "@/components/StatCards";
 import { Badge } from "@/components/ui/badge";
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { getPeriodoActual, getPromedioTotal, observacionPorPromedio } from "@/utils/boletines";
 import { Book, BookOpen } from "lucide-react";
 import { useState } from "react";

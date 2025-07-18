@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import AdminCalificacionesOverview from "@/components/AdminCalificacionesOverview";

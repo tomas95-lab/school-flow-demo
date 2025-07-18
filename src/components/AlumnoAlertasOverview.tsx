@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { 
   AlertTriangle, 
@@ -39,7 +39,7 @@ export default function AlumnoAlertasOverview() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <SchoolSpinner text="Cargando tus alertas..." />
+          <SchoolSpinner text="Cargando tus alertas..." fullScreen={true} />
           <p className="text-gray-500 mt-4">Preparando información de notificaciones</p>
         </div>
       </div>

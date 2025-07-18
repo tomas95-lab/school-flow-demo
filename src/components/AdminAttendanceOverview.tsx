@@ -1,6 +1,6 @@
 "use client";
 
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { BookOpen, Users, GraduationCap, TrendingUp, Plus } from "lucide-react";
 import { CourseCard } from "@/components/CourseCard";
 import type { Course } from "@/components/CourseCard";

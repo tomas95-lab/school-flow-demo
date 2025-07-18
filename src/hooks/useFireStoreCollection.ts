@@ -46,32 +46,32 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
         q = query(q, limit(options.limit));
       }
 
-              const unsubscribe = onSnapshot(
-          q, 
-          (snapshot: any) => {
-            const docs = snapshot.docs.map((doc: any) => ({
-              ...(doc.data() as T),
-              firestoreId: doc.id,
-            }));
-            
-            setData(docs);
-            setLoading(false);
+      const unsubscribe = onSnapshot(
+        q, 
+        (snapshot: any) => {
+          const docs = snapshot.docs.map((doc: any) => ({
+            ...(doc.data() as T),
+            firestoreId: doc.id,
+          }));
+          
+          setData(docs);
+          setLoading(false);
 
-            // Actualizar cache
-            if (options?.enableCache !== false) {
-              cache.set(cacheKey, {
-                data: docs,
-                timestamp: Date.now(),
-                listeners: (cache.get(cacheKey)?.listeners || 0) + 1
-              });
-            }
-          },
-          (error: any) => {
-            console.error(`Error loading collection ${path}:`, error);
-            setError(error.message);
-            setLoading(false);
+          // Actualizar cache
+          if (options?.enableCache !== false) {
+            cache.set(cacheKey, {
+              data: docs,
+              timestamp: Date.now(),
+              listeners: (cache.get(cacheKey)?.listeners || 0) + 1
+            });
           }
-        );
+        },
+        (error: any) => {
+          console.error(`Error loading collection ${path}:`, error);
+          setError(error.message);
+          setLoading(false);
+        }
+      );
 
       unsubscribeRef.current = unsubscribe;
     } catch (err) {
@@ -149,4 +149,4 @@ export function useFirestoreCollectionOnce<T extends DocumentData & { firestoreI
   }, [path, options?.limit, options?.orderBy]);
 
   return { data, loading, error };
-}
+} 

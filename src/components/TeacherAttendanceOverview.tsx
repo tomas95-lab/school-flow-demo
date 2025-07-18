@@ -1,5 +1,5 @@
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { useContext } from "react";
 import { CourseCard } from "./CourseCard";
 import type { Course } from "@/components/CourseCard";
@@ -57,7 +57,7 @@ export default function TeacherAttendanceOverview() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <SchoolSpinner text="Cargando panel de asistencias..." />
+          <SchoolSpinner text="Cargando panel de asistencias..." fullScreen={true} />
           <p className="text-gray-500 mt-4">Preparando información del sistema</p>
         </div>
       </div>
