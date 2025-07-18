@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from './ui/button';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';

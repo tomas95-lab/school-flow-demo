@@ -61,7 +61,7 @@ export default function Login() {
 
   return (
     <div className="grid lg:grid-cols-2 md:grid-cols-1 h-screen">
-      <div className="flex justify-center items-center flex-col bg-white">
+      <div className="flex justify-center items-center flex-col">
         <img
           src={logo}
           alt="Logo de EduFlow"
@@ -69,7 +69,7 @@ export default function Login() {
         />
         <ReutilizableCard
           title="Iniciar sesión"
-          full={false}
+          full="login"
           description="Por favor ingresa tus credenciales"
           action={
             <Button

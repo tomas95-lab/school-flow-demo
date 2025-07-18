@@ -2,7 +2,6 @@ import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { ReutilizableCard } from "@/components/ReutilizableCard";
 import { StatsCard } from "@/components/StatCards";
-import { Button } from "@/components/ui/button";
 
 import { 
   Users, 
