@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
 type Role = "admin" | "docente" | "alumno";
@@ -36,6 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const role = userDoc.exists() ? userDoc.data().role : null;
 
         if (role) {
+          // Registrar último acceso
+          try {
+            await updateDoc(doc(db, "users", firebaseUser.uid), {
+              lastLogin: new Date().toISOString()
+            });
+          } catch (error) {
+            console.error("Error updating last login:", error);
+          }
+
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email,

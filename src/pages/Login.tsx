@@ -32,7 +32,21 @@ export default function Login() {
       navigate("/dashboard");
     } catch (err: any) {
       console.error("Error de Firebase:", err.code, err.message);
-      setError("Credenciales inválidas");
+      
+      // Manejar errores específicos de Firebase Auth
+      if (err.code === 'auth/user-not-found') {
+        setError("No existe una cuenta con este email");
+      } else if (err.code === 'auth/wrong-password') {
+        setError("Contraseña incorrecta");
+      } else if (err.code === 'auth/invalid-email') {
+        setError("Formato de email inválido");
+      } else if (err.code === 'auth/user-disabled') {
+        setError("Esta cuenta ha sido deshabilitada");
+      } else if (err.code === 'auth/too-many-requests') {
+        setError("Demasiados intentos fallidos. Intenta más tarde");
+      } else {
+        setError("Error al iniciar sesión. Verifica tus credenciales");
+      }
     } finally {
       setLoading(false);
     }

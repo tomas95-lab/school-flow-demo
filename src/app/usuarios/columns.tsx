@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ export type User = {
   createdAt?: string
 }
 
-export const useColumnsUsuarios = (): ColumnDef<User>[] => [
+export const useColumnsUsuarios = (onEditUser?: (user: User) => void, onDeleteUser?: (user: User) => void): ColumnDef<User>[] => [
   {
     accessorKey: "name",
     header: "Nombre",
@@ -91,10 +91,34 @@ export const useColumnsUsuarios = (): ColumnDef<User>[] => [
     cell: ({ row }) => {
       const lastLogin = row.getValue("lastLogin") as string
       return (
-        <div className="text-sm text-gray-500">
-          {lastLogin ? new Date(lastLogin).toLocaleDateString('es-ES') : "Nunca"}
+        <div className="text-sm">
+          {lastLogin ? (
+            <div>
+              <div className="text-gray-900 font-medium">
+                {new Date(lastLogin).toLocaleDateString('es-ES')}
+              </div>
+              <div className="text-gray-500 text-xs">
+                {new Date(lastLogin).toLocaleTimeString('es-ES', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </div>
+            </div>
+          ) : (
+            <span className="text-gray-400 italic">Nunca</span>
+          )}
         </div>
       )
+    },
+    filterFn: (row, id, filterValue) => {
+      const lastLogin = row.getValue(id) as string;
+      if (!lastLogin || !filterValue) return true;
+      
+      const loginDate = new Date(lastLogin);
+      const filterDate = new Date(filterValue);
+      
+      // Verificar si el login fue hoy
+      return loginDate >= filterDate && loginDate < new Date(filterDate.getTime() + 24 * 60 * 60 * 1000);
     },
   },
   {
@@ -102,7 +126,6 @@ export const useColumnsUsuarios = (): ColumnDef<User>[] => [
     header: "Acciones",
     cell: ({ row }) => {
       const user = row.original
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -113,16 +136,15 @@ export const useColumnsUsuarios = (): ColumnDef<User>[] => [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              Ver detalles
-            </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEditUser?.(user)}>
               <Edit className="mr-2 h-4 w-4" />
               Editar usuario
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem 
+              className="text-red-600"
+              onClick={() => onDeleteUser?.(user)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Eliminar usuario
             </DropdownMenuItem>

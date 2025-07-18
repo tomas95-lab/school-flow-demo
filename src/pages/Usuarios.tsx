@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 
 import { 
   Users, 
-  UserPlus, 
   GraduationCap, 
   UserCheck,
   Shield
@@ -15,32 +14,64 @@ import { DataTable } from "@/components/data-table";
 import { useColumnsUsuarios } from "../app/usuarios/columns";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+import { UserModal } from "@/components/UserModal";
+import { DeleteUserModal } from "@/components/DeleteUserModal";
+import { SchoolSpinner } from "@/components/SchoolSpinner";
 
 export default function Usuarios() {
   const { user } = useContext(AuthContext);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Función para recargar usuarios
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersData = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Obtener usuarios de Firestore
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const usersData = usersSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setUsers(usersData);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
 
+  // Función para manejar la edición de usuarios
+  const handleEditUser = (user: any) => {
+    console.log('Editando usuario:', user);
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  // Función para manejar la eliminación de usuarios
+  const handleDeleteUser = (user: any) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  if (user === null) {
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <SchoolSpinner text="Cargando usuarios..." />
+            <p className="text-gray-500 mt-4">Preparando información de usuarios</p>
+          </div>
+        </div>
+      );
+    }
+    
   if (user?.role !== "admin") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -99,10 +130,10 @@ export default function Usuarios() {
                 Administra todos los usuarios del sistema educativo
               </p>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3">
-              <UserPlus className="h-5 w-5 mr-2" />
-              Crear Usuario
-            </Button>
+            <UserModal 
+              mode="create" 
+              onUserCreated={fetchUsers}
+            />
           </div>
         </div>
 
@@ -137,7 +168,7 @@ export default function Usuarios() {
                 </div>
               ) : (
                 <DataTable 
-                  columns={useColumnsUsuarios()} 
+                  columns={useColumnsUsuarios(handleEditUser, handleDeleteUser)} 
                   data={users}
                   placeholder="usuario"
                   filters={[
@@ -164,6 +195,15 @@ export default function Usuarios() {
                         { label: "Inactivos", value: "inactive" }
                       ]
                     },
+                    {
+                      type: "button",
+                      label: "Conectados hoy",
+                      onClick: table => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        table.getColumn("lastLogin")?.setFilterValue(today.toISOString());
+                      }
+                    },
                   ]}
                   exportable={true}
                   emptyMessage="No se encontraron usuarios. Comienza creando el primer usuario del sistema."
@@ -172,6 +212,35 @@ export default function Usuarios() {
             </div>
           </div>
         </ReutilizableCard>
+
+        {/* Modal de edición */}
+        {selectedUser && (
+          <UserModal 
+            mode="edit" 
+            user={selectedUser}
+            open={showEditModal}
+            onOpenChange={setShowEditModal}
+            onUserUpdated={() => {
+              fetchUsers();
+              setShowEditModal(false);
+              setSelectedUser(null);
+            }}
+          />
+        )}
+
+        {/* Modal de eliminación */}
+        {selectedUser && (
+          <DeleteUserModal 
+            user={selectedUser}
+            open={showDeleteModal}
+            onOpenChange={setShowDeleteModal}
+            onUserDeleted={() => {
+              fetchUsers();
+              setShowDeleteModal(false);
+              setSelectedUser(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
