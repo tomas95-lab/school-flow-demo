@@ -1,23 +1,23 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import AdminCalificacionesOverview from "@/components/AdminCalificacionesOverview";
 import TeacherCalificacionesOverview from "@/components/TeacherCalificacionesOverView";
 import AlumnoCalificacionesOverview from "@/components/AlumnoCalificacionesOverview";
+import { LoadingState } from "@/components/LoadingState";
 
 export default function Calificaciones() {
-  const { user } = useContext(AuthContext)
-  const { data:courses, loading = false } =  useFirestoreCollection("courses");
+  const { user, loading: userLoading } = useContext(AuthContext)
+  const { data:courses, loading: coursesLoading } =  useFirestoreCollection("courses");
 
-  if (courses.length==0 && loading) {
+  // Mostrar spinner si el usuario está cargando o si los cursos están cargando
+  if (userLoading || coursesLoading) {
     return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <SchoolSpinner text="Cargando panel administrativo..." />
-        <p className="text-gray-500 mt-4">Preparando información del sistema</p>
-      </div>
-    </div>
+      <LoadingState 
+        text="Cargando panel administrativo..."
+        timeout={8000}
+        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+      />
     );
   }
 

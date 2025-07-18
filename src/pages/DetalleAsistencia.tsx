@@ -1,10 +1,11 @@
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useContext, useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useContext, useState, useMemo, useEffect, useCallback } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import type { AttendanceRow } from "@/app/asistencias/columns";
+import { LoadingState } from "@/components/LoadingState";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,10 @@ import {
   Award,
   AlertTriangle,
   Plus,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import ReutilizableDialog from "@/components/DialogReutlizable";
 import { AttendanceModal } from "@/components/AttendanceFormModal";
@@ -116,31 +121,37 @@ const DetallesStatsCard = ({
 export default function DetalleAsistencia() {
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
-  const [id] = useState(searchParams.get("id") || "");
-
+  const id = searchParams.get("id");
+  const [modalOpen, setModalOpen] = useState(false);
   const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set());
   const [didInitCollapse, setDidInitCollapse] = useState(false);
 
-  const { data: courses } = useFirestoreCollection("courses");
+  // Usar hooks optimizados con cache
+  const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
   const { data: teachers } = useFirestoreCollection("teachers");
-  const { data: students } = useFirestoreCollection("students");
-  const { data: subjects } = useFirestoreCollection("subjects");
-  const { data: asistencias } = useFirestoreCollection("attendances");
-  const [modalOpen, setModalOpen] = useState(false);
+  const { data: students } = useFirestoreCollection("students", { enableCache: true });
+  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
+  const { data: asistencias, loading: asistenciasLoading } = useFirestoreCollection("attendances", { enableCache: true });
 
+  // Memoizar datos filtrados para evitar recálculos
+  console.log("id", id);  
+  const course = useMemo(() => 
+    courses?.find(c => c.firestoreId === id), 
+    [courses, id]
+  );
 
-  const course = courses.find(c => c.firestoreId === id);
   const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
 
+  const studentsInCourse = useMemo(() => 
+    students?.filter(s => s.cursoId === id) || [], 
+    [students, id]
+  );
 
-  // si es admin: todas las materias del curso; si es docente: solo las propias
   const subjectsInCourse = useMemo(() => {
-    const base = subjects.filter(s => s.cursoId === id);
+    const base = subjects?.filter(s => s.cursoId === id) || [];
     if (user?.role === "admin") return base;
     return base.filter(s => s.teacherId === teacher?.firestoreId);
   }, [subjects, id, user, teacher]);
-
-  const studentsInCourse = students.filter(s => s.cursoId === id);
 
   useEffect(() => {
     if (!didInitCollapse && subjectsInCourse.length) {
@@ -151,75 +162,74 @@ export default function DetalleAsistencia() {
     }
   }, [subjectsInCourse, didInitCollapse]);
 
-  const exportToCSV = () => {
-    if (!course) return;
-    const rows = [["Alumno", "Materia", "Estado", "Fecha"]];
-    subjectsInCourse.forEach(subject =>
-      studentsInCourse.forEach(student => {
-        const rec = asistencias.find(a =>
-          a.studentId === student.firestoreId &&
-          a.courseId === id &&
-          a.subject === subject.nombre
-        );
-        rows.push([
-          `${student.nombre} ${student.apellido}`,
-          subject.nombre,
-          rec?.present ? "Presente" : "Ausente",
-          rec?.fecha || "N/A"
-        ]);
-      })
-    );
-    const csv = rows.map(r => r.map(f => `"${f}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `asistencias_${course.nombre}_div_${course.division}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
+  // Memoizar estadísticas del curso para evitar recálculos pesados
   const courseStats = useMemo(() => {
+    if (!studentsInCourse.length || !subjectsInCourse.length || !asistencias) {
+      return {
+        totalStudents: 0,
+        totalSubjects: 0,
+        overallPercentage: 0,
+        subjectStats: [],
+        lowAttendanceSubjects: 0,
+        bestSubject: { percentage: 0, subject: "N/A" },
+        worstSubject: { percentage: 0, subject: "N/A" },
+        totalRecordsProcessed: 0,
+        totalPresentRecords: 0
+      };
+    }
+
     const totalStudents = studentsInCourse.length;
     const totalSubjects = subjectsInCourse.length;
     
+    // Crear map para búsqueda más rápida de asistencias por materia
+    const attendanceMap = new Map<string, any[]>();
+    asistencias.forEach(a => {
+      if (a.courseId === id) {
+        const key = a.subject;
+        if (!attendanceMap.has(key)) {
+          attendanceMap.set(key, []);
+        }
+        attendanceMap.get(key)!.push(a);
+      }
+    });
+    
     const subjectStats = subjectsInCourse.map(subject => {
-      // Obtener TODOS los registros de asistencia para esta materia
-      const subjectAttendances = asistencias.filter(a =>
-        a.courseId === id &&
-        a.subject === subject.nombre
-      );
+      const subjectAttendances = attendanceMap.get(subject.nombre) || [];
       
-      // Contar presentes y ausentes directamente de los registros
-      const presentRecords = subjectAttendances.filter(a => a.present === true).length;
-      const absentRecords = subjectAttendances.filter(a => a.present === false).length;
+      // Contar presentes y ausentes de forma optimizada
+      let presentRecords = 0;
+      let absentRecords = 0;
       const totalRecords = subjectAttendances.length;
       
-      // El porcentaje es: registros presentes / total de registros
+      subjectAttendances.forEach(a => {
+        if (a.present === true) presentRecords++;
+        else if (a.present === false) absentRecords++;
+      });
+      
       const percentage = totalRecords > 0 
         ? Math.round((presentRecords / totalRecords) * 100)
         : 0;
       
-      // Para mostrar en las cards, podemos mostrar el promedio por clase
-      const uniqueDates = [...new Set(subjectAttendances.map(a => a.fecha).filter(Boolean))];
-      const totalClasses = uniqueDates.length;
+      // Calcular fechas únicas de forma optimizada
+      const uniqueDates = new Set(subjectAttendances.map(a => a.fecha).filter(Boolean));
+      const totalClasses = uniqueDates.size;
       const avgPresentPerClass = totalClasses > 0 ? Math.round(presentRecords / totalClasses) : 0;
       const avgAbsentPerClass = totalClasses > 0 ? Math.round(absentRecords / totalClasses) : 0;
       
       return {
         subject: subject.nombre,
-        present: presentRecords,           // Total de registros presentes
-        absent: absentRecords,             // Total de registros ausentes
-        total: totalRecords,               // Total de registros
-        percentage,                        // Porcentaje real de asistencia
-        totalClasses,                      // Número de clases registradas
-        avgPresentPerClass,                // Promedio de presentes por clase
-        avgAbsentPerClass,                 // Promedio de ausentes por clase
-        studentsCount: totalStudents       // Para referencia
+        present: presentRecords,
+        absent: absentRecords,
+        total: totalRecords,
+        percentage,
+        totalClasses,
+        avgPresentPerClass,
+        avgAbsentPerClass,
+        studentsCount: totalStudents
       };
     });
 
-    // Estadísticas generales basadas en el total de registros
+    // Calcular estadísticas generales de forma optimizada
     const totalPresentRecords = subjectStats.reduce((sum, s) => sum + s.present, 0);
     const totalAllRecords = subjectStats.reduce((sum, s) => sum + s.total, 0);
     
@@ -242,33 +252,80 @@ export default function DetalleAsistencia() {
       lowAttendanceSubjects,
       bestSubject,
       worstSubject,
-      // Agregar datos adicionales para debug
       totalRecordsProcessed: totalAllRecords,
       totalPresentRecords
     };
   }, [studentsInCourse, subjectsInCourse, asistencias, id]);
 
-  const toggleSubjectCollapse = (sid: string) => {
-    const c = new Set(collapsedSubjects);
-    c.has(sid) ? c.delete(sid) : c.add(sid);
-    setCollapsedSubjects(c);
-  };
+  // Memoizar función de exportación
+  const exportToCSV = useCallback(() => {
+    if (!studentsInCourse.length || !subjectsInCourse.length) return;
 
-  // Funciones para determinar colores y tendencias
-  const getAttendanceColor = (percentage: number) => {
+    const headers = ["Estudiante", "Materia", "Presente", "Fecha"];
+    const rows: string[][] = [];
+
+    studentsInCourse.forEach(student => {
+      subjectsInCourse.forEach(subject => {
+        const studentAttendances = asistencias?.filter(a =>
+          a.studentId === student.firestoreId &&
+          a.courseId === id &&
+          a.subject === subject.nombre
+        ) || [];
+
+        studentAttendances.forEach(attendance => {
+          rows.push([
+            `${student.nombre} ${student.apellido}`,
+            subject.nombre,
+            attendance.present ? "Sí" : "No",
+            attendance.fecha || attendance.date || "N/A"
+          ]);
+        });
+      });
+    });
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map((cell: string) => `"${cell}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `asistencias_${course?.nombre || 'curso'}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [studentsInCourse, subjectsInCourse, asistencias, id, course]);
+
+  const toggleSubjectCollapse = useCallback((sid: string) => {
+    setCollapsedSubjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sid)) {
+        newSet.delete(sid);
+      } else {
+        newSet.add(sid);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Funciones para determinar colores y tendencias (memoizadas)
+  const getAttendanceColor = useCallback((percentage: number) => {
     if (percentage >= 90) return "green";
     if (percentage >= 80) return "blue";
     if (percentage >= 70) return "orange";
     return "red";
-  };
+  }, []);
 
-  const getAttendanceTrend = (percentage: number) => {
+  const getAttendanceTrend = useCallback((percentage: number) => {
     if (percentage >= 85) return "up";
     if (percentage < 75) return "down";
     return "neutral";
-  };
+  }, []);
 
-  if (!course) {
+
+  if (!course || asistenciasLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <SchoolSpinner text="Cargando Asistencias..." />
@@ -346,7 +403,7 @@ export default function DetalleAsistencia() {
                       present: a.present,
                       date: a.fecha
                     }))}
-                    courseId={id}
+                    courseId={id || ""}
                     onClose={() => {setModalOpen(false)}}
                   />
                 }

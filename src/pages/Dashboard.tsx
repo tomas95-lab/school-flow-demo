@@ -16,14 +16,15 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState, useMemo, useCallback } from "react"
 import { AuthContext } from "@/context/AuthContext"
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore"
+import { collection, getDocs } from "firebase/firestore"
 import { db } from "@/firebaseConfig"
 import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
+import { useFirestoreCollection, useFirestoreCollectionOnce } from "@/hooks/useFireStoreCollection"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -236,154 +237,178 @@ export default function Dashboard() {
     pending: 0,
   });
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [studentsSnap, coursesSnap, teachersSnap, calificacionesSnap, asistenciasSnap, subjectsSnap] = await Promise.all([
-          getDocs(collection(db, "students")),
-          getDocs(collection(db, "courses")),
-          getDocs(collection(db, "teachers")),
-          getDocs(collection(db, "calificaciones")),
-          getDocs(collection(db, "attendances")),
-          getDocs(collection(db, "subjects"))
-        ])
+  // Usar hooks optimizados con cache
+  const { data: students } = useFirestoreCollection("students", { enableCache: true });
+  const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
+  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
+  const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true });
+  const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true });
+  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
 
-        // Convertir snapshots a arrays de datos
-        const students = studentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]
-        const teachers = teachersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]
-        const courses = coursesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]
-        const calificaciones = calificacionesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]
-        const asistencias = asistenciasSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]
-        const subjects = subjectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[]
+  // Memoizar cálculos pesados
+  const calculatedStats = useMemo(() => {
+    if (!students || !courses || !teachers || !calificaciones || !asistencias || !subjects) {
+      return null;
+    }
 
-        // Calcular estadísticas básicas (admin)
-        const totalStudents = students.length
-        const totalTeachers = teachers.length
-        const totalCourses = courses.length
+    // Calcular estadísticas básicas (admin)
+    const totalStudents = students.length;
+    const totalTeachers = teachers.length;
+    const totalCourses = courses.length;
 
-        // Calcular promedios generales
-        const avgGrades = calificaciones.length > 0 
-          ? (calificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / calificaciones.length).toFixed(1)
-          : "0.0"
+    // Calcular promedios generales de forma optimizada
+    const avgGrades = calificaciones.length > 0 
+      ? (calificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / calificaciones.length).toFixed(1)
+      : "0.0";
 
-        const avgAttendance = asistencias.length > 0
-          ? `${Math.round((asistencias.filter((a: any) => a.present).length / asistencias.length) * 100)}%`
-          : "0%"
+    const presentCount = asistencias.filter((a: any) => a.present).length;
+    const avgAttendance = asistencias.length > 0
+      ? `${Math.round((presentCount / asistencias.length) * 100)}%`
+      : "0%";
 
-        // Calcular estadísticas específicas por rol
-        const roleStats: any = {
-          // Admin stats (siempre disponibles)
-          totalStudents,
-          totalTeachers,
-          totalCourses,
-          avgAttendance,
-          avgGrades,
-          criticalAlerts: 0, // Se calculará después con las alertas
-        }
+    // Calcular estadísticas específicas por rol
+    const roleStats: any = {
+      totalStudents,
+      totalTeachers,
+      totalCourses,
+      avgAttendance,
+      avgGrades,
+      criticalAlerts: 0,
+    };
 
-        // Estadísticas específicas por rol del usuario
-        if (user?.role === 'docente' && user?.teacherId) {
-          // Filtrar datos del docente actual
-          const teacherInfo = teachers.find(t => t.firestoreId === user.teacherId)
-          const teacherCourses = courses.filter(c => c.id === teacherInfo?.cursoId)
-          const teacherSubjects = subjects.filter(s => s.cursoId === teacherInfo?.cursoId)
-          const teacherStudents = students.filter(s => 
-            teacherCourses.some(c => c.id === s.cursoId)
-          )
-          
-          // Calcular asistencia del docente
-          const teacherAsistencias = asistencias.filter(a => 
-            teacherSubjects.some(s => s.cursoId === a.courseId)
-          )
-          console.log(teacherSubjects)
-          const teacherAttendance = teacherAsistencias.length > 0
-            ? `${Math.round((teacherAsistencias.filter(a => a.present).length / teacherAsistencias.length) * 100)}%`
-            : "0%"
+    // Estadísticas específicas por rol del usuario
+    if (user?.role === 'docente' && user?.teacherId) {
+      // Crear maps para búsqueda más rápida
+      const teacherMap = new Map(teachers.map(t => [t.firestoreId || '', t]));
+      const courseMap = new Map(courses.map(c => [c.firestoreId || '', c]));
+      const subjectMap = new Map(subjects.map(s => [s.firestoreId || '', s]));
+      
+      const teacherInfo = teacherMap.get(user.teacherId);
+      if (teacherInfo) {
+        const teacherCourses = courses.filter(c => c.firestoreId === teacherInfo.cursoId);
+        const teacherSubjects = subjects.filter(s => s.cursoId === teacherInfo.cursoId);
+        const teacherStudents = students.filter(s => 
+          teacherCourses.some(c => c.firestoreId === s.cursoId)
+        );
+        
+        // Calcular asistencia del docente de forma optimizada
+        const teacherSubjectIds = new Set(teacherSubjects.map(s => s.firestoreId));
+        const teacherAsistencias = asistencias.filter(a => 
+          teacherSubjectIds.has(a.courseId)
+        );
+        
+        const teacherPresentCount = teacherAsistencias.filter(a => a.present).length;
+        const teacherAttendance = teacherAsistencias.length > 0
+          ? `${Math.round((teacherPresentCount / teacherAsistencias.length) * 100)}%`
+          : "0%";
 
-          // Calcular calificaciones del docente
-          const teacherCalificaciones = calificaciones.filter(c => 
-            teacherSubjects.some(s => s.firestoreId === c.subjectId)
-          )
-          const teacherGrades = teacherCalificaciones.length > 0
-            ? (teacherCalificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / teacherCalificaciones.length).toFixed(1)
-            : "0.0"
+        // Calcular calificaciones del docente de forma optimizada
+        const teacherCalificaciones = calificaciones.filter(c => 
+          teacherSubjectIds.has(c.subjectId)
+        );
+        
+        const teacherGradesSum = teacherCalificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
+        const teacherGrades = teacherCalificaciones.length > 0
+          ? (teacherGradesSum / teacherCalificaciones.length).toFixed(1)
+          : "0.0";
 
-          // Estudiantes en riesgo (promedio < 6)
-          const studentsAtRisk = teacherStudents.filter(student => {
-            const studentGrades = teacherCalificaciones.filter(c => c.studentId === student.firestoreId)
-            if (studentGrades.length === 0) return false
-            const avg = studentGrades.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / studentGrades.length
-            return avg < 6
-          }).length
+        // Estudiantes en riesgo (promedio < 6) - optimizado
+        const studentGradesMap = new Map<string, number[]>();
+        teacherCalificaciones.forEach(c => {
+          if (!studentGradesMap.has(c.studentId)) {
+            studentGradesMap.set(c.studentId, []);
+          }
+          studentGradesMap.get(c.studentId)!.push(c.valor || 0);
+        });
 
-          // Tareas pendientes (calificaciones sin valor)
-          const pendingTasks = teacherCalificaciones.filter(c => !c.valor || c.valor === 0).length
+        const studentsAtRisk = teacherStudents.filter(student => {
+          const grades = studentGradesMap.get(student.firestoreId || '') || [];
+          if (grades.length === 0) return false;
+          const avg = grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
+          return avg < 6;
+        }).length;
 
-          Object.assign(roleStats, {
-            myCourses: teacherCourses.length,
-            myStudents: teacherStudents.length,
-            myAttendanceDocente: teacherAttendance,
-            myGrades: teacherGrades,
-            studentsAtRisk,
-            pendingTasks
-          })
-        }
+        // Tareas pendientes (calificaciones sin valor)
+        const pendingTasks = teacherCalificaciones.filter(c => !c.valor || c.valor === 0).length;
 
-        if (user?.role === 'alumno' && user?.studentId) {
-          // Filtrar datos del alumno actual
-          const studentInfo = students.find(s => s.firestoreId === user.studentId)
-          const studentCalificaciones = calificaciones.filter(c => c.studentId === user.studentId)
-          const studentAsistencias = asistencias.filter(a => a.studentId === user.studentId)
-          
-          // Calcular promedio del alumno
-          const myAverage = studentCalificaciones.length > 0
-            ? (studentCalificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / studentCalificaciones.length).toFixed(1)
-            : "0.0"
-
-          // Calcular asistencia del alumno
-          const myAttendance = studentAsistencias.length > 0
-            ? `${Math.round((studentAsistencias.filter(a => a.present).length / studentAsistencias.length) * 100)}%`
-            : "0%"
-
-          // Materias del curso del alumno
-          const studentSubjects = subjects.filter(s => s.cursoId === studentInfo?.cursoId)
-          
-          // Materias aprobadas (promedio >= 7)
-          const approvedSubjects = studentSubjects.filter(subject => {
-            const subjectGrades = studentCalificaciones.filter(c => c.subjectId === subject.firestoreId)
-            if (subjectGrades.length === 0) return false
-            const avg = subjectGrades.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / subjectGrades.length
-            return avg >= 7
-          }).length
-
-          Object.assign(roleStats, {
-            myAverage,
-            myAttendance,
-            approvedSubjects,
-            totalSubjects: studentSubjects.length,
-            pendingEvaluations: 0, // No hay sistema de evaluaciones pendientes
-            unreadMessagesAlumno: 0 // No hay sistema de mensajes
-          })
-        }
-
-        setStats(roleStats)
-
-        // No hay alertas reales en Firestore, usar array vacío
-        setLatestAlerts([])
-
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
+        Object.assign(roleStats, {
+          myCourses: teacherCourses.length,
+          myStudents: teacherStudents.length,
+          myAttendanceDocente: teacherAttendance,
+          myGrades: teacherGrades,
+          studentsAtRisk,
+          pendingTasks
+        });
       }
     }
 
-    fetchData()
-  }, [user])
+    if (user?.role === 'alumno' && user?.studentId) {
+      // Crear maps para búsqueda más rápida
+      const studentMap = new Map(students.map(s => [s.firestoreId || '', s]));
+      const subjectMap = new Map(subjects.map(s => [s.firestoreId || '', s]));
+      
+      const studentInfo = studentMap.get(user.studentId);
+      if (studentInfo) {
+        const studentCalificaciones = calificaciones.filter(c => c.studentId === user.studentId);
+        const studentAsistencias = asistencias.filter(a => a.studentId === user.studentId);
+        
+        // Calcular promedio del alumno de forma optimizada
+        const gradesSum = studentCalificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
+        const myAverage = studentCalificaciones.length > 0
+          ? (gradesSum / studentCalificaciones.length).toFixed(1)
+          : "0.0";
 
+        // Calcular asistencia del alumno de forma optimizada
+        const presentCount = studentAsistencias.filter(a => a.present).length;
+        const myAttendance = studentAsistencias.length > 0
+          ? `${Math.round((presentCount / studentAsistencias.length) * 100)}%`
+          : "0%";
+
+        // Materias del curso del alumno
+        const studentSubjects = subjects.filter(s => s.cursoId === studentInfo.cursoId);
+        
+        // Materias aprobadas (promedio >= 7) - optimizado
+        const subjectGradesMap = new Map<string, number[]>();
+        studentCalificaciones.forEach(c => {
+          if (!subjectGradesMap.has(c.subjectId)) {
+            subjectGradesMap.set(c.subjectId, []);
+          }
+          subjectGradesMap.get(c.subjectId)!.push(c.valor || 0);
+        });
+
+        const approvedSubjects = studentSubjects.filter(subject => {
+          const grades = subjectGradesMap.get(subject.firestoreId || '') || [];
+          if (grades.length === 0) return false;
+          const avg = grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
+          return avg >= 7;
+        }).length;
+
+        Object.assign(roleStats, {
+          myAverage,
+          myAttendance,
+          approvedSubjects,
+          totalSubjects: studentSubjects.length,
+          pendingEvaluations: 0,
+          unreadMessagesAlumno: 0
+        });
+      }
+    }
+
+    return roleStats;
+  }, [students, courses, teachers, calificaciones, asistencias, subjects, user]);
+
+  // Actualizar stats cuando calculatedStats cambie
   useEffect(() => {
-    async function fetchAlerts() {
+    if (calculatedStats) {
+      setStats(calculatedStats);
+    }
+  }, [calculatedStats]);
+
+  // Fetch alerts de forma optimizada
+  useEffect(() => {
+    const fetchAlerts = async () => {
       try {
-        let q = collection(db, "alerts");
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(collection(db, "alerts"));
         let alerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
         
         // Filtrar alertas según el rol
@@ -411,18 +436,19 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Error fetching alerts:", error);
       }
-    }
+    };
+    
     fetchAlerts();
   }, [user]);
 
-  const role = (user?.role || "alumno").toLowerCase()
+  const role = (user?.role || "alumno").toLowerCase();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <SchoolSpinner text="Cargando datos del dashboard..." />
       </div>
-    )
+    );
   }
 
   return (

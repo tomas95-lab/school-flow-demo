@@ -9,8 +9,8 @@ import AlumnoAttendanceOverview from "@/components/AlumnoAttendanceOverview";
 
 export default function Asistencias() {
   // Mock data para el demo
-  const { user } = useContext(AuthContext)
-  const { loading = false } =  useFirestoreCollection("courses");
+  const { user, loading: userLoading } = useContext(AuthContext)
+  const { loading: coursesLoading } =  useFirestoreCollection("courses");
 
   // Función para obtener el mensaje según el rol
   const getRoleMessage = (role: string | undefined) => {
@@ -26,7 +26,8 @@ export default function Asistencias() {
     }
   };
 
-  if (loading) {
+  // Mostrar spinner si el usuario está cargando o si los cursos están cargando
+  if (userLoading || coursesLoading) {
     return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">

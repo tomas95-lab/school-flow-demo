@@ -1,22 +1,34 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
+import { LoadingState } from "@/components/LoadingState";
+import { ErrorState } from "@/components/ErrorState";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import AdminBoletinesOverview from "@/components/AminBoletinesOverview";
 import AlumnoBoletinesOverview from "@/components/AlumnoBoletinesOverview";
 
 export default function Boletines() {
-  const { user } = useContext(AuthContext)
-  const { data:courses, loading = false } =  useFirestoreCollection("courses");
+  const { user, loading: userLoading } = useContext(AuthContext)
+  const { data:courses, loading: coursesLoading, error: coursesError } =  useFirestoreCollection("courses");
 
-  if (courses.length==0 && loading) {
+  // Mostrar spinner si el usuario está cargando o si los cursos están cargando
+  if (userLoading || coursesLoading) {
     return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <SchoolSpinner text="Cargando panel administrativo..." />
-        <p className="text-gray-500 mt-4">Preparando información del sistema</p>
-      </div>
-    </div>
+      <LoadingState 
+        text="Cargando panel administrativo..."
+        timeout={8000}
+        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+      />
+    );
+  }
+
+  // Mostrar error si hay un problema al cargar los cursos
+  if (coursesError) {
+    return (
+      <ErrorState 
+        title="Error al cargar cursos"
+        message="No se pudieron cargar los cursos. Esto puede afectar la funcionalidad del sistema."
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 

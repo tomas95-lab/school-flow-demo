@@ -7,7 +7,6 @@ import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Downl
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/calificaciones/columns";
 import type { CalificacionesRow } from "@/app/calificaciones/columns";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { StatsCard } from "@/components/StatCards";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { AuthContext } from "@/context/AuthContext";
 import CrearCalificacion from "@/components/CalificacioneslForm";
+import { LoadingState } from "@/components/LoadingState";
 
 export default function DetallesCalificaciones() {
     const { user } = useContext(AuthContext);
@@ -34,7 +34,7 @@ export default function DetallesCalificaciones() {
     const { data: calificaciones, loading = false } = useFirestoreCollection("calificaciones");
     const [endDate, setEndDate] = useState<Date>();
     const [startDate, setStartDate] = useState<Date>();
-const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
     let course;
     let studentsInCourse: typeof students = [];
@@ -159,12 +159,11 @@ const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <SchoolSpinner text="Cargando panel administrativo..." />
-                    <p className="text-gray-500 mt-4">Preparando información del sistema</p>
-                </div>
-            </div>
+            <LoadingState 
+                text="Cargando panel administrativo..."
+                timeout={8000}
+                timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+            />
         );
     }
 

@@ -5,7 +5,7 @@ import { Percent, TriangleAlert } from "lucide-react";
 import { db } from "@/firebaseConfig";
 import { setDoc, doc } from "firebase/firestore";
 import { Button } from "./ui/button";
-import { useContext } from "react";
+import { useContext, useMemo, useCallback } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import {
   getPeriodoActual,
@@ -23,53 +23,98 @@ interface Course {
 
 export default function AdminBoletinesOverview() {
   const { user } = useContext(AuthContext);
-  const { data: courses } = useFirestoreCollection("courses");
-  const { data: subjects } = useFirestoreCollection("subjects");
-  const { data: calificaciones } = useFirestoreCollection("calificaciones");
-  const { data: boletines } = useFirestoreCollection("boletines");
-  const { data: alumnos } = useFirestoreCollection("students");
-  const { data: teachers } = useFirestoreCollection("teachers");
+  
+  // Usar hooks optimizados con cache
+  const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
+  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
+  const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true });
+  const { data: boletines } = useFirestoreCollection("boletines", { enableCache: true });
+  const { data: alumnos } = useFirestoreCollection("students", { enableCache: true });
+  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
+
+  // Memoizar cálculos pesados
+  const boletinesCalculados = useMemo(() => {
+    if (!alumnos || !subjects || !calificaciones) return [];
+
+    const periodoActual = getPeriodoActual();
+    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones);
+
+    return alumnos.map((alumno: any) => {
+      const materias = getPromedioPorMateriaPorTrimestre(
+        calificacionesTrimestre,
+        subjects,
+        alumno.firestoreId
+      );
+
+      const promedioTotal = getPromedioTotal(materias);
+
+      return {
+        alumnoId: alumno.firestoreId,
+        alumnoNombre: `${alumno.nombre} ${alumno.apellido}`,
+        periodo: periodoActual,
+        materias,
+        curso: alumno.cursoId || "Sin curso",
+        promedioTotal,
+        asistenciasTotales: alumno.asistenciasTotales ?? 0,
+        comentario: "",
+        abierto: false,
+        alertas: [],
+      };
+    });
+  }, [alumnos, subjects, calificaciones]);
+
+  // Memoizar promedio global
+  const promedioGlobal = useMemo(() => {
+    if (!calificaciones) return "0.00";
+    
+    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones);
+    return calcPromedio(calificacionesTrimestre.map((c: any) => c.valor)).toFixed(2);
+  }, [calificaciones]);
+
+  // Memoizar función de subida de boletines
+  const subirBoletines = useCallback(async () => {
+    if (!boletinesCalculados.length) return;
+    
+    try {
+      // Usar Promise.all para subir en paralelo (más eficiente)
+      const uploadPromises = boletinesCalculados.map(boletin => {
+        const boletinRef = doc(db, "boletines", `${boletin.alumnoId}_${boletin.periodo}`);
+        return setDoc(boletinRef, boletin, { merge: true });
+      });
+      
+      await Promise.all(uploadPromises);
+      alert("¡Boletines subidos a Firestore!");
+    } catch (error) {
+      console.error("Error subiendo boletines:", error);
+      alert("Error al subir boletines");
+    }
+  }, [boletinesCalculados]);
+
+  // Memoizar estadísticas
+  const stats = useMemo(() => {
+    if (!boletines || !boletinesCalculados) {
+      return {
+        coverage: 0,
+        globalAverage: "0.00",
+        readCount: 0,
+        criticalAlerts: 0
+      };
+    }
+
+    return {
+      coverage: boletines.length,
+      globalAverage: promedioGlobal,
+      readCount: boletines.filter((b: any) => b.abierto).length,
+      criticalAlerts: boletinesCalculados.reduce(
+        (count, b) => count + (b.alertas.length > 0 ? 1 : 0),
+        0
+      )
+    };
+  }, [boletines, boletinesCalculados, promedioGlobal]);
 
   if (!courses || !subjects || !calificaciones || !alumnos || !teachers) {
     return <div>Cargando...</div>;
   }
-
-
-  const periodoActual = getPeriodoActual();
-  const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones);
-
-  const boletinesCalculados = alumnos.map((alumno: any) => {
-  const materias = getPromedioPorMateriaPorTrimestre(
-    calificacionesTrimestre,
-    subjects,
-    alumno.firestoreId
-  );
-
-    const promedioTotal = getPromedioTotal(materias);
-
-    return {
-      alumnoId: alumno.firestoreId,
-      alumnoNombre: `${alumno.nombre} ${alumno.apellido}`,
-      periodo: periodoActual,
-      materias,
-      curso: alumno.cursoId || "Sin curso",
-      promedioTotal,
-      asistenciasTotales: alumno.asistenciasTotales ?? 0,
-      comentario: "",
-      abierto: false,
-      alertas: [],
-    };
-  });
-
-  const promedioGlobal = calcPromedio(calificacionesTrimestre.map((c: any) => c.valor));
-
-  const subirBoletines = async () => {
-    for (const boletin of boletinesCalculados) {
-      const boletinRef = doc(db, "boletines", `${boletin.alumnoId}_${boletin.periodo}`);
-      await setDoc(boletinRef, boletin, { merge: true });
-    }
-    alert("¡Boletines subidos a Firestore!");
-  };
 
   // Si es docente y no hay boletines, mostrar mensaje
   if (user?.role === "docente" && boletines.length === 0) {
@@ -101,30 +146,27 @@ export default function AdminBoletinesOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <StatsCard
           label="Cobertura de boletines"
-          value={boletines.length}
+          value={stats.coverage}
           icon={Percent}
           subtitle="Alumnos con notas en cada trimestre."
         />
         <StatsCard
           label="Promedio global de notas"
-          value={promedioGlobal}
+          value={stats.globalAverage}
           icon={Percent}
           color="green"
           subtitle="Media aritmética de todas las calificaciones."
         />
         <StatsCard
           label="Lectura de boletines"
-          value={boletines.filter((b: any) => b.abierto).length}
+          value={stats.readCount}
           icon={Percent}
           color="red"
           subtitle="Boletines abiertos o descargados por familias."
         />
         <StatsCard
           label="Alertas críticas (conteo)"
-          value={boletinesCalculados.reduce(
-            (count, b) => count + (b.alertas.length > 0 ? 1 : 0),
-            0
-          )}
+          value={stats.criticalAlerts}
           icon={TriangleAlert}
           color="red"
           subtitle="Notificaciones urgentes generadas por IA."

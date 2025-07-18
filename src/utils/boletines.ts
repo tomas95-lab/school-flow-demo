@@ -1,3 +1,37 @@
+// Cache para cálculos pesados
+const calculationCache = new Map<string, any>();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
+
+// Función para limpiar cache expirado
+function cleanExpiredCache() {
+  const now = Date.now();
+  for (const [key, value] of calculationCache.entries()) {
+    if (now - value.timestamp > CACHE_DURATION) {
+      calculationCache.delete(key);
+    }
+  }
+}
+
+// Función para obtener o calcular con cache
+function getCachedOrCalculate<T>(key: string, calculateFn: () => T): T {
+  cleanExpiredCache();
+  
+  if (calculationCache.has(key)) {
+    const cached = calculationCache.get(key)!;
+    if (Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.value;
+    }
+  }
+  
+  const result = calculateFn();
+  calculationCache.set(key, {
+    value: result,
+    timestamp: Date.now()
+  });
+  
+  return result;
+}
+
 // Devuelve el periodo actual (trimestre)
 export function getPeriodoActual(fecha = new Date()) {
   const year = fecha.getFullYear();
@@ -20,82 +54,117 @@ export function getInicioTrimestre(fecha = new Date()) {
   return new Date(year, mesInicio, 1);
 }
 
-// Calcula el promedio de un array de números
+// Calcula el promedio de un array de números (optimizado)
 export function calcPromedio(arr: number[]) {
   if (!arr.length) return 0;
+  
+  // Usar reduce con acumulador numérico para mejor rendimiento
   const suma = arr.reduce((a, b) => a + b, 0);
   return Number((suma / arr.length).toFixed(2));
 }
 
-// Filtra calificaciones del trimestre actual
+// Filtra calificaciones del trimestre actual (optimizado)
 export function filtrarCalificacionesTrimestre(calificaciones: any[], fechaRef?: Date) {
-  const inicioTrimestre = getInicioTrimestre(fechaRef);
-  return calificaciones.filter((c) => {
-    if (!c.fecha) return false;
-    const fechaCalif = new Date(c.fecha);
-    return fechaCalif >= inicioTrimestre;
+  const cacheKey = `trimestre_${fechaRef?.getTime() || 'current'}_${calificaciones.length}`;
+  
+  return getCachedOrCalculate(cacheKey, () => {
+    const inicioTrimestre = getInicioTrimestre(fechaRef);
+    
+    // Usar filter con early return para mejor rendimiento
+    return calificaciones.filter((c) => {
+      if (!c.fecha) return false;
+      const fechaCalif = new Date(c.fecha);
+      return fechaCalif >= inicioTrimestre;
+    });
   });
 }
 
-
-
+// Función optimizada para obtener promedios por materia
 export function getPromedioPorMateriaPorTrimestre(
   calificaciones: any[],
   subjects: any[],
   alumnoId: string
 ) {
-  return subjects.map((materia) => {
-    const califsMateria = calificaciones.filter(
-      (c) =>
-        c.studentId === alumnoId &&
-        c.subjectId === materia.firestoreId &&
-        typeof c.valor === "number"
-    );
-
-    const trimestres: { T1: number[]; T2: number[]; T3: number[] } = {
-      T1: [],
-      T2: [],
-      T3: [],
-    };
-
-    califsMateria.forEach((c) => {
-      const fecha = new Date(c.fecha);
-      const mes = fecha.getMonth();
-
-      if (mes >= 3 && mes < 6) trimestres.T1.push(c.valor);
-      else if (mes >= 6 && mes < 9) trimestres.T2.push(c.valor);
-      else if (mes >= 9 && mes < 12) trimestres.T3.push(c.valor);
+  const cacheKey = `promedio_materia_${alumnoId}_${subjects.length}_${calificaciones.length}`;
+  
+  return getCachedOrCalculate(cacheKey, () => {
+    // Crear map para búsqueda más rápida
+    const califsMap = new Map<string, any[]>();
+    
+    // Agrupar calificaciones por materia una sola vez
+    calificaciones.forEach((c) => {
+      if (c.studentId === alumnoId && typeof c.valor === "number") {
+        const key = c.subjectId;
+        if (!califsMap.has(key)) {
+          califsMap.set(key, []);
+        }
+        califsMap.get(key)!.push(c);
+      }
     });
 
-    return {
-      nombre: materia.nombre,
-      T1: calcPromedio(trimestres.T1),
-      T2: calcPromedio(trimestres.T2),
-      T3: calcPromedio(trimestres.T3),
-    };
+    return subjects.map((materia) => {
+      const califsMateria = califsMap.get(materia.firestoreId) || [];
+
+      const trimestres: { T1: number[]; T2: number[]; T3: number[] } = {
+        T1: [],
+        T2: [],
+        T3: [],
+      };
+
+      // Procesar calificaciones una sola vez
+      califsMateria.forEach((c) => {
+        const fecha = new Date(c.fecha);
+        const mes = fecha.getMonth();
+
+        if (mes >= 3 && mes < 6) trimestres.T1.push(c.valor);
+        else if (mes >= 6 && mes < 9) trimestres.T2.push(c.valor);
+        else if (mes >= 9 && mes < 12) trimestres.T3.push(c.valor);
+      });
+
+      return {
+        nombre: materia.nombre,
+        T1: calcPromedio(trimestres.T1),
+        T2: calcPromedio(trimestres.T2),
+        T3: calcPromedio(trimestres.T3),
+      };
+    });
   });
 }
 
-// Agrupa calificaciones por materia para un alumno dado
+// Agrupa calificaciones por materia para un alumno dado (optimizado)
 export function getPromedioPorMateria(
   calificaciones: any[],
   subjects: any[],
   alumnoId: string
 ) {
-  return subjects.map((materia) => {
-    const califs = calificaciones.filter(
-      (c) =>
-        c.studentId === alumnoId &&
-        c.subjectId === materia.firestoreId &&
-        typeof c.valor === "number"
-    );
-    const promedio = califs.length > 0
-      ? califs.reduce((sum, c) => sum + c.valor, 0) / califs.length
-      : 0;
-    return {
-      nombre: materia.nombre,
-      promedio: Number(promedio.toFixed(2)),
-    };
+  const cacheKey = `promedio_simple_${alumnoId}_${subjects.length}_${calificaciones.length}`;
+  
+  return getCachedOrCalculate(cacheKey, () => {
+    // Crear map para búsqueda más rápida
+    const califsMap = new Map<string, number[]>();
+    
+    // Agrupar calificaciones por materia
+    calificaciones.forEach((c) => {
+      if (c.studentId === alumnoId && typeof c.valor === "number") {
+        const key = c.subjectId;
+        if (!califsMap.has(key)) {
+          califsMap.set(key, []);
+        }
+        califsMap.get(key)!.push(c.valor);
+      }
+    });
+
+    return subjects.map((materia) => {
+      const califs = califsMap.get(materia.firestoreId) || [];
+      const promedio = califs.length > 0
+        ? califs.reduce((sum, valor) => sum + valor, 0) / califs.length
+        : 0;
+      
+      return {
+        nombre: materia.nombre,
+        promedio: Number(promedio.toFixed(2)),
+      };
+    });
   });
 }
 
