@@ -25,6 +25,11 @@ dist-ssr
 
 # Firebase config
 firebaseConfig.js
+firebase.json
+.firebaserc
+firestore.indexes.json
 logo2.png.specstory/
 .cursorindexingignore
 .src/scripts/
+deploy-rules.js
+firestore.rules

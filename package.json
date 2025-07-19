@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "export-data": "node src/scripts/tables.js"
+    "export-data": "node src/scripts/tables.js",
+    "deploy-rules": "node deploy-rules.js"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
@@ -35,6 +36,7 @@
     "react-date-range": "^2.0.1",
     "react-day-picker": "^9.7.0",
     "react-dom": "^19.1.0",
+    "react-firebase-hooks": "^5.1.1",
     "react-router-dom": "^7.6.2",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.8"
