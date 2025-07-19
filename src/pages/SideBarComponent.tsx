@@ -31,7 +31,7 @@ const validRoutes = [
   "/alertas",
   "/gestion",
   "/usuarios",
-  "/cursos",
+  "/gestion-cursos-materias",
   "/inscripciones",
   "/ia",
   "/reportes",

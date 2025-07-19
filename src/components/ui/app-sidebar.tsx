@@ -51,7 +51,7 @@ const data = {
       isActive: false,
       items: [
         { title: "Usuarios", url: "/usuarios", isActive: false },
-        { title: "Cursos y Materias", url: "/cursos", isActive: false },
+        { title: "Cursos y Materias", url: "/gestion-cursos-materias", isActive: false },
         { title: "Inscripciones", url: "/inscripciones", isActive: false },
       ],
     },
