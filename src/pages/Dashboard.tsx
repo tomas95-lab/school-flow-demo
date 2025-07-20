@@ -26,6 +26,7 @@ import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection"
 
+
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
   admin: [
@@ -213,6 +214,7 @@ export default function Dashboard() {
     critical: 0,
     pending: 0,
   });
+
 
   // Usar hooks optimizados con cache
   const { data: students } = useFirestoreCollection("students", { enableCache: true });
@@ -427,6 +429,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+
+      
       <WelcomeMessage user={user} />
       
       {/* KPIs Principales */}

@@ -1,0 +1,457 @@
+{
+  "courses": [
+    {
+      "id": "nm9vFQT5a3k6K9zxrp5Y",
+      "creadoEn": {
+        "seconds": 1749690786,
+        "nanoseconds": 402000000
+      },
+      "division": "A",
+      "nombre": "1er año",
+      "teacherId": "9piIV5fgA787wd1pCTWK",
+      "año": 2025
+    }
+  ],
+  "subjects": [
+    {
+      "id": "4BhrBADvphwkPFpX17q0",
+      "nombre": "Historia",
+      "teacherId": "9piIV5fgA787wd1pCTWK",
+      "creadoEn": {
+        "seconds": 1749693442,
+        "nanoseconds": 520000000
+      },
+      "firestoreId": "4BhrBADvphwkPFpX17q0",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "profesor": "Prof. Díaz"
+    },
+    {
+      "id": "ABfIvYXcS9BLeNpdOOaf",
+      "profesor": "Martín",
+      "nombre": "Ingles",
+      "creadoEn": {
+        "seconds": 1752963967,
+        "nanoseconds": 184000000
+      },
+      "teacherId": "ytykUWklzJTNsRTYDwpU",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "ATNAJXW15lRRFzFQRG7X",
+      "teacherId": "Bz9CEAWfnS7aaNwt5SAp",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "profesor": "Prof. Acosta",
+      "firestoreId": "ATNAJXW15lRRFzFQRG7X",
+      "creadoEn": {
+        "seconds": 1749693441,
+        "nanoseconds": 598000000
+      },
+      "nombre": "Matemática"
+    },
+    {
+      "id": "mWcYl6n5mFy93Tcrg50G",
+      "actualizadoEn": {
+        "seconds": 1752963923,
+        "nanoseconds": 514000000
+      },
+      "creadoEn": {
+        "seconds": 1749693442,
+        "nanoseconds": 59000000
+      },
+      "profesor": "Tomás",
+      "firestoreId": "mWcYl6n5mFy93Tcrg50G",
+      "teacherId": "9piIV5fgA787wd1pCTWK",
+      "nombre": "Lengua",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "9piIV5fgA787wd1pCTWK",
+      "apellido": "Acosta",
+      "nombre": "Tomás",
+      "creadoEn": {
+        "seconds": 1749693953,
+        "nanoseconds": 168000000
+      },
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "firestoreId": "9piIV5fgA787wd1pCTWK",
+      "email": "sofia.acosta@edunova.com"
+    },
+    {
+      "id": "Bz9CEAWfnS7aaNwt5SAp",
+      "apellido": "Pereyra",
+      "creadoEn": {
+        "seconds": 1749693953,
+        "nanoseconds": 662000000
+      },
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "nombre": "Martín",
+      "email": "martin.pereyra@edunova.com",
+      "firestoreId": "Bz9CEAWfnS7aaNwt5SAp"
+    },
+    {
+      "id": "UGdyAMQNo7mmGxzrUVMV",
+      "creadoEn": {
+        "seconds": 1749693948,
+        "nanoseconds": 828000000
+      },
+      "firestoreId": "UGdyAMQNo7mmGxzrUVMV",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "nombre": "Sofía",
+      "apellido": "Acosta",
+      "email": "sofia.acosta@edunova.com"
+    },
+    {
+      "id": "ytykUWklzJTNsRTYDwpU",
+      "nombre": "Martín",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "creadoEn": {
+        "seconds": 1749693949,
+        "nanoseconds": 326000000
+      },
+      "firestoreId": "ytykUWklzJTNsRTYDwpU",
+      "apellido": "Pereyra",
+      "email": "martin.pereyra@edunova.com"
+    }
+  ],
+  "students": [
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5",
+      "firestoreId": "3fiBvwNTHKnDgATZYKU5",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "apellido": "Fernández",
+      "nombre": "Lucas",
+      "creadoEn": {
+        "seconds": 1749693221,
+        "nanoseconds": 726000000
+      }
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5",
+      "creadoEn": {
+        "seconds": 1749693223,
+        "nanoseconds": 270000000
+      },
+      "firestoreId": "8wwsdEl8ZdcregOS68s5",
+      "nombre": "Camila",
+      "apellido": "Pérez",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2",
+      "apellido": "Sosa",
+      "firestoreId": "RA60TOxcRczAfi1Ycdr2",
+      "nombre": "Valentino",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "creadoEn": {
+        "seconds": 1749693222,
+        "nanoseconds": 752000000
+      }
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh",
+      "firestoreId": "X1tsZfOyTguLkllg4VPh",
+      "creadoEn": {
+        "seconds": 1749693222,
+        "nanoseconds": 242000000
+      },
+      "nombre": "Martina",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "apellido": "Gómez"
+    }
+  ],
+  "attendances": [
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-06-27",
+      "subject": "Historia",
+      "fecha": "2025-07-18",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true,
+      "studentId": "3fiBvwNTHKnDgATZYKU5",
+      "date": "2025-06-27",
+      "createdAt": {
+        "seconds": 1751039547,
+        "nanoseconds": 376000000
+      }
+    },
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-16",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "createdAt": {
+        "seconds": 1752681104,
+        "nanoseconds": 774000000
+      },
+      "studentId": "3fiBvwNTHKnDgATZYKU5",
+      "present": false,
+      "subject": "Historia",
+      "date": "2025-07-16"
+    },
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-17",
+      "createdAt": {
+        "seconds": 1752776784,
+        "nanoseconds": 590000000
+      },
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "studentId": "3fiBvwNTHKnDgATZYKU5",
+      "subject": "Historia",
+      "date": "2025-07-17",
+      "present": true
+    },
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-19",
+      "present": false,
+      "subject": "Historia",
+      "studentId": "3fiBvwNTHKnDgATZYKU5",
+      "createdAt": {
+        "seconds": 1752966194,
+        "nanoseconds": 640000000
+      },
+      "date": "2025-07-19",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-24",
+      "date": "2025-07-24",
+      "subject": "Historia",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true,
+      "createdAt": {
+        "seconds": 1752776816,
+        "nanoseconds": 232000000
+      },
+      "studentId": "3fiBvwNTHKnDgATZYKU5"
+    },
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Ingles_2025-07-19",
+      "studentId": "3fiBvwNTHKnDgATZYKU5",
+      "subject": "Ingles",
+      "present": true,
+      "date": "2025-07-19",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "createdAt": {
+        "seconds": 1752964000,
+        "nanoseconds": 76000000
+      }
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-06-27",
+      "present": true,
+      "date": "2025-06-27",
+      "subject": "Historia",
+      "createdAt": {
+        "seconds": 1751039548,
+        "nanoseconds": 803000000
+      },
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "studentId": "8wwsdEl8ZdcregOS68s5"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-16",
+      "createdAt": {
+        "seconds": 1752681106,
+        "nanoseconds": 181000000
+      },
+      "studentId": "8wwsdEl8ZdcregOS68s5",
+      "present": false,
+      "subject": "Historia",
+      "date": "2025-07-16",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-17",
+      "present": true,
+      "createdAt": {
+        "seconds": 1752776785,
+        "nanoseconds": 991000000
+      },
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "studentId": "8wwsdEl8ZdcregOS68s5",
+      "date": "2025-07-17",
+      "subject": "Historia"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-19",
+      "studentId": "8wwsdEl8ZdcregOS68s5",
+      "present": false,
+      "date": "2025-07-19",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "createdAt": {
+        "seconds": 1752966196,
+        "nanoseconds": 234000000
+      },
+      "subject": "Historia"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-24",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true,
+      "studentId": "8wwsdEl8ZdcregOS68s5",
+      "subject": "Historia",
+      "createdAt": {
+        "seconds": 1752776816,
+        "nanoseconds": 478000000
+      },
+      "date": "2025-07-24"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Ingles_2025-07-19",
+      "studentId": "8wwsdEl8ZdcregOS68s5",
+      "date": "2025-07-19",
+      "createdAt": {
+        "seconds": 1752964000,
+        "nanoseconds": 384000000
+      },
+      "subject": "Ingles",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-06-27",
+      "studentId": "RA60TOxcRczAfi1Ycdr2",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "date": "2025-06-27",
+      "createdAt": {
+        "seconds": 1751039549,
+        "nanoseconds": 48000000
+      },
+      "subject": "Historia",
+      "present": true
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-16",
+      "subject": "Historia",
+      "date": "2025-07-16",
+      "present": false,
+      "createdAt": {
+        "seconds": 1752681106,
+        "nanoseconds": 423000000
+      },
+      "studentId": "RA60TOxcRczAfi1Ycdr2",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-17",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "createdAt": {
+        "seconds": 1752776786,
+        "nanoseconds": 238000000
+      },
+      "studentId": "RA60TOxcRczAfi1Ycdr2",
+      "date": "2025-07-17",
+      "present": true,
+      "subject": "Historia"
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-19",
+      "subject": "Historia",
+      "present": false,
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "date": "2025-07-19",
+      "createdAt": {
+        "seconds": 1752966196,
+        "nanoseconds": 501000000
+      },
+      "studentId": "RA60TOxcRczAfi1Ycdr2"
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-24",
+      "date": "2025-07-24",
+      "createdAt": {
+        "seconds": 1752776816,
+        "nanoseconds": 735000000
+      },
+      "present": true,
+      "studentId": "RA60TOxcRczAfi1Ycdr2",
+      "subject": "Historia",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Ingles_2025-07-19",
+      "subject": "Ingles",
+      "createdAt": {
+        "seconds": 1752964000,
+        "nanoseconds": 649000000
+      },
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "fecha": "2025-07-19",
+      "date": "2025-07-19",
+      "present": true,
+      "studentId": "RA60TOxcRczAfi1Ycdr2"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-06-27",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "createdAt": {
+        "seconds": 1751039549,
+        "nanoseconds": 268000000
+      },
+      "studentId": "X1tsZfOyTguLkllg4VPh",
+      "present": true,
+      "subject": "Historia",
+      "date": "2025-06-27"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-16",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "subject": "Historia",
+      "createdAt": {
+        "seconds": 1752681106,
+        "nanoseconds": 652000000
+      },
+      "present": true,
+      "studentId": "X1tsZfOyTguLkllg4VPh",
+      "date": "2025-07-16"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-17",
+      "date": "2025-07-17",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true,
+      "studentId": "X1tsZfOyTguLkllg4VPh",
+      "subject": "Historia",
+      "createdAt": {
+        "seconds": 1752776786,
+        "nanoseconds": 494000000
+      }
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-19",
+      "present": false,
+      "createdAt": {
+        "seconds": 1752966196,
+        "nanoseconds": 760000000
+      },
+      "date": "2025-07-19",
+      "subject": "Historia",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "studentId": "X1tsZfOyTguLkllg4VPh"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Historia_2025-07-24",
+      "studentId": "X1tsZfOyTguLkllg4VPh",
+      "createdAt": {
+        "seconds": 1752776816,
+        "nanoseconds": 974000000
+      },
+      "subject": "Historia",
+      "date": "2025-07-24",
+      "present": true,
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Ingles_2025-07-19",
+      "subject": "Ingles",
+      "fecha": "2025-07-19",
+      "createdAt": {
+        "seconds": 1752964000,
+        "nanoseconds": 910000000
+      },
+      "studentId": "X1tsZfOyTguLkllg4VPh",
+      "date": "2025-07-19",
+      "present": true,
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    }
+  ]
+}

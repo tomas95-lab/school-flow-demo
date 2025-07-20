@@ -8,6 +8,7 @@ import logo from "../assets/media/logo.png";
 import backgound from "../assets/media/auth/auth-bg.png";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "../context/AuthContext";
+import { useGlobalError } from "@/components/GlobalErrorProvider";
 
 async function signInWithEmailAndPassword(auth: Auth, email: string, password: string) {
   return firebaseSignInWithEmailAndPassword(auth, email, password);
@@ -20,6 +21,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { handleError } = useGlobalError();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +35,10 @@ export default function Login() {
     } catch (err: any) {
       console.error("Error de Firebase:", err.code, err.message);
       
-      // Manejar errores específicos de Firebase Auth
+      // Usar el sistema global de manejo de errores
+      handleError(err, "Login");
+      
+      // Mantener el manejo local para mostrar en el formulario
       if (err.code === 'auth/user-not-found') {
         setError("No existe una cuenta con este email");
       } else if (err.code === 'auth/wrong-password') {

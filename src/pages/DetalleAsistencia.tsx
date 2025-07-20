@@ -1,555 +1,511 @@
-import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
-import { useContext, useState, useMemo, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
-
-import { DataTable } from "@/components/data-table";
-import { useColumnsDetalle } from "@/app/asistencias/columns";
-import type { AttendanceRow } from "@/app/asistencias/columns";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
+import { useContext, useState, useMemo } from "react";
+import { AuthContext } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Users,
-  UserCheck,
-  UserX,
-  BookOpen,
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Users, 
+  Calendar, 
+  BookOpen, 
+  TrendingUp, 
+  CheckCircle, 
+  XCircle, 
+  ArrowLeft,
+  Filter,
   Download,
   Eye,
-  EyeClosed,
-  Target,
-  Award,
-  AlertTriangle,
-  Plus
+  Edit,
+  Table,
+  List
 } from "lucide-react";
-import ReutilizableDialog from "@/components/DialogReutlizable";
-import { AttendanceModal } from "@/components/AttendanceFormModal";
+import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
+import { es } from "date-fns/locale";
+import { useColumnsDetalle } from "@/app/asistencias/columns";
+import { DataTable } from "@/components/data-table";
+import { useSearchParams, Link } from "react-router-dom";
 
-type DetallesStatsCardProps = {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  subtitle?: string;
-  color?: string;
-  trend?: "up" | "down" | "neutral";
-  percentage?: number;
+type Student = {
+  firestoreId: string;
+  nombre: string;
+  apellido: string;
+  cursoId: string;
 };
 
-const DetallesStatsCard = ({
-  icon: Icon,
-  label,
-  value,
-  subtitle,
-  color = "blue",
-  trend
-}: DetallesStatsCardProps) => {
-  const colorVariants = {
-    blue: {
-      bg: "bg-blue-50",
-      icon: "text-blue-600",
-      accent: "border-l-blue-500",
-      progressBg: "bg-blue-200",
-      progressFill: "bg-blue-500"
-    },
-    green: {
-      bg: "bg-green-50",
-      icon: "text-green-600",
-      accent: "border-l-green-500",
-      progressBg: "bg-green-200",
-      progressFill: "bg-green-500"
-    },
-    orange: {
-      bg: "bg-orange-50",
-      icon: "text-orange-600",
-      accent: "border-l-orange-500",
-      progressBg: "bg-orange-200",
-      progressFill: "bg-orange-500"
-    },
-    red: {
-      bg: "bg-red-50",
-      icon: "text-red-600",
-      accent: "border-l-red-500",
-      progressBg: "bg-red-200",
-      progressFill: "bg-red-500"
-    },
-    purple: {
-      bg: "bg-purple-50",
-      icon: "text-purple-600",
-      accent: "border-l-purple-500",
-      progressBg: "bg-purple-200",
-      progressFill: "bg-purple-500"
-    }
-  };
-
-  const colors = colorVariants[color as keyof typeof colorVariants] || colorVariants.blue;
-
-  return (
-    <div className={`bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-200`}>
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-sm font-medium text-gray-600">{label}</p>
-            {trend && (
-              <div className={`text-xs px-2 py-1 rounded-full ${
-                trend === 'up' ? 'bg-green-100 text-green-700' :
-                trend === 'down' ? 'bg-red-100 text-red-700' :
-                'bg-gray-100 text-gray-700'
-              }`}>
-                {trend === 'up' ? '↗' : trend === 'down' ? '↘' : '→'}
-              </div>
-            )}
-          </div>
-          <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-          {subtitle && (
-            <p className="text-xs text-gray-500">{subtitle}</p>
-          )}
-        </div>
-        <div className={`p-3 rounded-full ${colors.bg}`}>
-          <Icon className={`h-6 w-6 ${colors.icon}`} />
-        </div>
-      </div>
-    </div>
-  );
+type Subject = {
+  firestoreId: string;
+  nombre: string;
+  teacherId: string;
+  cursoId: string;
 };
 
+type Attendance = {
+  firestoreId: string;
+  studentId: string;
+  courseId: string;
+  subject: string;
+  date: string;
+  present: boolean;
+  createdAt?: any;
+};
 
 export default function DetalleAsistencia() {
   const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
-  const id = searchParams.get("id");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set());
-  const [didInitCollapse, setDidInitCollapse] = useState(false);
+  const courseId = searchParams.get("id");
+  
+  const [selectedSubject, setSelectedSubject] = useState("all");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "list">("table");
 
-  // Usar hooks optimizados con cache
-  const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
-  const { data: teachers } = useFirestoreCollection("teachers");
-  const { data: students } = useFirestoreCollection("students", { enableCache: true });
-  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
-  const { data: asistencias, loading: asistenciasLoading } = useFirestoreCollection("attendances", { enableCache: true });
+  // Obtener datos
+  const { data: courses, loading: loadingCourses } = useFirestoreCollection("courses");
+  const { data: students, loading: loadingStudents } = useFirestoreCollection<Student>("students");
+  const { data: subjects, loading: loadingSubjects } = useFirestoreCollection<Subject>("subjects");
+  const { data: attendances, loading: loadingAttendances } = useFirestoreCollection<Attendance>("attendances");
 
-  // Memoizar datos filtrados para evitar recálculos
-  console.log("id", id);  
-  const course = useMemo(() => 
-    courses?.find(c => c.firestoreId === id), 
-    [courses, id]
+  // Calcular semana actual (siempre se ejecuta)
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  // Encontrar el curso
+  const course = useMemo(() => courses?.find(c => c.firestoreId === courseId), [courses, courseId]);
+
+  // Filtrar estudiantes del curso
+  const courseStudents = useMemo(() => 
+    students?.filter(s => s.cursoId === courseId) || [], 
+    [students, courseId]
+  );
+  
+  // Filtrar materias del curso
+  const courseSubjects = useMemo(() => 
+    subjects?.filter(s => s.cursoId === courseId) || [], 
+    [subjects, courseId]
+  );
+  
+  // Filtrar asistencias del curso
+  const courseAttendances = useMemo(() => 
+    attendances?.filter(a => a.courseId === courseId) || [], 
+    [attendances, courseId]
   );
 
-  const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
+  // Calcular estadísticas
+  const stats = useMemo(() => {
+    const totalRecords = courseAttendances.length;
+    const presentRecords = courseAttendances.filter(a => a.present).length;
+    const absentRecords = totalRecords - presentRecords;
+    const attendancePercentage = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
 
-  const studentsInCourse = useMemo(() => 
-    students?.filter(s => s.cursoId === id) || [], 
-    [students, id]
-  );
-
-  const subjectsInCourse = useMemo(() => {
-    const base = subjects?.filter(s => s.cursoId === id) || [];
-    if (user?.role === "admin") return base;
-    return base.filter(s => s.teacherId === teacher?.firestoreId);
-  }, [subjects, id, user, teacher]);
-
-  useEffect(() => {
-    if (!didInitCollapse && subjectsInCourse.length) {
-      setCollapsedSubjects(
-        new Set(subjectsInCourse.map(s => s.firestoreId!).filter(Boolean))
-      );
-      setDidInitCollapse(true);
-    }
-  }, [subjectsInCourse, didInitCollapse]);
-
-  // Memoizar estadísticas del curso para evitar recálculos pesados
-  const courseStats = useMemo(() => {
-    if (!studentsInCourse.length || !subjectsInCourse.length || !asistencias) {
-      return {
-        totalStudents: 0,
-        totalSubjects: 0,
-        overallPercentage: 0,
-        subjectStats: [],
-        lowAttendanceSubjects: 0,
-        bestSubject: { percentage: 0, subject: "N/A" },
-        worstSubject: { percentage: 0, subject: "N/A" },
-        totalRecordsProcessed: 0,
-        totalPresentRecords: 0
-      };
-    }
-
-    const totalStudents = studentsInCourse.length;
-    const totalSubjects = subjectsInCourse.length;
-    
-    // Crear map para búsqueda más rápida de asistencias por materia
-    const attendanceMap = new Map<string, any[]>();
-    asistencias.forEach(a => {
-      if (a.courseId === id) {
-        const key = a.subject;
-        if (!attendanceMap.has(key)) {
-          attendanceMap.set(key, []);
-        }
-        attendanceMap.get(key)!.push(a);
-      }
-    });
-    
-    const subjectStats = subjectsInCourse.map(subject => {
-      const subjectAttendances = attendanceMap.get(subject.nombre) || [];
-      
-      // Contar presentes y ausentes de forma optimizada
-      let presentRecords = 0;
-      let absentRecords = 0;
-      const totalRecords = subjectAttendances.length;
-      
-      subjectAttendances.forEach(a => {
-        if (a.present === true) presentRecords++;
-        else if (a.present === false) absentRecords++;
-      });
-      
-      const percentage = totalRecords > 0 
-        ? Math.round((presentRecords / totalRecords) * 100)
-        : 0;
-      
-      // Calcular fechas únicas de forma optimizada
-      const uniqueDates = new Set(subjectAttendances.map(a => a.fecha).filter(Boolean));
-      const totalClasses = uniqueDates.size;
-      const avgPresentPerClass = totalClasses > 0 ? Math.round(presentRecords / totalClasses) : 0;
-      const avgAbsentPerClass = totalClasses > 0 ? Math.round(absentRecords / totalClasses) : 0;
+    // Estadísticas por materia
+    const subjectStats = courseSubjects.map(subject => {
+      const subjectAttendances = courseAttendances.filter(a => a.subject === subject.nombre);
+      const subjectTotal = subjectAttendances.length;
+      const subjectPresent = subjectAttendances.filter(a => a.present).length;
+      const subjectPercentage = subjectTotal > 0 ? Math.round((subjectPresent / subjectTotal) * 100) : 0;
       
       return {
         subject: subject.nombre,
-        present: presentRecords,
-        absent: absentRecords,
-        total: totalRecords,
-        percentage,
-        totalClasses,
-        avgPresentPerClass,
-        avgAbsentPerClass,
-        studentsCount: totalStudents
+        total: subjectTotal,
+        present: subjectPresent,
+        absent: subjectTotal - subjectPresent,
+        percentage: subjectPercentage
       };
     });
 
-    // Calcular estadísticas generales de forma optimizada
-    const totalPresentRecords = subjectStats.reduce((sum, s) => sum + s.present, 0);
-    const totalAllRecords = subjectStats.reduce((sum, s) => sum + s.total, 0);
-    
-    const overallPercentage = totalAllRecords > 0
-      ? Math.round((totalPresentRecords / totalAllRecords) * 100)
-      : 0;
-
-    const lowAttendanceSubjects = subjectStats.filter(s => s.percentage < 80).length;
-    
-    // Ordenar por porcentaje para encontrar mejor y peor
-    const sortedByPercentage = [...subjectStats].sort((a, b) => b.percentage - a.percentage);
-    const bestSubject = sortedByPercentage[0] || { percentage: 0, subject: "N/A" };
-    const worstSubject = sortedByPercentage[sortedByPercentage.length - 1] || { percentage: 0, subject: "N/A" };
-
-    return {
-      totalStudents,
-      totalSubjects,
-      overallPercentage,
-      subjectStats,
-      lowAttendanceSubjects,
-      bestSubject,
-      worstSubject,
-      totalRecordsProcessed: totalAllRecords,
-      totalPresentRecords
-    };
-  }, [studentsInCourse, subjectsInCourse, asistencias, id]);
-
-  // Memoizar función de exportación
-  const exportToCSV = useCallback(() => {
-    if (!studentsInCourse.length || !subjectsInCourse.length) return;
-
-    const headers = ["Estudiante", "Materia", "Presente", "Fecha"];
-    const rows: string[][] = [];
-
-    studentsInCourse.forEach(student => {
-      subjectsInCourse.forEach(subject => {
-        const studentAttendances = asistencias?.filter(a =>
-          a.studentId === student.firestoreId &&
-          a.courseId === id &&
-          a.subject === subject.nombre
-        ) || [];
-
-        studentAttendances.forEach(attendance => {
-          rows.push([
-            `${student.nombre} ${student.apellido}`,
-            subject.nombre,
-            attendance.present ? "Sí" : "No",
-            attendance.fecha || attendance.date || "N/A"
-          ]);
-        });
-      });
+    // Estadísticas por estudiante
+    const studentStats = courseStudents.map(student => {
+      const studentAttendances = courseAttendances.filter(a => a.studentId === student.firestoreId);
+      const studentTotal = studentAttendances.length;
+      const studentPresent = studentAttendances.filter(a => a.present).length;
+      const studentPercentage = studentTotal > 0 ? Math.round((studentPresent / studentTotal) * 100) : 0;
+      
+      return {
+        student: student,
+        total: studentTotal,
+        present: studentPresent,
+        absent: studentTotal - studentPresent,
+        percentage: studentPercentage
+      };
     });
 
+    return {
+      totalRecords,
+      presentRecords,
+      absentRecords,
+      attendancePercentage,
+      subjectStats,
+      studentStats
+    };
+  }, [courseAttendances, courseSubjects, courseStudents]);
+
+  // Filtrar datos para la tabla
+  const filteredAttendances = useMemo(() => {
+    let filtered = courseAttendances;
+
+    if (selectedSubject && selectedSubject !== "all") {
+      filtered = filtered.filter(a => a.subject === selectedSubject);
+    }
+
+    if (selectedDate) {
+      filtered = filtered.filter(a => a.date === selectedDate);
+    }
+
+    if (filterStatus !== "all") {
+      const isPresent = filterStatus === "present";
+      filtered = filtered.filter(a => a.present === isPresent);
+    }
+
+    return filtered;
+  }, [courseAttendances, selectedSubject, selectedDate, filterStatus]);
+
+  // Preparar datos para la tabla
+  const tableData = useMemo(() => {
+    return filteredAttendances.map(attendance => {
+      const student = courseStudents.find(s => s.firestoreId === attendance.studentId);
+      return {
+        id: attendance.studentId,
+        Nombre: student ? `${student.nombre} ${student.apellido}` : "Estudiante no encontrado",
+        present: attendance.present,
+        fecha: attendance.date,
+        idAsistencia: attendance.firestoreId,
+        subject: attendance.subject
+      };
+    });
+  }, [filteredAttendances, courseStudents]);
+
+  const columns = useColumnsDetalle(user);
+
+  // Función para exportar a CSV
+  const exportToCSV = () => {
+    if (!course || tableData.length === 0) return;
+
+    // Crear encabezados
+    const headers = [
+      "Estudiante",
+      "Materia", 
+      "Fecha",
+      "Estado",
+      "Curso"
+    ];
+
+    // Crear filas de datos
+    const rows = tableData.map(row => [
+      row.Nombre,
+      row.subject,
+      format(new Date(row.fecha), 'dd/MM/yyyy'),
+      row.present ? "Presente" : "Ausente",
+      `${course.nombre} - ${course.division}`
+    ]);
+
+    // Combinar encabezados y datos
     const csvContent = [headers, ...rows]
-      .map(row => row.map((cell: string) => `"${cell}"`).join(","))
+      .map(row => row.map(cell => `"${cell}"`).join(","))
       .join("\n");
 
+    // Crear y descargar archivo
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `asistencias_${course?.nombre || 'curso'}.csv`);
+    link.setAttribute("download", `asistencias_${course.nombre}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [studentsInCourse, subjectsInCourse, asistencias, id, course]);
+  };
 
-  const toggleSubjectCollapse = useCallback((sid: string) => {
-    setCollapsedSubjects(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sid)) {
-        newSet.delete(sid);
-      } else {
-        newSet.add(sid);
-      }
-      return newSet;
-    });
-  }, []);
-
-  // Funciones para determinar colores y tendencias (memoizadas)
-  const getAttendanceColor = useCallback((percentage: number) => {
-    if (percentage >= 90) return "green";
-    if (percentage >= 80) return "blue";
-    if (percentage >= 70) return "orange";
-    return "red";
-  }, []);
-
-  const getAttendanceTrend = useCallback((percentage: number) => {
-    if (percentage >= 85) return "up";
-    if (percentage < 75) return "down";
-    return "neutral";
-  }, []);
-
-
-  // Verifica que todos los datos necesarios estén cargados antes de renderizar
-  if (
-    !course ||
-    asistenciasLoading ||
-    studentsInCourse.length === 0 ||
-    subjectsInCourse.length === 0 ||
-    asistencias.length === 0
-  ) {
+  // Mostrar loading si los datos están cargando
+  if (loadingCourses || loadingStudents || loadingSubjects || loadingAttendances) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <SchoolSpinner text="Cargando Asistencias..." fullScreen={true} />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <SchoolSpinner text="Cargando detalles de asistencia..." fullScreen={true} />
+          <p className="text-gray-500 mt-4">Preparando información del curso</p>
+        </div>
       </div>
     );
   }
 
+  // Mostrar error si el curso no existe
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Curso no encontrado</h2>
+          <p className="text-gray-600 mb-6">El curso que buscas no existe o no tienes permisos para verlo.</p>
+          <Link to="/asistencias">
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a Asistencias
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header mejorado */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{course.nombre}</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      División {course.division}
-                    </Badge>
-                    <Badge variant="outline" className="bg-gray-50 text-gray-700">
-                      Año {course.año}
-                    </Badge>
-                  </div>
-                </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Link to="/asistencias">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Volver
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {course.nombre} - {course.division}
+                </h1>
+                <p className="text-gray-600">
+                  Detalle de asistencias del curso
+                </p>
               </div>
-              <p className="text-gray-600 ml-12">
-                Gestión completa de asistencias • {courseStats.totalStudents} estudiantes
-              </p>
             </div>
-            <div className="flex items-center justify-between gap-4 ">
+            <div className="flex items-center gap-2">
               <Button 
+                variant="outline" 
+                size="sm"
                 onClick={exportToCSV}
-                variant={"default"} 
-                disabled={!studentsInCourse.length}
+                disabled={tableData.length === 0}
               >
-                <Download className="h-4 w-4 mr-2" /> 
+                <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
               </Button>
-              <ReutilizableDialog
-                background
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                small
-                triger={
-                  <div className="flex items-center justify-between">
-                    <Plus size={12} className="h-4 w-4 mr-2" />
-                    Registrar Asistencias
-                  </div>
-                }             
-                title="Registro de Asistencia del Curso"
-                content={
-                  <AttendanceModal
-                    subjects={subjectsInCourse.map(s => ({
-                      ...s,
-                      id: s.firestoreId ?? "",
-                      name: s.nombre ?? ""
-                    }))}
-                    students={studentsInCourse.map(s => ({
-                      ...s,
-                      id: s.firestoreId ?? "",
-                      firstName: s.nombre ?? "",
-                      lastName: s.apellido ?? ""
-                    }))}
-                    attendances={asistencias.map(a => ({
-                      id: a.firestoreId ?? "",
-                      studentId: a.studentId,
-                      courseId: a.cursoId,
-                      subject: a.subject,
-                      present: a.present,
-                      date: a.fecha
-                    }))}
-                    courseId={id || ""}
-                    onClose={() => {setModalOpen(false)}}
-                  />
-                }
-              />
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === "table" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("table")}
+                  className="rounded-r-none"
+                >
+                  <Table className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-l-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
+
+          {/* Calendario semanal */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-indigo-600" />
+                Semana del {format(weekStart, 'dd MMM', { locale: es })} al {format(weekEnd, 'dd MMM yyyy', { locale: es })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-7 gap-2">
+                {weekDays.map((day, index) => {
+                  const dayAttendances = courseAttendances.filter(a => a.date === format(day, 'yyyy-MM-dd'));
+                  const dayPresent = dayAttendances.filter(a => a.present).length;
+                  const dayTotal = dayAttendances.length;
+                  const dayPercentage = dayTotal > 0 ? Math.round((dayPresent / dayTotal) * 100) : 0;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`p-3 text-center rounded-lg border transition-colors ${
+                        dayAttendances.length > 0
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="text-xs text-gray-500 mb-1">
+                        {format(day, 'EEE', { locale: es })}
+                      </div>
+                      <div className="text-lg font-semibold">
+                        {format(day, 'dd')}
+                      </div>
+                      {dayAttendances.length > 0 && (
+                        <div className="text-xs text-blue-600 font-medium mt-1">
+                          {dayPercentage}%
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Stats Cards Mejoradas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <DetallesStatsCard
-            icon={Users}
-            label="Total Estudiantes"
-            value={courseStats.totalStudents}
-            subtitle={`En ${courseStats.totalSubjects} materias`}
-            color="blue"
-          />
+        {/* Estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Estudiantes</p>
+                  <p className="text-2xl font-bold text-gray-900">{courseStudents.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
-          <DetallesStatsCard
-            icon={Target}
-            label="Asistencia General"
-            value={`${courseStats.overallPercentage}%`}
-            subtitle="Promedio del curso"
-            color={getAttendanceColor(courseStats.overallPercentage)}
-            trend={getAttendanceTrend(courseStats.overallPercentage)}
-            percentage={courseStats.overallPercentage}
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Presentes</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.presentRecords}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
-          <DetallesStatsCard
-            icon={Award}
-            label="Mejor Materia"
-            value={`${courseStats.bestSubject.percentage}%`}
-            subtitle={courseStats.bestSubject.subject || "N/A"}
-            color="green"
-            trend="up"
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-100 p-3 rounded-lg">
+                  <XCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Ausentes</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.absentRecords}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
-          <DetallesStatsCard
-            icon={AlertTriangle}
-            label="Materias en Riesgo"
-            value={courseStats.lowAttendanceSubjects}
-            subtitle="Asistencia < 80%"
-            color={courseStats.lowAttendanceSubjects === 0 ? "green" : courseStats.lowAttendanceSubjects <= 2 ? "orange" : "red"}
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-100 p-3 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Asistencia</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.attendancePercentage}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Detalle por materia */}
-        <Card className="border-0 shadow-sm">
+        {/* Filtros */}
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-blue-600" /> 
-              Detalle por Materia
+              <Filter className="h-5 w-5" />
+              Filtros
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {subjectsInCourse.map(subject => {
-            const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre);
-            const isCollapsed = collapsedSubjects.has(subject.firestoreId!);
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="subject">Materia</Label>
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas las materias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las materias</SelectItem>
+                    {courseSubjects.map(subject => (
+                      <SelectItem key={subject.firestoreId} value={subject.nombre}>
+                        {subject.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="date">Fecha</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  placeholder="Todas las fechas"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="status">Estado</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="present">Presentes</SelectItem>
+                    <SelectItem value="absent">Ausentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            // 1) Filtramos *todos* los registros de ese alumno + curso + materia
-            const data: AttendanceRow[] = studentsInCourse.flatMap(student => {
-              const recs = asistencias.filter(a =>
-                a.studentId === student.firestoreId &&
-                a.courseId  === id &&
-                a.subject   === subject.nombre
-              );
-
-              // 3) Si tiene registros, devolvemos UNA fila por cada fecha
-              return recs.map(rec => ({
-                id:           student.firestoreId!,
-                Nombre:       `${student.nombre} ${student.apellido}`,
-                present:      Boolean(rec.present),
-                fecha:        rec.date,
-                idAsistencia: rec.firestoreId ?? ""
-              }));
-            });
-
-              const subjectColor = stat ? getAttendanceColor(stat.percentage) : "gray";
-
-              return (
-                <div key={subject.firestoreId} className="space-y-4">
-                  <div className={`flex items-center justify-between p-4 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow border-l-${subjectColor === 'green' ? 'green' : subjectColor === 'red' ? 'red' : subjectColor === 'orange' ? 'orange' : 'blue'}-500`}>
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleSubjectCollapse(subject.firestoreId!)}
-                        className="hover:bg-gray-100"
-                      >
-                        {isCollapsed ? (
-                          <EyeClosed className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{subject.nombre}</h3>
-                        <p className="text-sm text-gray-500">{stat?.total || 0} Asistencias registrados</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Badge 
-                        variant={stat && stat.percentage >= 80 ? "default" : "destructive"}
-                        className="text-sm px-3 py-1"
-                      >
-                        {stat?.percentage || 0}% asistencia
-                      </Badge>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <UserCheck className="h-4 w-4 text-green-600" />
-                          <span className="font-medium text-green-700">{stat?.present || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <UserX className="h-4 w-4 text-red-600" />
-                          <span className="font-medium text-red-700">{stat?.absent || 0}</span>
-                        </div>
-                      </div>
-                    </div>
+        {/* Tabla de asistencias */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Registros de Asistencia ({tableData.length})
+              {viewMode === "table" && <Badge variant="outline">Vista Tabla</Badge>}
+              {viewMode === "list" && <Badge variant="outline">Vista Lista</Badge>}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {viewMode === "table" ? (
+              <DataTable columns={columns} data={tableData} />
+            ) : (
+              <div className="space-y-3">
+                {tableData.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No hay registros que coincidan con los filtros seleccionados.
                   </div>
-                  {!isCollapsed && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <DataTable<AttendanceRow, any>
-                        columns={useColumnsDetalle(user)}
-                        data={data}
-                        placeholder="Buscar estudiante..."
-                        filters={[
-                          { 
-                            type: "button", 
-                            label: "Solo presentes", 
-                            onClick: t => t.getColumn("present")?.setFilterValue(true) 
-                          },
-                          { 
-                            type: "button", 
-                            label: "Solo ausentes", 
-                            onClick: t => t.getColumn("present")?.setFilterValue(false) 
-                          }
-                        ]}
-                      />
+                ) : (
+                  tableData.map((row, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 bg-white rounded-lg border hover:shadow-sm transition-shadow"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium text-gray-900">{row.Nombre}</p>
+                          <p className="text-sm text-gray-500">{row.subject}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Badge variant={row.present ? "default" : "destructive"}>
+                          {row.present ? "Presente" : "Ausente"}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {format(new Date(row.fecha), 'dd/MM/yyyy')}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  ))
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -16,6 +16,7 @@ import { db } from "@/firebaseConfig";
 import { UserModal } from "@/components/UserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
+import { useGlobalError } from "@/components/GlobalErrorProvider";
 
 export default function Usuarios() {
   const { user } = useContext(AuthContext);
@@ -24,6 +25,7 @@ export default function Usuarios() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { handleError } = useGlobalError();
 
   // Función para recargar usuarios
   const fetchUsers = async () => {
@@ -37,6 +39,7 @@ export default function Usuarios() {
       setUsers(usersData);
     } catch (error) {
       console.error("Error fetching users:", error);
+      handleError(error, "Cargar usuarios");
     } finally {
       setLoading(false);
     }

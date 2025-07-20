@@ -3,7 +3,7 @@ import { db } from "../firebaseConfig.js";
 import fs from 'fs';
 
 async function exportData() {
-  const collections = ['courses', 'subjects', 'teachers', 'students'];
+  const collections = ['courses', 'subjects', 'teachers', 'students', 'attendances'];
   let allData = {};
 
   try {

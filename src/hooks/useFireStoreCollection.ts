@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { collection, onSnapshot, getFirestore, query, orderBy, limit } from "firebase/firestore";
 import type { DocumentData } from "firebase/firestore";
+import { useGlobalError } from "@/components/GlobalErrorProvider";
 
 // Cache global para evitar múltiples listeners
 const cache = new Map<string, { data: any[], timestamp: number, listeners: number }>();
@@ -21,6 +22,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
   const db = getFirestore();
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const cacheKey = `${path}_${options?.limit || 'all'}_${options?.orderBy || 'none'}`;
+  const { handleError } = useGlobalError();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -68,7 +70,8 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
         },
         (error: any) => {
           console.error(`Error loading collection ${path}:`, error);
-          setError(error.message);
+          const appError = handleError(error, `Loading collection: ${path}`);
+          setError(appError.message);
           setLoading(false);
         }
       );
@@ -76,7 +79,8 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       unsubscribeRef.current = unsubscribe;
     } catch (err) {
       console.error(`Error setting up collection listener for ${path}:`, err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const appError = handleError(err, `Setting up listener for: ${path}`);
+      setError(appError.message);
       setLoading(false);
     }
   }, [path, options?.limit, options?.orderBy, options?.enableCache, ...(options?.dependencies || [])]);
