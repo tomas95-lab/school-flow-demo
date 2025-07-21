@@ -1,0 +1,356 @@
+{
+  "attendances": [
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5_nm9vFQT5a3k6K9zxrp5Y_Lengua_2025-07-21",
+      "createdAt": {
+        "seconds": 1753125521,
+        "nanoseconds": 500000000
+      },
+      "date": "2025-07-21",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true,
+      "subject": "Lengua",
+      "studentId": "3fiBvwNTHKnDgATZYKU5"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5_nm9vFQT5a3k6K9zxrp5Y_Lengua_2025-07-21",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "present": true,
+      "studentId": "8wwsdEl8ZdcregOS68s5",
+      "date": "2025-07-21",
+      "subject": "Lengua",
+      "createdAt": {
+        "seconds": 1753125521,
+        "nanoseconds": 500000000
+      }
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2_nm9vFQT5a3k6K9zxrp5Y_Lengua_2025-07-21",
+      "present": true,
+      "createdAt": {
+        "seconds": 1753125521,
+        "nanoseconds": 500000000
+      },
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "studentId": "RA60TOxcRczAfi1Ycdr2",
+      "subject": "Lengua",
+      "date": "2025-07-21"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh_nm9vFQT5a3k6K9zxrp5Y_Lengua_2025-07-21",
+      "studentId": "X1tsZfOyTguLkllg4VPh",
+      "subject": "Lengua",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "date": "2025-07-21",
+      "createdAt": {
+        "seconds": 1753125521,
+        "nanoseconds": 500000000
+      },
+      "present": true
+    }
+  ],
+  "students": [
+    {
+      "id": "3fiBvwNTHKnDgATZYKU5",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "nombre": "Lucas",
+      "creadoEn": {
+        "seconds": 1749693221,
+        "nanoseconds": 726000000
+      },
+      "apellido": "Fernández",
+      "firestoreId": "3fiBvwNTHKnDgATZYKU5"
+    },
+    {
+      "id": "8wwsdEl8ZdcregOS68s5",
+      "firestoreId": "8wwsdEl8ZdcregOS68s5",
+      "apellido": "Pérez",
+      "creadoEn": {
+        "seconds": 1749693223,
+        "nanoseconds": 270000000
+      },
+      "nombre": "Camila",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "RA60TOxcRczAfi1Ycdr2",
+      "nombre": "Valentino",
+      "firestoreId": "RA60TOxcRczAfi1Ycdr2",
+      "apellido": "Sosa",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "creadoEn": {
+        "seconds": 1749693222,
+        "nanoseconds": 752000000
+      }
+    },
+    {
+      "id": "WYEuxGFfipbDd6zWlO73zd63ZuW2",
+      "firestoreId": "WYEuxGFfipbDd6zWlO73zd63ZuW2",
+      "createdAt": "2025-07-21T16:28:57.340Z",
+      "nombre": "Tomas",
+      "status": "active",
+      "cursoId": "FyARiFQeVrYUbD1DEevo",
+      "email": "demo@email.com",
+      "apellido": "Ruiz"
+    },
+    {
+      "id": "X1tsZfOyTguLkllg4VPh",
+      "nombre": "Martina",
+      "creadoEn": {
+        "seconds": 1749693222,
+        "nanoseconds": 242000000
+      },
+      "apellido": "Gómez",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "firestoreId": "X1tsZfOyTguLkllg4VPh"
+    }
+  ],
+  "courses": [
+    {
+      "id": "FyARiFQeVrYUbD1DEevo",
+      "division": "A",
+      "creadoEn": {
+        "seconds": 1752980352,
+        "nanoseconds": 186000000
+      },
+      "año": 2025,
+      "nombre": "2do año",
+      "teacherId": "9piIV5fgA787wd1pCTWK"
+    },
+    {
+      "id": "nm9vFQT5a3k6K9zxrp5Y",
+      "division": "A",
+      "creadoEn": {
+        "seconds": 1749690786,
+        "nanoseconds": 402000000
+      },
+      "año": 2025,
+      "actualizadoEn": {
+        "seconds": 1753113055,
+        "nanoseconds": 213000000
+      },
+      "teacherId": "UGdyAMQNo7mmGxzrUVMV",
+      "nombre": "1er año"
+    },
+    {
+      "id": "xwJLTZ0InAN52zIzVYJg",
+      "division": "B",
+      "actualizadoEn": {
+        "seconds": 1753114167,
+        "nanoseconds": 720000000
+      },
+      "nombre": "1er año",
+      "teacherId": "UGdyAMQNo7mmGxzrUVMV",
+      "creadoEn": {
+        "seconds": 1752980296,
+        "nanoseconds": 540000000
+      },
+      "año": 2025
+    }
+  ],
+  "subjects": [
+    {
+      "id": "NHh2mORSBbgd5Xsl6PgF",
+      "nombre": "Lengua",
+      "cursoId": [
+        "nm9vFQT5a3k6K9zxrp5Y",
+        "xwJLTZ0InAN52zIzVYJg"
+      ],
+      "actualizadoEn": {
+        "seconds": 1753113029,
+        "nanoseconds": 342000000
+      },
+      "creadoEn": {
+        "seconds": 1753112350,
+        "nanoseconds": 143000000
+      },
+      "profesor": "Sofía",
+      "teacherId": "UGdyAMQNo7mmGxzrUVMV"
+    },
+    {
+      "id": "S4mj4HtylrwnjAzHPzqh",
+      "cursoId": [
+        "nm9vFQT5a3k6K9zxrp5Y",
+        "xwJLTZ0InAN52zIzVYJg"
+      ],
+      "creadoEn": {
+        "seconds": 1753112350,
+        "nanoseconds": 375000000
+      },
+      "nombre": "Ingles",
+      "actualizadoEn": {
+        "seconds": 1753114276,
+        "nanoseconds": 605000000
+      },
+      "profesor": "Martín",
+      "teacherId": "Bz9CEAWfnS7aaNwt5SAp"
+    },
+    {
+      "id": "pXgso6hznXCXOqEoc7Dk",
+      "profesor": "Sofía",
+      "teacherId": "UGdyAMQNo7mmGxzrUVMV",
+      "cursoId": [
+        "nm9vFQT5a3k6K9zxrp5Y",
+        "xwJLTZ0InAN52zIzVYJg"
+      ],
+      "creadoEn": {
+        "seconds": 1753112349,
+        "nanoseconds": 669000000
+      },
+      "actualizadoEn": {
+        "seconds": 1753114720,
+        "nanoseconds": 155000000
+      },
+      "nombre": "Historia"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "9piIV5fgA787wd1pCTWK",
+      "apellido": "Acosta",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "nombre": "Tomás",
+      "creadoEn": {
+        "seconds": 1749693953,
+        "nanoseconds": 168000000
+      },
+      "email": "sofia.acosta@edunova.com",
+      "firestoreId": "9piIV5fgA787wd1pCTWK"
+    },
+    {
+      "id": "Bz9CEAWfnS7aaNwt5SAp",
+      "nombre": "Martín",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "apellido": "Pereyra",
+      "creadoEn": {
+        "seconds": 1749693953,
+        "nanoseconds": 662000000
+      },
+      "firestoreId": "Bz9CEAWfnS7aaNwt5SAp",
+      "email": "martin.pereyra@edunova.com"
+    },
+    {
+      "id": "UGdyAMQNo7mmGxzrUVMV",
+      "creadoEn": {
+        "seconds": 1749693948,
+        "nanoseconds": 828000000
+      },
+      "email": "sofia.acosta@edunova.com",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "apellido": "Acosta",
+      "nombre": "Sofía",
+      "firestoreId": "UGdyAMQNo7mmGxzrUVMV"
+    },
+    {
+      "id": "ytykUWklzJTNsRTYDwpU",
+      "email": "martin.pereyra@edunova.com",
+      "nombre": "Martín",
+      "creadoEn": {
+        "seconds": 1749693949,
+        "nanoseconds": 326000000
+      },
+      "apellido": "Pereyra",
+      "cursoId": "nm9vFQT5a3k6K9zxrp5Y",
+      "firestoreId": "ytykUWklzJTNsRTYDwpU"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "228VlRvswyoWLk9OrvLT",
+      "updatedAt": {
+        "seconds": 1752809766,
+        "nanoseconds": 938000000
+      },
+      "recipients": [
+        "specific_students"
+      ],
+      "isActive": true,
+      "description": "El estudiante tiene un promedio de 5.50. Se requiere atención inmediata para mejorar su rendimiento académico.",
+      "expiresAt": "",
+      "createdByRole": "system",
+      "targetUserId": "all",
+      "priority": "low",
+      "selectedStudents": [
+        "3fiBvwNTHKnDgATZYKU5"
+      ],
+      "selectedCourse": "",
+      "isRead": true,
+      "createdBy": "system",
+      "readBy": [],
+      "status": "active",
+      "createdAt": {
+        "seconds": 1752711355,
+        "nanoseconds": 95000000
+      },
+      "type": "academic",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y",
+      "customMessage": "Promedio actual: 5.50. Se recomienda programar una reunión con el estudiante y sus padres.",
+      "courseName": "",
+      "title": "Bajo rendimiento académico - Lucas Fernández"
+    },
+    {
+      "id": "cp2DKId6N12qSyaIngk6",
+      "recipients": [
+        "specific_course"
+      ],
+      "selectedCourse": "nm9vFQT5a3k6K9zxrp5Y",
+      "status": "active",
+      "description": "Se detectaron problemas de rendimiento en el 1.2% de los estudiantes del curso. Se requiere intervención del docente.",
+      "readBy": [],
+      "isRead": true,
+      "updatedAt": {
+        "seconds": 1752809776,
+        "nanoseconds": 419000000
+      },
+      "isActive": true,
+      "priority": "medium",
+      "createdAt": {
+        "seconds": 1752711361,
+        "nanoseconds": 60000000
+      },
+      "customMessage": "Curso: 1er año A. Estudiantes afectados: 4/4",
+      "createdByRole": "system",
+      "selectedStudents": [],
+      "targetUserId": "all",
+      "createdBy": "system",
+      "expiresAt": "",
+      "type": "academic",
+      "title": "Atención requerida - Curso 1er año A",
+      "courseName": "1er año - A",
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    },
+    {
+      "id": "h2vf3OHg6UJB2CY8V3OZ",
+      "createdAt": {
+        "seconds": 1752711354,
+        "nanoseconds": 828000000
+      },
+      "readBy": [],
+      "status": "active",
+      "updatedAt": {
+        "seconds": 1752809776,
+        "nanoseconds": 923000000
+      },
+      "selectedCourse": "",
+      "description": "El estudiante tiene un promedio de 1.00. Se requiere atención inmediata para mejorar su rendimiento académico.",
+      "customMessage": "Promedio actual: 1.00. Se recomienda programar una reunión con el estudiante y sus padres.",
+      "createdBy": "system",
+      "selectedStudents": [
+        "8wwsdEl8ZdcregOS68s5"
+      ],
+      "title": "Bajo rendimiento académico - Camila Pérez",
+      "targetUserId": "all",
+      "priority": "high",
+      "courseName": "",
+      "type": "academic",
+      "recipients": [
+        "specific_students"
+      ],
+      "expiresAt": "",
+      "createdByRole": "system",
+      "isRead": true,
+      "isActive": true,
+      "courseId": "nm9vFQT5a3k6K9zxrp5Y"
+    }
+  ]
+}

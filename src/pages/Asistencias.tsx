@@ -15,7 +15,7 @@ import TeacherAttendanceOverview from "@/components/TeacherAttendanceOverview";
 import AlumnoAttendanceOverview from "@/components/AlumnoAttendanceOverview";
 
 // Nuevo componente de registro rápido
-import QuickAttendanceRegister from "@/components/QuickAttendanceRegister";
+
 
 // Componente de alerta de asistencias pendientes
 import AttendanceAlert from "@/components/AttendanceAlert";
@@ -149,16 +149,7 @@ export default function Asistencias() {
               <BookOpen className="h-4 w-4" />
               Resumen
             </Button>
-            {user?.role === "docente" && (
-              <Button
-                variant={activeView === "register" ? "default" : "outline"}
-                onClick={() => setActiveView("register")}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Registrar
-              </Button>
-            )}
+
             <Button
               variant={activeView === "calendar" ? "default" : "outline"}
               onClick={() => setActiveView("calendar")}
@@ -185,9 +176,7 @@ export default function Asistencias() {
             </>
           )}
 
-          {activeView === "register" && user?.role === "docente" && (
-            <QuickAttendanceRegister />
-          )}
+
 
           {activeView === "calendar" && (
             <AttendanceCalendar />

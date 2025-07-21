@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar, Users, BookOpen, Check, Minus, Search, Clock, AlertCircle, Save, X, RotateCcw } from "lucide-react"
 import { db } from "@/firebaseConfig"
@@ -61,53 +61,31 @@ export function AttendanceModal({
     setAttendanceMap(m)
   }, [subject, date, students, attendances, courseId])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose?.()
-      }
-      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        save()
-      }
-      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        markAllPresent()
-      }
-      if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        markAllAbsent()
-      }
-    }
 
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [attendanceMap])
 
-  const toggleAttendance = (id: string) => {
+  const toggleAttendance = useCallback((id: string) => {
     setAttendanceMap((prev) => ({ ...prev, [id]: !prev[id] }))
-  }
+  }, [])
 
-  const markAllPresent = () => {
+  const markAllPresent = useCallback(() => {
     const newMap: Record<string, boolean> = {}
     students.forEach(s => newMap[s.id] = true)
     setAttendanceMap(newMap)
-  }
+  }, [students])
 
-  const markAllAbsent = () => {
+  const markAllAbsent = useCallback(() => {
     const newMap: Record<string, boolean> = {}
     students.forEach(s => newMap[s.id] = false)
     setAttendanceMap(newMap)
-  }
+  }, [students])
 
-  const resetAttendance = () => {
+  const resetAttendance = useCallback(() => {
     const newMap: Record<string, boolean> = {}
     students.forEach(s => newMap[s.id] = false)
     setAttendanceMap(newMap)
-  }
+  }, [students])
 
-  const save = async () => {
+  const save = useCallback(async () => {
     setIsLoading(true)
     setSaveSuccess(false)
     try {
@@ -143,7 +121,31 @@ export function AttendanceModal({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [students, attendanceMap, courseId, subject, date, attendances])
+
+  // Keyboard shortcuts - moved after function definitions
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose?.()
+      }
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        save()
+      }
+      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        markAllPresent()
+      }
+      if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        markAllAbsent()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [onClose, save, markAllPresent, markAllAbsent])
 
   const presentCount = Object.values(attendanceMap).filter(Boolean).length
   const totalStudents = students.length

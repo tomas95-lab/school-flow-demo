@@ -1,6 +1,7 @@
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
+import { subjectBelongsToCourse } from "@/utils/subjectUtils";
 import { CourseCard } from "./CourseCard";
 import type { Course } from "@/components/CourseCard";
 import { SchoolSpinner } from "./SchoolSpinner";
@@ -24,7 +25,6 @@ import {
   isBefore,
   format,
 } from "date-fns";
-import { es } from "date-fns/locale";
 import { StatsCard } from "./StatCards";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -45,13 +45,13 @@ export default function TeacherAttendanceOverview() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const { data: courses, loading: loadingCourses = false } =
-    useFirestoreCollection<Course>("courses");
+    useFirestoreCollection("courses");
   const { data: teachers, loading: loadingTeachers = false } =
     useFirestoreCollection<{ firestoreId: string; cursoId?: string; cursoIds?: string[] }>(
       "teachers"
     );
   const { data: subjects, loading: loadingSubjects = false } =
-    useFirestoreCollection<{ firestoreId: string; nombre: string; teacherId: string; cursoId: string }>(
+    useFirestoreCollection<{ firestoreId: string; nombre: string; teacherId: string; cursoId: string | string[] }>(
       "subjects"
     );
   const { data: students, loading: loadingStudents = false } =
@@ -67,6 +67,27 @@ export default function TeacherAttendanceOverview() {
       date: string;
       present: boolean;
     }>("attendances");
+
+  // 1. Identificar al docente
+  const teacherUserId = user?.teacherId;
+  const teacher = teachers.find(t => t.firestoreId == teacherUserId )
+  
+  // Obtener cursos del docente a través de las materias
+  const teacherCourses = courses.filter(c => c.teacherId == teacherUserId )
+  // 2. Materias del docente
+  const subjectsTeacher = subjects.filter(
+    (subj) => subj.teacherId == teacherUserId
+  );
+
+  // Auto-seleccionar materia si el docente tiene una sola
+  useEffect(() => {
+    if (subjectsTeacher.length === 1 && !selectedSubject) {
+      setSelectedSubject(subjectsTeacher[0].nombre);
+    } else if (subjectsTeacher.length > 1 && !selectedSubject) {
+      // Pre-seleccionar la primera materia si tiene múltiples
+      setSelectedSubject(subjectsTeacher[0].nombre);
+    }
+  }, [subjectsTeacher, selectedSubject]);
 
   if (
     loadingCourses ||
@@ -85,15 +106,8 @@ export default function TeacherAttendanceOverview() {
     );
   }
 
-  // 1. Identificar al docente
-  const teacherUserId = user?.teacherId;
-  const teacher = teachers.find((t) => t.firestoreId === teacherUserId);
-
-  // 2. Materias del docente
-  const subjectsTeacher = subjects.filter(
-    (subj) => subj.teacherId === teacher?.firestoreId
-  );
-
+  console.log(teacherUserId)
+  console.log(subjectsTeacher)
   // 3. IDs de cursos (soporta cursoId o cursoIds[])
   const cursoIds = Array.isArray(teacher?.cursoIds)
     ? teacher.cursoIds
@@ -101,15 +115,12 @@ export default function TeacherAttendanceOverview() {
     ? [teacher.cursoId]
     : [];
 
-  // 4. Cursos que imparte
-  const teacherCourses = courses.filter((c) =>
-    cursoIds.includes(c.firestoreId)
-  );
 
   // 5. Estudiantes de esos cursos
   const teacherStudents = students.filter((s) =>
     cursoIds.includes(s.cursoId)
   );
+
   const validStudentIds = new Set(teacherStudents.map((s) => s.firestoreId));
 
   // 6. Asistencias válidas: alumno + curso + materia
@@ -334,7 +345,6 @@ export default function TeacherAttendanceOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Header con botón de registro rápido */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -344,138 +354,7 @@ export default function TeacherAttendanceOverview() {
             Gestiona las asistencias de tus materias y cursos asignados
           </p>
         </div>
-        <Button
-          onClick={() => setShowQuickRegister(!showQuickRegister)}
-          className="bg-indigo-600 hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {showQuickRegister ? "Ocultar Registro" : "Registro Rápido"}
-        </Button>
       </div>
-
-      {/* Registro rápido */}
-      {showQuickRegister && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900">
-              <BookOpen className="h-5 w-5" />
-              Registro Rápido de Asistencias
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{presentCount}</div>
-                <div className="text-sm text-gray-600">Presentes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{totalStudents - presentCount}</div>
-                <div className="text-sm text-gray-600">Ausentes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{totalStudents}</div>
-                <div className="text-sm text-gray-600">Total</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-indigo-600">{attendancePercentage}%</div>
-                <div className="text-sm text-gray-600">Asistencia</div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div>
-                <Label htmlFor="subject">Materia</Label>
-                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una materia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjectsTeacher.map(subject => (
-                      <SelectItem key={subject.firestoreId} value={subject.nombre}>
-                        {subject.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="date">Fecha</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-6">
-              <Button
-                onClick={markAllPresent}
-                variant="outline"
-                size="sm"
-                className="text-green-600 border-green-200 hover:bg-green-50"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Marcar Todos Presentes
-              </Button>
-              <Button
-                onClick={markAllAbsent}
-                variant="outline"
-                size="sm"
-                className="text-red-600 border-red-200 hover:bg-red-50"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Marcar Todos Ausentes
-              </Button>
-              <Button
-                onClick={saveAttendance}
-                disabled={isLoading || !selectedSubject}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                Guardar Asistencias
-              </Button>
-            </div>
-
-            {saveSuccess && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                ¡Asistencias guardadas exitosamente!
-              </div>
-            )}
-
-            {/* Lista de estudiantes */}
-            {selectedSubject && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {teacherStudents.map(student => (
-                  <div
-                    key={student.firestoreId}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
-                      attendanceMap[student.firestoreId]
-                        ? 'border-green-200 bg-green-50'
-                        : 'border-red-200 bg-red-50'
-                    }`}
-                    onClick={() => toggleAttendance(student.firestoreId)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {student.nombre} {student.apellido}
-                        </div>
-                      </div>
-                      <Badge
-                        variant={attendanceMap[student.firestoreId] ? "default" : "destructive"}
-                        className="text-sm"
-                      >
-                        {attendanceMap[student.firestoreId] ? "Presente" : "Ausente"}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -510,35 +389,45 @@ export default function TeacherAttendanceOverview() {
       </div>
 
       {/* Lista de Cursos */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Mis Cursos ({teacherCourses.length})
-          </h2>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-            <span>Cursos activos</span>
-          </div>
-        </div>
-        <p className="text-gray-600 mt-1">
-          Administra cursos y revisa asistencias por materia
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {teacherCourses.map((course, index) => {
-          const stats = getCourseStats(course.firestoreId);
-          return (
-            <div key={course.firestoreId || index} className="transform transition-all duration-200 hover:scale-105">
-              <CourseCard 
-                course={course} 
-                link={`/asistencias/detalles?id=${course.firestoreId}`} 
-                descripcion={`${stats.percentage}% asistencia - ${stats.total} registros`}
-              />
+      {teacherCourses.length > 0 ? (
+        <>
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Mis Cursos ({teacherCourses.length})
+              </h2>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span>Cursos activos</span>
+              </div>
             </div>
-          );
-        })}
-      </div>
+            <p className="text-gray-600 mt-1">
+              Administra cursos y revisa asistencias por materia
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {teacherCourses.map((course, index) => {
+              if (!course.firestoreId) return null;
+              const stats = getCourseStats(course.firestoreId);
+              return (
+                <div key={course.firestoreId || index} className="transform transition-all duration-200 hover:scale-105">
+                  <CourseCard 
+                    course={course as Course} 
+                    link={`/asistencias/detalles?id=${course.firestoreId}`} 
+                    descripcion={`${stats.percentage}% asistencia - ${stats.total} registros`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-8">
+          <h1 className="text-xl font-semibold text-gray-600">No hay cursos asignados</h1>
+          <p className="text-gray-500 mt-2">Contacta al administrador para que te asigne cursos</p>
+        </div>
+      )}
     </div>
   );
 }

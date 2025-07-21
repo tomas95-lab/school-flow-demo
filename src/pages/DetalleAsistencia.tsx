@@ -21,13 +21,17 @@ import {
   Eye,
   Edit,
   Table,
-  List
+  List,
+  Plus
 } from "lucide-react";
 import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import { DataTable } from "@/components/data-table";
 import { useSearchParams, Link } from "react-router-dom";
+import { filterSubjectsByCourse } from "@/utils/subjectUtils";
+import QuickAttendanceRegister from "@/components/QuickAttendanceRegister";
+import ReutilizableDialog from "@/components/DialogReutlizable";
 
 type Student = {
   firestoreId: string;
@@ -40,7 +44,7 @@ type Subject = {
   firestoreId: string;
   nombre: string;
   teacherId: string;
-  cursoId: string;
+  cursoId: string | string[]; // Array de cursos o string para compatibilidad
 };
 
 type Attendance = {
@@ -62,6 +66,7 @@ export default function DetalleAsistencia() {
   const [selectedDate, setSelectedDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "list">("table");
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // Obtener datos
   const { data: courses, loading: loadingCourses } = useFirestoreCollection("courses");
@@ -84,9 +89,9 @@ export default function DetalleAsistencia() {
     [students, courseId]
   );
   
-  // Filtrar materias del curso
+  // Filtrar materias del curso (usando función utilitaria)
   const courseSubjects = useMemo(() => 
-    subjects?.filter(s => s.cursoId === courseId) || [], 
+    filterSubjectsByCourse(subjects || [], courseId || ''), 
     [subjects, courseId]
   );
   
@@ -274,6 +279,15 @@ export default function DetalleAsistencia() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {user?.role === "docente" && (
+                <Button 
+                  onClick={() => setShowRegisterModal(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registrar Asistencias
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm"
@@ -407,18 +421,24 @@ export default function DetalleAsistencia() {
           </Card>
         </div>
 
-        {/* Filtros */}
-        <Card className="mb-6">
+        {/* Tabla de asistencias */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtros
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between mb-6">
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Registros de Asistencia ({tableData.length})
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {viewMode === "table" && <Badge variant="outline">Vista Tabla</Badge>}
+                {viewMode === "list" && <Badge variant="outline">Vista Lista</Badge>}
+              </div>
+            </div>
+            
+            {/* Filtros integrados */}
+            <div className="flex items-end gap-4">
               <div>
-                <Label htmlFor="subject">Materia</Label>
+                <Label htmlFor="subject" className="text-sm font-medium text-gray-700 mb-1">Materia</Label>
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las materias" />
@@ -435,7 +455,7 @@ export default function DetalleAsistencia() {
               </div>
               
               <div>
-                <Label htmlFor="date">Fecha</Label>
+                <Label htmlFor="date" className="text-sm font-medium text-gray-700 mb-1 block">Fecha</Label>
                 <Input
                   id="date"
                   type="date"
@@ -446,7 +466,7 @@ export default function DetalleAsistencia() {
               </div>
               
               <div>
-                <Label htmlFor="status">Estado</Label>
+                <Label htmlFor="status" className="text-sm font-medium text-gray-700 mb-1 block">Estado</Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger>
                     <SelectValue />
@@ -459,18 +479,6 @@ export default function DetalleAsistencia() {
                 </Select>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabla de asistencias */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Registros de Asistencia ({tableData.length})
-              {viewMode === "table" && <Badge variant="outline">Vista Tabla</Badge>}
-              {viewMode === "list" && <Badge variant="outline">Vista Lista</Badge>}
-            </CardTitle>
           </CardHeader>
           <CardContent>
             {viewMode === "table" ? (
@@ -508,6 +516,28 @@ export default function DetalleAsistencia() {
             )}
           </CardContent>
         </Card>
+
+        {/* Modal de registro de asistencias */}
+        <ReutilizableDialog
+          open={showRegisterModal}
+          onOpenChange={setShowRegisterModal}
+          title={
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Plus className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">Registrar Asistencias</h2>
+                <p className="text-sm text-gray-600">
+                  {course?.nombre} - {course?.division}
+                </p>
+              </div>
+            </div>
+          }
+          description="Marca la asistencia de los estudiantes del curso"
+          content={<QuickAttendanceRegister courseId={courseId || ""} />}
+          small={false}
+        />
       </div>
     </div>
   );

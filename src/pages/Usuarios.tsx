@@ -17,6 +17,7 @@ import { UserModal } from "@/components/UserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
+import ImportStudentsModal from "@/components/ImportStudentsModal";
 
 export default function Usuarios() {
   const { user } = useContext(AuthContext);
@@ -120,10 +121,13 @@ export default function Usuarios() {
                 Administra todos los usuarios del sistema educativo
               </p>
             </div>
-            <UserModal 
-              mode="create" 
-              onUserCreated={fetchUsers}
-            />
+            <div className="flex gap-3">
+              <ImportStudentsModal />
+              <UserModal 
+                mode="create" 
+                onUserCreated={fetchUsers}
+              />
+            </div>
           </div>
         </div>
 
@@ -141,7 +145,7 @@ export default function Usuarios() {
           ))}
         </div>
 
-                {/* Main Content */}
+        {/* Main Content */}
         <ReutilizableCard
           title="Lista de Usuarios"
           description="Gestiona y administra todos los usuarios del sistema"
@@ -203,10 +207,10 @@ export default function Usuarios() {
           </div>
         </ReutilizableCard>
 
-        {/* Modal de edición */}
-        {selectedUser && (
-          <UserModal 
-            mode="edit" 
+        {/* Modals */}
+        {showEditModal && selectedUser && (
+          <UserModal
+            mode="edit"
             user={selectedUser}
             open={showEditModal}
             onOpenChange={setShowEditModal}
@@ -218,9 +222,8 @@ export default function Usuarios() {
           />
         )}
 
-        {/* Modal de eliminación */}
-        {selectedUser && (
-          <DeleteUserModal 
+        {showDeleteModal && selectedUser && (
+          <DeleteUserModal
             user={selectedUser}
             open={showDeleteModal}
             onOpenChange={setShowDeleteModal}

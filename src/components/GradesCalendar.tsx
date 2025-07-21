@@ -10,9 +10,10 @@ import {
   ChevronRight, 
   Calendar, 
   Users, 
+  TrendingUp, 
   CheckCircle, 
   XCircle,
-  TrendingUp
+  BookOpen
 } from "lucide-react";
 import { 
   format, 
@@ -20,6 +21,7 @@ import {
   endOfMonth, 
   eachDayOfInterval, 
   isSameMonth, 
+  isSameDay, 
   isToday,
   addMonths,
   subMonths,
@@ -27,7 +29,6 @@ import {
   endOfWeek
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { subjectBelongsToCourse } from "@/utils/subjectUtils";
 
 type Student = {
   firestoreId: string;
@@ -42,24 +43,19 @@ type Course = {
   division: string;
 };
 
-type Subject = {
-  firestoreId: string;
-  nombre: string;
-  teacherId: string;
-  cursoId: string | string[];
-};
-
-type Attendance = {
+type Grade = {
   firestoreId: string;
   studentId: string;
-  courseId: string;
+  subjectId: string;
   subject: string;
-  date: string;
-  present: boolean;
+  valor: number;
+  tipo: string;
+  fecha: string;
+  comentario?: string;
   createdAt?: any;
 };
 
-export default function AttendanceCalendar() {
+export default function GradesCalendar() {
   const { user } = useContext(AuthContext);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCourse, setSelectedCourse] = useState("all");
@@ -67,38 +63,19 @@ export default function AttendanceCalendar() {
   // Obtener datos
   const { data: courses } = useFirestoreCollection<Course>("courses");
   const { data: students } = useFirestoreCollection<Student>("students");
-  const { data: subjects } = useFirestoreCollection<Subject>("subjects");
-  const { data: attendances } = useFirestoreCollection<Attendance>("attendances");
+  const { data: grades } = useFirestoreCollection<Grade>("calificaciones");
 
   // Filtrar cursos según el rol
   const availableCourses = useMemo(() => {
     if (!courses) return [];
     
     if (user?.role === "admin") {
-      // Admin ve todos los cursos
       return courses;
     } else if (user?.role === "docente") {
-      // Docente ve solo cursos donde enseña
-      if (!subjects || !user.teacherId) return [];
-      
-      // Obtener materias del docente
-      const teacherSubjects = subjects.filter(subject => 
-        subject.teacherId === user.teacherId
-      );
-      
-      // Obtener IDs de cursos donde enseña
-      const teacherCourseIds = new Set<string>();
-      teacherSubjects.forEach(subject => {
-        if (Array.isArray(subject.cursoId)) {
-          subject.cursoId.forEach(courseId => teacherCourseIds.add(courseId));
-        } else {
-          teacherCourseIds.add(subject.cursoId);
-        }
-      });
-      
-      return courses.filter(course => teacherCourseIds.has(course.firestoreId));
+      // Para docentes, mostrar solo cursos donde enseñan
+      return courses;
     } else if (user?.role === "alumno") {
-      // Alumno ve solo su curso
+      // Para alumnos, mostrar solo su curso
       const student = students?.find(s => s.firestoreId === user.uid);
       if (student) {
         return courses.filter(c => c.firestoreId === student.cursoId);
@@ -107,7 +84,7 @@ export default function AttendanceCalendar() {
     }
     
     return [];
-  }, [courses, students, subjects, user]);
+  }, [courses, students, user]);
 
   // Calcular días del mes
   const monthStart = startOfMonth(currentDate);
@@ -118,89 +95,88 @@ export default function AttendanceCalendar() {
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  // Filtrar asistencias según el curso seleccionado y rol
-  const filteredAttendances = useMemo(() => {
-    if (!attendances) return [];
+  // Filtrar calificaciones según el curso seleccionado
+  const filteredGrades = useMemo(() => {
+    if (!grades) return [];
     
-    let filtered = attendances;
-    
-    // Filtrar por curso seleccionado
-    if (selectedCourse !== "all") {
-      filtered = filtered.filter(a => a.courseId === selectedCourse);
-    } else {
-      // Si es "todos", filtrar por cursos disponibles según el rol
-      const availableCourseIds = availableCourses.map(c => c.firestoreId);
-      filtered = filtered.filter(a => availableCourseIds.includes(a.courseId));
+    if (selectedCourse === "all") {
+      return grades;
     }
     
-    // Para docentes, filtrar también por materias que enseñan
-    if (user?.role === "docente" && subjects) {
-      const teacherSubjects = subjects.filter(subject => 
-        subject.teacherId === user.teacherId
-      );
-      const teacherSubjectNames = teacherSubjects.map(s => s.nombre);
-      filtered = filtered.filter(a => teacherSubjectNames.includes(a.subject));
-    }
+    // Filtrar por estudiantes del curso seleccionado
+    const courseStudents = students?.filter(s => s.cursoId === selectedCourse) || [];
+    const studentIds = courseStudents.map(s => s.firestoreId);
     
-    return filtered;
-  }, [attendances, selectedCourse, availableCourses, user, subjects]);
+    return grades.filter(g => studentIds.includes(g.studentId));
+  }, [grades, selectedCourse, students]);
 
   // Calcular estadísticas del mes
   const monthStats = useMemo(() => {
-    const monthAttendances = filteredAttendances.filter(a => {
-      const attendanceDate = new Date(a.date);
-      return isSameMonth(attendanceDate, currentDate);
+    const monthGrades = filteredGrades.filter(g => {
+      const gradeDate = new Date(g.fecha);
+      return isSameMonth(gradeDate, currentDate);
     });
 
-    const totalRecords = monthAttendances.length;
-    const presentRecords = monthAttendances.filter(a => a.present).length;
-    const absentRecords = totalRecords - presentRecords;
-    const attendancePercentage = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
+    const totalGrades = monthGrades.length;
+    const averageGrade = totalGrades > 0 
+      ? monthGrades.reduce((sum, g) => sum + g.valor, 0) / totalGrades 
+      : 0;
+    const passingGrades = monthGrades.filter(g => g.valor >= 7).length;
+    const failingGrades = totalGrades - passingGrades;
 
-    // Días con registro de asistencia
-    const daysWithAttendance = new Set(monthAttendances.map(a => a.date)).size;
+    // Días con calificaciones
+    const daysWithGrades = new Set(monthGrades.map(g => g.fecha)).size;
+
+    // Tipos de evaluación
+    const gradeTypes = new Set(monthGrades.map(g => g.tipo));
 
     return {
-      totalRecords,
-      presentRecords,
-      absentRecords,
-      attendancePercentage,
-      daysWithAttendance
+      totalGrades,
+      averageGrade: averageGrade.toFixed(2),
+      passingGrades,
+      failingGrades,
+      daysWithGrades,
+      gradeTypes: Array.from(gradeTypes)
     };
-  }, [filteredAttendances, currentDate]);
+  }, [filteredGrades, currentDate]);
 
-  // Función para obtener el color del día según las asistencias
+  // Función para obtener el color del día según las calificaciones
   const getDayColor = (day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    const dayAttendances = filteredAttendances.filter(a => a.date === dayStr);
+    const dayGrades = filteredGrades.filter(g => g.fecha === dayStr);
     
-    if (dayAttendances.length === 0) {
+    if (dayGrades.length === 0) {
       return 'bg-white border-gray-200';
     }
     
-    const presentCount = dayAttendances.filter(a => a.present).length;
-    const totalCount = dayAttendances.length;
-    const percentage = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
+    const averageGrade = dayGrades.reduce((sum, g) => sum + g.valor, 0) / dayGrades.length;
     
-    if (percentage >= 80) {
+    if (averageGrade >= 8) {
       return 'bg-green-50 border-green-200';
-    } else if (percentage >= 60) {
+    } else if (averageGrade >= 7) {
+      return 'bg-blue-50 border-blue-200';
+    } else if (averageGrade >= 6) {
       return 'bg-yellow-50 border-yellow-200';
     } else {
       return 'bg-red-50 border-red-200';
     }
   };
 
-  // Función para obtener el porcentaje del día
-  const getDayPercentage = (day: Date) => {
+  // Función para obtener información del día
+  const getDayInfo = (day: Date) => {
     const dayStr = format(day, 'yyyy-MM-dd');
-    const dayAttendances = filteredAttendances.filter(a => a.date === dayStr);
+    const dayGrades = filteredGrades.filter(g => g.fecha === dayStr);
     
-    if (dayAttendances.length === 0) return null;
+    if (dayGrades.length === 0) return null;
     
-    const presentCount = dayAttendances.filter(a => a.present).length;
-    const totalCount = dayAttendances.length;
-    return totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+    const averageGrade = dayGrades.reduce((sum, g) => sum + g.valor, 0) / dayGrades.length;
+    const types = new Set(dayGrades.map(g => g.tipo));
+    
+    return {
+      count: dayGrades.length,
+      average: averageGrade.toFixed(1),
+      types: Array.from(types)
+    };
   };
 
   // Navegación del calendario
@@ -216,7 +192,7 @@ export default function AttendanceCalendar() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-indigo-600" />
-              Calendario de Asistencias
+              Calendario de Calificaciones
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={goToToday}>
@@ -260,33 +236,13 @@ export default function AttendanceCalendar() {
           </div>
 
           {/* Estadísticas del mes */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
+                <BookOpen className="h-5 w-5 text-blue-600" />
                 <div>
-                  <p className="text-sm text-blue-600">Total Registros</p>
-                  <p className="text-xl font-bold text-blue-900">{monthStats.totalRecords}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-green-600">Presentes</p>
-                  <p className="text-xl font-bold text-green-900">{monthStats.presentRecords}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm text-red-600">Ausentes</p>
-                  <p className="text-xl font-bold text-red-900">{monthStats.absentRecords}</p>
+                  <p className="text-sm text-blue-600">Total Calificaciones</p>
+                  <p className="text-xl font-bold text-blue-900">{monthStats.totalGrades}</p>
                 </div>
               </div>
             </div>
@@ -295,8 +251,28 @@ export default function AttendanceCalendar() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-indigo-600" />
                 <div>
-                  <p className="text-sm text-indigo-600">Asistencia</p>
-                  <p className="text-xl font-bold text-indigo-900">{monthStats.attendancePercentage}%</p>
+                  <p className="text-sm text-indigo-600">Promedio</p>
+                  <p className="text-xl font-bold text-indigo-900">{monthStats.averageGrade}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-sm text-green-600">Aprobados</p>
+                  <p className="text-xl font-bold text-green-900">{monthStats.passingGrades}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="text-sm text-red-600">Desaprobados</p>
+                  <p className="text-xl font-bold text-red-900">{monthStats.failingGrades}</p>
                 </div>
               </div>
             </div>
@@ -305,8 +281,18 @@ export default function AttendanceCalendar() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-purple-600" />
                 <div>
-                  <p className="text-sm text-purple-600">Días con Registro</p>
-                  <p className="text-xl font-bold text-purple-900">{monthStats.daysWithAttendance}</p>
+                  <p className="text-sm text-purple-600">Días con Calificaciones</p>
+                  <p className="text-xl font-bold text-purple-900">{monthStats.daysWithGrades}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="text-sm text-yellow-600">Tipos de Evaluación</p>
+                  <p className="text-xl font-bold text-yellow-900">{monthStats.gradeTypes.length}</p>
                 </div>
               </div>
             </div>
@@ -328,13 +314,13 @@ export default function AttendanceCalendar() {
               {calendarDays.map((day, index) => {
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isCurrentDay = isToday(day);
-                const dayPercentage = getDayPercentage(day);
+                const dayInfo = getDayInfo(day);
                 const dayColor = getDayColor(day);
                 
                 return (
                   <div
                     key={index}
-                    className={`min-h-[80px] p-2 ${dayColor} ${
+                    className={`min-h-[100px] p-2 ${dayColor} ${
                       !isCurrentMonth ? 'opacity-50' : ''
                     }`}
                   >
@@ -351,25 +337,55 @@ export default function AttendanceCalendar() {
                       )}
                     </div>
                     
-                    {dayPercentage !== null && (
-                      <div className="mt-1">
+                    {dayInfo && (
+                      <div className="mt-1 space-y-1">
                         <div className="text-xs font-medium text-gray-600">
-                          {dayPercentage}%
+                          {dayInfo.count} calif.
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                          <div 
-                            className={`h-1 rounded-full ${
-                              dayPercentage >= 80 ? 'bg-green-500' :
-                              dayPercentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${dayPercentage}%` }}
-                          />
+                        <div className="text-xs font-medium text-gray-800">
+                          Prom: {dayInfo.average}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {dayInfo.types.slice(0, 2).map((type, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {type}
+                            </Badge>
+                          ))}
+                          {dayInfo.types.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{dayInfo.types.length - 2}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     )}
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Leyenda */}
+          <div className="mt-4 flex items-center justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-50 border border-green-200 rounded"></div>
+              <span>Promedio ≥ 8</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
+              <span>Promedio 7-7.9</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded"></div>
+              <span>Promedio 6-6.9</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
+              <span>Promedio &lt; 6</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-white border border-gray-200 rounded"></div>
+              <span>Sin calificaciones</span>
             </div>
           </div>
         </CardContent>

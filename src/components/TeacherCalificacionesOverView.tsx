@@ -13,7 +13,7 @@ export default function TeacherCalificacionesOverview() {
     const { data: calificaciones } = useFirestoreCollection("calificaciones");
 
     const teacher = teachers.find(t => t.firestoreId == user?.teacherId )
-    const teacherCourses = courses.filter(c => c.firestoreId == teacher?.cursoId )
+    const teacherCourses = courses.filter(c => c.teacherId == teacher?.firestoreId )
 
 
     const averageGrade = useMemo(() => {
@@ -78,7 +78,7 @@ export default function TeacherCalificacionesOverview() {
         <div className="m-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
-                    Todos los Cursos ({courses.length})
+                    Todos los Cursos ({teacherCourses.length})
                 </h2>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="h-2 w-2 bg-green-500 rounded-full"></div>

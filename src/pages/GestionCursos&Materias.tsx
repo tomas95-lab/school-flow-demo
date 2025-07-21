@@ -38,14 +38,14 @@ export default function GestionCursosMaterias() {
   const [materiaForm, setMateriaForm] = useState({
     nombre: '',
     teacherId: '',
-    cursoId: ''
+    cursoId: [] as string[]
   });
 
   // Reset forms when modal type changes
   useEffect(() => {
     if (modalType === 'create') {
       setCursoForm({ nombre: '', division: '', teacherId: '' });
-      setMateriaForm({ nombre: '', teacherId: '', cursoId: '' });
+      setMateriaForm({ nombre: '', teacherId: '', cursoId: [] });
     } else if (modalType === 'edit' && selectedCurso) {
       // Buscar el curso original en los datos de Firestore
       const originalCurso = courses.find(c => c.firestoreId === selectedCurso.id);
@@ -58,11 +58,13 @@ export default function GestionCursosMaterias() {
     } else if (modalType === 'edit' && selectedMateria) {
       // Buscar la materia original en los datos de Firestore
       const originalMateria = subjects.find(s => s.firestoreId === selectedMateria.id);
-      console.log('Editando materia:', { selectedMateria, originalMateria });
+
       setMateriaForm({
         nombre: originalMateria?.nombre || selectedMateria.name || '',
         teacherId: originalMateria?.teacherId || '',
-        cursoId: originalMateria?.cursoId || ''
+        cursoId: originalMateria?.cursoId ? 
+          (Array.isArray(originalMateria.cursoId) ? originalMateria.cursoId : [originalMateria.cursoId]) 
+          : []
       });
     }
   }, [modalType, selectedCurso, selectedMateria, courses, subjects]);
@@ -129,7 +131,7 @@ export default function GestionCursosMaterias() {
   };
 
   const handleMateriaSubmit = async () => {
-    if (!materiaForm.nombre.trim() || !materiaForm.cursoId) {
+    if (!materiaForm.nombre.trim() || materiaForm.cursoId.length === 0) {
       setMessage({ type: 'error', text: 'Por favor completa todos los campos requeridos' });
       return;
     }
@@ -286,22 +288,29 @@ export default function GestionCursosMaterias() {
   }
 
   const myCourses = user?.role === "docente"
-    ? courses.filter((c) => c.teacherId.includes(user.teacherId))
+    ? courses.filter((c) => c.teacherId === user.teacherId)
     : user?.role === "alumno"
     ? courses.filter((c) => c.firestoreId === studentInfo?.cursoId)
     : courses
 
   // Filtrar materias por rol
   const mySubjects = user?.role === "docente" 
-    ? subjects.filter((s) => s.teacherId == user.teacherId) 
+    ? subjects.filter((s) => s.teacherId === user.teacherId) 
     : user?.role === "alumno"
-    ? subjects.filter((s) => s.cursoId === studentInfo?.cursoId)
+    ? subjects.filter((s) => {
+        if (Array.isArray(s.cursoId)) {
+          return s.cursoId.includes(studentInfo?.cursoId);
+        }
+        return s.cursoId === studentInfo?.cursoId;
+      })
     : subjects
+
+
 
   // Para cada curso, obtener los teachers relacionados
   const coursesWithTeachers = myCourses.map((course: any) => {
     const relatedTeachers = teachers.filter((t: any) => {
-      return t.cursoId === course.firestoreId;
+      return t.firestoreId === course.teacherId;
     });
     return {
       ...course,
@@ -323,22 +332,33 @@ export default function GestionCursosMaterias() {
   // Map Firestore data to Curso type
   const mappedCourses = myCourses.map((course: any) => {
     const courseWithTeachers = coursesWithTeachers.find((c: any) => c.firestoreId === course.firestoreId);
+    const teacher = teachers.find((t: any) => t.firestoreId === course.teacherId);
     return {
       id: course.firestoreId,
       name: course.nombre || "Sin nombre",
-      teacherId: courseWithTeachers?.teachers?.map((t: any) => `${t.nombre} ${t.apellido}`) || [],
+      teacherId: teacher ? [`${teacher.nombre} ${teacher.apellido}`] : [],
       division: course.division || "Sin división"
     };
   })
 
   // Map Firestore data to Materia type
   const mappedSubjects = mySubjects.map((subject: any) => {
-    const subjectWithTeachers = subjectsWithTeachers.find((s: any) => s.firestoreId === subject.firestoreId);
+    const teacher = teachers.find((t: any) => t.firestoreId === subject.teacherId);
     return {
       id: subject.firestoreId,
       name: subject.nombre || "Sin nombre",
-      teacherId: subjectWithTeachers?.teachers?.map((t: any) => `${t.nombre} ${t.apellido}`) || [],
-      cursoIds: subject.cursoId ? myCourses.filter((c) => c.firestoreId === subject.cursoId).map((c) => c.nombre + " - " + c.division) : []
+      teacherId: teacher ? [`${teacher.nombre} ${teacher.apellido}`] : [],
+      cursoIds: (() => {
+        if (!subject.cursoId) return [];
+        
+        if (Array.isArray(subject.cursoId)) {
+          return subject.cursoId.flatMap((courseId: string) => 
+            myCourses.filter((c) => c.firestoreId === courseId).map((c) => c.nombre + " - " + c.division)
+          );
+        }
+        
+        return myCourses.filter((c) => c.firestoreId === subject.cursoId).map((c) => c.nombre + " - " + c.division);
+      })()
     };
   })
 
@@ -506,25 +526,41 @@ export default function GestionCursosMaterias() {
             )}
           </div>
           <div>
-            <Label htmlFor="materia-curso">Curso donde se imparte</Label>
-            <Select
-              value={materiaForm.cursoId}
-              onValueChange={(value) => setMateriaForm({ ...materiaForm, cursoId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione un curso" />
-              </SelectTrigger>
-              <SelectContent>
-                {myCourses.map((course: any) => (
-                  <SelectItem key={course.firestoreId} value={course.firestoreId}>
+            <Label htmlFor="materia-curso">Cursos donde se imparte</Label>
+            <div className="space-y-2">
+              {myCourses.map((course: any) => (
+                <div key={course.firestoreId} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`course-${course.firestoreId}`}
+                    checked={materiaForm.cursoId.includes(course.firestoreId)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setMateriaForm({
+                          ...materiaForm,
+                          cursoId: [...materiaForm.cursoId, course.firestoreId]
+                        });
+                      } else {
+                        setMateriaForm({
+                          ...materiaForm,
+                          cursoId: materiaForm.cursoId.filter(id => id !== course.firestoreId)
+                        });
+                      }
+                    }}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor={`course-${course.firestoreId}`} className="text-sm text-gray-700">
                     {course.nombre} - {course.division}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </label>
+                </div>
+              ))}
+            </div>
             {modalType === 'edit' && (
               <p className="text-xs text-gray-500 mt-1">
-                Valor actual: {materiaForm.cursoId || 'No seleccionado'}
+                Cursos actuales: {materiaForm.cursoId.length > 0 ? materiaForm.cursoId.map(id => {
+                  const course = myCourses.find(c => c.firestoreId === id);
+                  return course ? `${course.nombre} - ${course.division}` : id;
+                }).join(', ') : 'Ninguno seleccionado'}
               </p>
             )}
           </div>
@@ -560,6 +596,8 @@ export default function GestionCursosMaterias() {
       </Button>
     </div>
   );
+
+
 
   return (
       <div className="min-h-screen">
