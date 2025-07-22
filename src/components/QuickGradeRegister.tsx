@@ -8,15 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { 
-  BookOpen, 
-  Calendar, 
-  Users, 
   Plus, 
   Save, 
   CheckCircle, 
   XCircle,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Users
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";

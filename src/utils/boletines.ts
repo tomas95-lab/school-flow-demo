@@ -239,9 +239,39 @@ export function getPromedioTotal(materias: any[]) {
 
 // Función para generar y descargar el PDF del boletín
 export async function generarPDFBoletin(row: any) {
-  // Importar dinámicamente para evitar problemas de SSR
-  const jsPDF = (await import('jspdf')).default;
-  const autoTable = (await import('jspdf-autotable')).default;
+  try {
+    // Verificar que row tenga datos válidos
+    if (!row) {
+      throw new Error('No hay datos del boletín para generar el PDF');
+    }
+
+    // Importar dinámicamente las librerías
+    let jsPDF, autoTable;
+    
+    try {
+      const jsPDFModule = await import('jspdf');
+      jsPDF = jsPDFModule.default || jsPDFModule;
+    } catch (error) {
+      console.error('Error al importar jsPDF:', error);
+      throw new Error('Error al cargar la librería de PDF. Inténtalo de nuevo.');
+    }
+
+    try {
+      const autoTableModule = await import('jspdf-autotable');
+      autoTable = autoTableModule.default || autoTableModule;
+    } catch (error) {
+      console.error('Error al importar jspdf-autotable:', error);
+      throw new Error('Error al cargar la librería de tablas PDF. Inténtalo de nuevo.');
+    }
+
+    // Verificar que las librerías estén disponibles
+    if (typeof jsPDF === 'undefined') {
+      throw new Error('La librería jsPDF no está disponible');
+    }
+
+    if (typeof autoTable === 'undefined') {
+      throw new Error('La librería autoTable no está disponible');
+    }
 
   const doc = new jsPDF();
   
@@ -269,32 +299,42 @@ export async function generarPDFBoletin(row: any) {
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Nombre: ${row.Nombre}`, 20, 65);
-  doc.text(`Promedio General: ${row.promediototal.toFixed(1)}`, 20, 75);
+    doc.text(`Nombre: ${row.Nombre || 'N/A'}`, 20, 65);
+    doc.text(`Promedio General: ${(row.promediototal || 0).toFixed(1)}`, 20, 75);
   doc.text(`Estado: ${row.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}`, 20, 85);
-  doc.text(`Alertas: ${row.alertas}`, 20, 95);
+    doc.text(`Alertas: ${row.alertas || 0}`, 20, 95);
 
   // Datos de asistencia si están disponibles
-  if (row.asistencia) {
+    if (row.asistencia && row.asistencia.porcentaje !== undefined) {
     doc.text(`Asistencia: ${row.asistencia.porcentaje}%`, 20, 105);
-    doc.text(`Clases: ${row.asistencia.presentes}/${row.asistencia.total}`, 20, 115);
+      doc.text(`Clases: ${row.asistencia.presentes || 0}/${row.asistencia.total || 0}`, 20, 115);
   }
 
   // Estadísticas
+    const materias = row.materias || [];
   const stats = {
-    totalMaterias: row.materias?.length || 0,
-    materiasAprobadas: row.materias?.filter((m: any) => {
-      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      totalMaterias: materias.length,
+      materiasAprobadas: materias.filter((m: any) => {
+        const t1 = m.t1 || m.T1 || 0;
+        const t2 = m.t2 || m.T2 || 0;
+        const t3 = m.t3 || m.T3 || 0;
+        const promedio = m.promedio || (t1 + t2 + t3) / 3;
       return promedio >= 7.0;
-    }).length || 0,
-    materiasDestacadas: row.materias?.filter((m: any) => {
-      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      }).length,
+      materiasDestacadas: materias.filter((m: any) => {
+        const t1 = m.t1 || m.T1 || 0;
+        const t2 = m.t2 || m.T2 || 0;
+        const t3 = m.t3 || m.T3 || 0;
+        const promedio = m.promedio || (t1 + t2 + t3) / 3;
       return promedio >= 9.0;
-    }).length || 0,
-    materiasEnRiesgo: row.materias?.filter((m: any) => {
-      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      }).length,
+      materiasEnRiesgo: materias.filter((m: any) => {
+        const t1 = m.t1 || m.T1 || 0;
+        const t2 = m.t2 || m.T2 || 0;
+        const t3 = m.t3 || m.T3 || 0;
+        const promedio = m.promedio || (t1 + t2 + t3) / 3;
       return promedio < 7.0;
-    }).length || 0
+      }).length
   };
 
   doc.setFontSize(14);
@@ -309,22 +349,28 @@ export async function generarPDFBoletin(row: any) {
   doc.text(`En Riesgo: ${stats.materiasEnRiesgo}`, 20, 175);
 
   // Tabla de calificaciones
+    if (materias.length > 0) {
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('CALIFICACIONES POR MATERIA', 20, 195);
 
   // Preparar datos para la tabla
-  const tableData = row.materias?.map((materia: any) => {
-    const promedio = (materia.t1 + materia.t2 + materia.t3) / 3;
+      const tableData = materias.map((materia: any) => {
+        // Manejar tanto T1/T2/T3 como t1/t2/t3
+        const t1 = materia.t1 || materia.T1 || 0;
+        const t2 = materia.t2 || materia.T2 || 0;
+        const t3 = materia.t3 || materia.T3 || 0;
+        const promedio = materia.promedio || (t1 + t2 + t3) / 3;
+        
     return [
-      materia.nombre,
-      materia.t1.toFixed(1),
-      materia.t2.toFixed(1),
-      materia.t3.toFixed(1),
+          materia.nombre || 'N/A',
+          t1.toFixed(1),
+          t2.toFixed(1),
+          t3.toFixed(1),
       promedio.toFixed(1),
       promedio >= 7.0 ? 'Aprobada' : 'Reprobada'
     ];
-  }) || [];
+      });
 
   // Generar tabla
   autoTable(doc, {
@@ -352,10 +398,10 @@ export async function generarPDFBoletin(row: any) {
 
   // Comentario general si existe
   if (row.comentario) {
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+        const finalY = (doc as any).lastAutoTable?.finalY || 250;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('COMENTARIO GENERAL', 20, finalY);
+        doc.text('COMENTARIO GENERAL', 20, finalY + 10);
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -363,7 +409,17 @@ export async function generarPDFBoletin(row: any) {
     // Dividir el comentario en líneas si es muy largo
     const maxWidth = 170;
     const lines = doc.splitTextToSize(row.comentario, maxWidth);
-    doc.text(lines, 20, finalY + 10);
+        doc.text(lines, 20, finalY + 20);
+      }
+    } else {
+      // Si no hay materias, mostrar mensaje
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CALIFICACIONES POR MATERIA', 20, 195);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('No hay calificaciones disponibles para este período.', 20, 205);
   }
 
   // Footer
@@ -375,6 +431,10 @@ export async function generarPDFBoletin(row: any) {
   doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 105, pageHeight - 15, { align: 'center' });
 
   // Descargar el PDF
-  const fileName = `Boletin_${row.Nombre.replace(/\s+/g, '_')}_${row.periodo || 'Academico'}.pdf`;
+    const fileName = `Boletin_${(row.Nombre || 'Estudiante').replace(/\s+/g, '_')}_${row.periodo || 'Academico'}.pdf`;
   doc.save(fileName);
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    throw new Error('Error al generar el PDF. Verifica que los datos del boletín sean válidos.');
+  }
 }

@@ -11,7 +11,7 @@ import { Separator } from './ui/separator';
 import { AuthContext } from '../context/AuthContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { useFirestoreCollection } from '../hooks/useFireStoreCollection';
+import { useFirestoreCollection } from '@/hooks/useFirestoreCollection';
 import { 
   AlertTriangle, 
   Bell, 
@@ -20,10 +20,8 @@ import {
   BookOpen, 
   Clock, 
   FileText, 
-  Settings,
   CheckCircle,
-  XCircle,
-  Info
+  XCircle
 } from 'lucide-react';
 
 interface CreateAlertModalProps {

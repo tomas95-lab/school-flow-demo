@@ -1,39 +1,33 @@
-import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
-import { useContext, useState, useEffect } from "react";
-import { subjectBelongsToCourse } from "@/utils/subjectUtils";
+import { useContext, useState, useEffect, useMemo } from "react";
+import { AuthContext } from "@/context/AuthContext";
+import {
+  Users, 
+  Calendar,
+  BookOpen,
+  Clock, 
+  TrendingUp, 
+  CheckCircle,
+  XCircle
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { format, startOfDay, subDays, eachDayOfInterval, isToday, isYesterday, parseISO, isAfter, isBefore } from "date-fns";
+import { es } from "date-fns/locale";
+import { StatsCard } from "./StatCards";
+import { SchoolSpinner } from "./SchoolSpinner";
+import { DataTable } from "./data-table";
+import { useColumnsDetalle } from "@/app/asistencias/columns";
+import { Button } from "./ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import { addDoc, collection, serverTimestamp, doc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+import QuickAttendanceRegister from "./QuickAttendanceRegister";
+import ReutilizableDialog from "./DialogReutlizable";
 import { CourseCard } from "./CourseCard";
 import type { Course } from "@/components/CourseCard";
-import { SchoolSpinner } from "./SchoolSpinner";
-import {
-  GraduationCap,
-  TrendingUp,
-  AlertTriangle,
-  UserX,
-  Calendar,
-  Users,
-  Plus,
-  BookOpen,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
-import {
-  subDays,
-  startOfDay,
-  parseISO,
-  isAfter,
-  isBefore,
-  format,
-} from "date-fns";
-import { StatsCard } from "./StatCards";
-import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { db } from "@/firebaseConfig";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
 
 export default function TeacherAttendanceOverview() {
   const { user } = useContext(AuthContext);

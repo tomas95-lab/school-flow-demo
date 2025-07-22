@@ -1,12 +1,23 @@
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
-import { AlertTriangle, Calendar, Clock, CheckCircle, X } from "lucide-react";
+import { useContext, useState, useEffect, useMemo } from "react";
+import { AuthContext } from "@/context/AuthContext";
+import { format, subDays, isToday, isYesterday } from "date-fns";
+import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format, subDays, startOfDay, endOfDay, isToday, isYesterday, isSameDay } from "date-fns";
-import { es } from "date-fns/locale";
+import { 
+  AlertTriangle, 
+  Calendar, 
+  Users, 
+  Clock, 
+  TrendingUp, 
+  CheckCircle, 
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  X
+} from "lucide-react";
 
 type Subject = {
   firestoreId: string;

@@ -30,6 +30,9 @@ firebase.json
 firestore.indexes.json
 logo2.png.specstory/
 .cursorindexingignore
-.src/scripts/
+.src.scripts/
 deploy-rules.js
 firestore.rules
+.scripts
+# Scripts directory
+src/scripts/

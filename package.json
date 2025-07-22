@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "export-data": "node src/scripts/tables.js",
-    "deploy-rules": "node deploy-rules.js"
+    "deploy-rules": "node deploy-rules.js",
+    "test": "node scripts/testSystem.js",
+    "test:system": "node scripts/testSystem.js",
+    "test:functionality": "node scripts/testFunctionality.js"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",

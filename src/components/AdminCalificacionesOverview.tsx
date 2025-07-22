@@ -2,9 +2,27 @@ import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { CourseCard } from "./CourseCard";
 import { StatsCard } from "./StatCards";
 import { Percent, TriangleAlert } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function AdminCalificacionesOverview() {
+  const { user } = useContext(AuthContext);
+  
+  // Verificar permisos de acceso
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-white p-8 rounded-lg shadow-sm border">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Denegado</h2>
+            <p className="text-gray-600">Solo los administradores pueden acceder a esta vista.</p>
+            <p className="text-gray-500 text-sm mt-2">Contacta al administrador si crees que esto es un error.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   const { data: courses } = useFirestoreCollection("courses");
   const { data: subjects } = useFirestoreCollection("subjects");
   const { data: calificaciones } = useFirestoreCollection("calificaciones");

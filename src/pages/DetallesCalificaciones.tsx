@@ -1,5 +1,5 @@
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useState, useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Download, Clock } from 'lucide-react';
@@ -36,62 +36,128 @@ export default function DetallesCalificaciones() {
     const [startDate, setStartDate] = useState<Date>();
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
-    let course;
-    let studentsInCourse: typeof students = [];
-    let teacherSubjectId: string | undefined;
-    let teacher:any;
-    let subject: any;
-    if (user?.role === "admin"){
-        const teacher = teachers.find(t => t.firestoreId == user?.teacherId );
-        course = courses.find(c => c.firestoreId == teacher?.cursoId);
-        studentsInCourse = students.filter(s => s.cursoId === teacher?.cursoId);
-    } else if (user?.role === "docente") {
-        // DOCENTE: buscar curso y materia asignada
-        teacher = teachers.find(t => t.firestoreId == user?.teacherId );
-        course = courses.find(c => c.firestoreId == teacher?.cursoId);
-        studentsInCourse = students.filter(s => s.cursoId === teacher?.cursoId);
-        // Buscar materia asignada al docente
-        subject = subjects.find(s => s.teacherId === user.teacherId && s.cursoId === teacher?.cursoId);
-        teacherSubjectId = subject?.firestoreId;
-    } else {
-        course = courses.find(c => c.firestoreId === id);
-        studentsInCourse = students.filter(s => s.cursoId === id);
-    }
+    // Funciones optimizadas con useCallback
+    const handleStudentSelection = useCallback((studentId: string) => {
+        setSelectedStudentIds(prev => 
+            prev.includes(studentId) 
+                ? prev.filter(id => id !== studentId)
+                : [...prev, studentId]
+        );
+    }, []);
 
-    const calificacionesFiltradas = (calificaciones.filter(c => {
+    const handleDateChange = useCallback((date: Date | undefined, type: 'start' | 'end') => {
+        if (type === 'start') {
+            setStartDate(date);
+        } else {
+            setEndDate(date);
+        }
+    }, []);
+
+    // Mover todos los useMemo al inicio para evitar problemas con hooks
+    // Verificar permisos de acceso
+    const canAccessCourse = useMemo(() => {
+        if (!user) return false;
+        
+        if (user.role === "admin") return true;
+        
+        if (user.role === "docente") {
+            const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
+            if (id) {
+                return teacherSubjects.some(s => {
+                    if (Array.isArray(s.cursoId)) {
+                        return s.cursoId.includes(id);
+                    }
+                    return s.cursoId === id;
+                });
+            }
+            return teacherSubjects.length > 0;
+        }
+        
+        return false;
+    }, [user, id, subjects]);
+
+    const course = useMemo(() => {
+        if (user?.role === "admin" && id) {
+            return courses.find(c => c.firestoreId === id);
+        } else if (user?.role === "docente") {
+            const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
+            const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
+            
+            if (id) {
+                const foundCourse = courses.find(c => c.firestoreId === id);
+                const hasAccess = teacherSubjects.some(s => {
+                    if (Array.isArray(s.cursoId)) {
+                        return s.cursoId.includes(id);
+                    }
+                    return s.cursoId === id;
+                });
+                return hasAccess ? foundCourse : null;
+            } else {
+                const teacherCourseIds = new Set<string>();
+                teacherSubjects.forEach(s => {
+                    if (Array.isArray(s.cursoId)) {
+                        s.cursoId.forEach(courseId => teacherCourseIds.add(courseId));
+                    } else if (s.cursoId) {
+                        teacherCourseIds.add(s.cursoId);
+                    }
+                });
+                return courses.find(c => c.firestoreId && teacherCourseIds.has(c.firestoreId));
+            }
+        }
+        return null;
+    }, [user, id, courses, students, subjects, teachers]);
+
+    const studentsInCourse = useMemo(() => {
+        return course && course.firestoreId ? students.filter(s => s.cursoId === course.firestoreId) : [];
+    }, [course, students]);
+
+    const teacherSubjectId = useMemo(() => {
+        if (user?.role === "docente" && course && course.firestoreId) {
+            const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
+            const subject = teacherSubjects.find(s => {
+                if (Array.isArray(s.cursoId)) {
+                    return s.cursoId.includes(course.firestoreId);
+                }
+                return s.cursoId === course.firestoreId;
+            });
+            return subject?.firestoreId;
+        }
+        return undefined;
+    }, [user, course, subjects]);
+
+    const calificacionesFiltradas = useMemo(() => {
+        return calificaciones.filter(c => {
         const student = students.find(student => student.firestoreId === c.studentId && student.cursoId === course?.firestoreId);
         if (!student) return false;
         if (user?.role === "docente" && teacherSubjectId) {
             return c.subjectId === teacherSubjectId;
         }
         return true;
-    })
-    ).sort((a, b) => {
+        }).sort((a, b) => {
         const studentA = students.find(s => s.firestoreId === a.studentId);
         const studentB = students.find(s => s.firestoreId === b.studentId);
         return studentA?.nombre.localeCompare(studentB?.nombre);
     });
+    }, [calificaciones, students, course, user, teacherSubjectId]);
 
-    // 2) Mapear y agregar nombre de materia
-    const resultado: CalificacionesRow[] = calificacionesFiltradas.map(c => {
-        // buscar materia como antes
+    const resultado = useMemo(() => {
+        return calificacionesFiltradas.map(c => {
         const materia = subjects.find(s => s.firestoreId === c.subjectId);
-
-        // buscar alumno en el curso
         const estudiante = studentsInCourse.find(s => s.firestoreId === c.studentId);
 
         return {
-            id: c.firestoreId ?? "", // o el campo correcto para 'id'
-            Actividad: c.Actividad ?? "", // ajusta según el nombre real del campo
+                id: c.firestoreId ?? "",
+                Actividad: c.Actividad ?? "",
             Nombre: estudiante
             ? `${estudiante.nombre} ${estudiante.apellido}`
             : "—",
-            Comentario: c.Comentario ?? "Sin comentario", // ajusta según el nombre real del campo
-            Valor: c.valor, // asegurar tipo number
-            Materia: materia?.nombre || "—", // nombre correcto y mayúscula
+                Comentario: c.Comentario ?? "Sin comentario",
+                Valor: c.valor,
+                Materia: materia?.nombre || "—",
             fecha: c.fecha
         };
     });
+    }, [calificacionesFiltradas, subjects, studentsInCourse]);
 
     const averageGrade = useMemo(() => {
         if (!calificacionesFiltradas.length) return "0.00";
@@ -99,7 +165,7 @@ export default function DetallesCalificaciones() {
         return (total / calificacionesFiltradas.length).toFixed(2);
     }, [calificacionesFiltradas]);
 
-    const [pctAprob] = useMemo(() => {
+    const [pctAprob, pctReprob] = useMemo(() => {
         const total = calificacionesFiltradas.length;
         if (!total) return ["0.00", "0.00"];
         const aprobCount = calificacionesFiltradas.filter(c => c.valor >= 7).length;
@@ -108,15 +174,40 @@ export default function DetallesCalificaciones() {
         return [pctA, pctR];
     }, [calificacionesFiltradas]);
 
-    const desapCount = calificacionesFiltradas.filter((c) => c.valor <= 7).length;
+    const desapCount = useMemo(() => {
+        return calificacionesFiltradas.filter((c) => c.valor <= 7).length;
+    }, [calificacionesFiltradas]);
 
-    const alumnoFilterOptions = studentsInCourse.map(s => {
-        const fullName = `${s.nombre} ${s.apellido}`;
-        return { label: fullName, value: fullName };
-    });
-    const materiaOptions = subjects.filter(s => s.cursoId === course?.firestoreId).map(s => ({ label: s.nombre, value: s.nombre }));
+    // Opciones de filtro
+    const alumnoFilterOptions = useMemo(() => {
+        return studentsInCourse.map(s => ({ label: `${s.nombre} ${s.apellido}`, value: `${s.nombre} ${s.apellido}` }));
+    }, [studentsInCourse]);
+
+    const materiaOptions = useMemo(() => {
+        return subjects.filter(s => s.cursoId === course?.firestoreId || "").map(s => ({ label: s.nombre, value: s.nombre }));
+    }, [subjects, course]);
+
+    // Verificar acceso denegado para docente
+    if (user?.role === "docente" && id && !course) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="bg-white p-8 rounded-lg shadow-sm border">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Denegado</h2>
+                        <p className="text-gray-600">No tienes permisos para ver las calificaciones de este curso.</p>
+                        <p className="text-gray-500 text-sm mt-2">Solo puedes acceder a los cursos donde enseñas.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Redirigir alumno
+    if (user?.role === "alumno") {
+        return <Navigate to="/calificaciones" replace />;
+    }
     
-    const exportCalificacionesToCSV = () => {
+    const exportCalificacionesToCSV = useCallback(() => {
         if (!course) return;
         // Cabeceras
         const rows = [
@@ -155,7 +246,7 @@ export default function DetallesCalificaciones() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
+    }, [course, resultado]);
 
     if (loading) {
         return (
@@ -165,10 +256,6 @@ export default function DetallesCalificaciones() {
                 timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
             />
         );
-    }
-
-    if (user?.role == "alumno"){
-        return <Navigate to="/calificaciones" replace />;
     }
 
     return (
@@ -334,7 +421,7 @@ export default function DetallesCalificaciones() {
           </div>
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 flex flex-col gap-4">
             <h1 className="text-2xl font-bold text-gray-900">
-              Evaluaciones Registradas {user?.role === "docente" ? (subject?.nombre) : ("")}
+              Evaluaciones Registradas {user?.role === "docente" ? (course?.nombre) : ("")}
             </h1>
             <div className="flex flex-col gap-2 h-full">
               {user?.role === "admin" ? (

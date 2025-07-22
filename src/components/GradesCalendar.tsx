@@ -13,7 +13,8 @@ import {
   TrendingUp, 
   CheckCircle, 
   XCircle,
-  BookOpen
+  BookOpen,
+  Lock
 } from "lucide-react";
 import { 
   format, 
@@ -21,7 +22,6 @@ import {
   endOfMonth, 
   eachDayOfInterval, 
   isSameMonth, 
-  isSameDay, 
   isToday,
   addMonths,
   subMonths,
@@ -43,6 +43,13 @@ type Course = {
   division: string;
 };
 
+type Subject = {
+  firestoreId: string;
+  nombre: string;
+  teacherId: string;
+  cursoId: string | string[];
+};
+
 type Grade = {
   firestoreId: string;
   studentId: string;
@@ -59,10 +66,12 @@ export default function GradesCalendar() {
   const { user } = useContext(AuthContext);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCourse, setSelectedCourse] = useState("all");
+  const [selectedSubject, setSelectedSubject] = useState("all");
 
   // Obtener datos
   const { data: courses } = useFirestoreCollection<Course>("courses");
   const { data: students } = useFirestoreCollection<Student>("students");
+  const { data: subjects } = useFirestoreCollection<Subject>("subjects");
   const { data: grades } = useFirestoreCollection<Grade>("calificaciones");
 
   // Filtrar cursos según el rol
@@ -73,10 +82,27 @@ export default function GradesCalendar() {
       return courses;
     } else if (user?.role === "docente") {
       // Para docentes, mostrar solo cursos donde enseñan
-      return courses;
+      if (!subjects || !user.teacherId) return [];
+      
+      // Obtener materias del docente
+      const teacherSubjects = subjects.filter(subject => 
+        subject.teacherId === user.teacherId
+      );
+      
+      // Obtener IDs de cursos donde enseña
+      const teacherCourseIds = new Set<string>();
+      teacherSubjects.forEach(subject => {
+        if (Array.isArray(subject.cursoId)) {
+          subject.cursoId.forEach(courseId => teacherCourseIds.add(courseId));
+        } else {
+          teacherCourseIds.add(subject.cursoId);
+        }
+      });
+      
+      return courses.filter(course => teacherCourseIds.has(course.firestoreId));
     } else if (user?.role === "alumno") {
       // Para alumnos, mostrar solo su curso
-      const student = students?.find(s => s.firestoreId === user.uid);
+      const student = students?.find(s => s.firestoreId === user.studentId);
       if (student) {
         return courses.filter(c => c.firestoreId === student.cursoId);
       }
@@ -84,7 +110,33 @@ export default function GradesCalendar() {
     }
     
     return [];
-  }, [courses, students, user]);
+  }, [courses, students, subjects, user]);
+
+  // Filtrar materias según el rol
+  const availableSubjects = useMemo(() => {
+    if (!subjects) return [];
+    
+    if (user?.role === "admin") {
+      return subjects;
+    } else if (user?.role === "docente") {
+      // Solo materias del docente
+      return subjects.filter(subject => subject.teacherId === user.teacherId);
+    } else if (user?.role === "alumno") {
+      // Solo materias del curso del alumno
+      const student = students?.find(s => s.firestoreId === user.studentId);
+      if (student) {
+        return subjects.filter(subject => {
+          if (Array.isArray(subject.cursoId)) {
+            return subject.cursoId.includes(student.cursoId);
+          }
+          return subject.cursoId === student.cursoId;
+        });
+      }
+      return [];
+    }
+    
+    return [];
+  }, [subjects, students, user]);
 
   // Calcular días del mes
   const monthStart = startOfMonth(currentDate);
@@ -95,20 +147,40 @@ export default function GradesCalendar() {
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  // Filtrar calificaciones según el curso seleccionado
+  // Filtrar calificaciones según el curso y materia seleccionados
   const filteredGrades = useMemo(() => {
     if (!grades) return [];
     
-    if (selectedCourse === "all") {
-      return grades;
+    let filtered = grades;
+    
+    // Filtrar por curso seleccionado
+    if (selectedCourse !== "all") {
+      const courseStudents = students?.filter(s => s.cursoId === selectedCourse) || [];
+      const studentIds = courseStudents.map(s => s.firestoreId);
+      filtered = filtered.filter(g => studentIds.includes(g.studentId));
+    } else {
+      // Si es "todos", filtrar por cursos disponibles según el rol
+      const availableCourseIds = availableCourses.map(c => c.firestoreId);
+      const availableStudentIds = students
+        ?.filter(s => availableCourseIds.includes(s.cursoId))
+        .map(s => s.firestoreId) || [];
+      filtered = filtered.filter(g => availableStudentIds.includes(g.studentId));
     }
     
-    // Filtrar por estudiantes del curso seleccionado
-    const courseStudents = students?.filter(s => s.cursoId === selectedCourse) || [];
-    const studentIds = courseStudents.map(s => s.firestoreId);
+    // Filtrar por materia seleccionada
+    if (selectedSubject !== "all") {
+      const subject = availableSubjects.find(s => s.nombre === selectedSubject);
+      if (subject) {
+        filtered = filtered.filter(g => g.subjectId === subject.firestoreId);
+      }
+    } else {
+      // Si es "todas", filtrar por materias disponibles según el rol
+      const availableSubjectIds = availableSubjects.map(s => s.firestoreId);
+      filtered = filtered.filter(g => availableSubjectIds.includes(g.subjectId));
+    }
     
-    return grades.filter(g => studentIds.includes(g.studentId));
-  }, [grades, selectedCourse, students]);
+    return filtered;
+  }, [grades, selectedCourse, selectedSubject, students, availableCourses, availableSubjects]);
 
   // Calcular estadísticas del mes
   const monthStats = useMemo(() => {
@@ -184,6 +256,29 @@ export default function GradesCalendar() {
   const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
+  // Verificar permisos
+  const canViewCalendar = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
+
+  if (!canViewCalendar) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Lock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Acceso Restringido
+              </h3>
+              <p className="text-gray-600">
+                No tienes permisos para ver el calendario de calificaciones.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header del calendario */}
@@ -193,6 +288,16 @@ export default function GradesCalendar() {
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-indigo-600" />
               Calendario de Calificaciones
+              {user?.role === "docente" && (
+                <Badge variant="secondary" className="ml-2">
+                  Mis Cursos
+                </Badge>
+              )}
+              {user?.role === "alumno" && (
+                <Badge variant="secondary" className="ml-2">
+                  Mi Curso
+                </Badge>
+              )}
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={goToToday}>
@@ -216,22 +321,47 @@ export default function GradesCalendar() {
               </Button>
             </div>
             
-            {/* Selector de curso */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Curso:</span>
-              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Todos los cursos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los cursos</SelectItem>
-                  {availableCourses.map(course => (
-                    <SelectItem key={course.firestoreId} value={course.firestoreId}>
-                      {course.nombre} - {course.division}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Filtros */}
+            <div className="flex items-center gap-4">
+              {/* Selector de curso */}
+              {availableCourses.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Curso:</span>
+                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Todos los cursos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los cursos</SelectItem>
+                      {availableCourses.map(course => (
+                        <SelectItem key={course.firestoreId} value={course.firestoreId}>
+                          {course.nombre} - {course.division}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              {/* Selector de materia */}
+              {availableSubjects.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Materia:</span>
+                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Todas las materias" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las materias</SelectItem>
+                      {availableSubjects.map(subject => (
+                        <SelectItem key={subject.firestoreId} value={subject.nombre}>
+                          {subject.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
 

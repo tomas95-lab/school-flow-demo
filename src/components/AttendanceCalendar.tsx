@@ -10,9 +10,10 @@ import {
   ChevronRight, 
   Calendar, 
   Users, 
+  TrendingUp, 
   CheckCircle, 
   XCircle,
-  TrendingUp
+  BookOpen
 } from "lucide-react";
 import { 
   format, 
@@ -20,6 +21,7 @@ import {
   endOfMonth, 
   eachDayOfInterval, 
   isSameMonth, 
+  isSameDay, 
   isToday,
   addMonths,
   subMonths,
