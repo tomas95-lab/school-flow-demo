@@ -158,14 +158,20 @@ export default function AlumnoAlertasOverview() {
                         alert.priority === "medium" ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
                         "bg-blue-100 text-blue-800 border-blue-200"
                       }`}>
-                        {alert.priority}
+                        {alert.priority === "critical" ? "Crítica" :
+                         alert.priority === "high" ? "Alta" :
+                         alert.priority === "medium" ? "Media" :
+                         alert.priority === "low" ? "Baja" : alert.priority}
                       </Badge>
                       <Badge className={`text-xs ${
                         alert.type === "academic" ? "bg-purple-100 text-purple-800 border-purple-200" :
                         alert.type === "attendance" ? "bg-green-100 text-green-800 border-green-200" :
                         "bg-gray-100 text-gray-800 border-gray-200"
                       }`}>
-                        {alert.type}
+                        {alert.type === "academic" ? "Académica" :
+                         alert.type === "attendance" ? "Asistencia" :
+                         alert.type === "behavior" ? "Comportamiento" :
+                         alert.type === "general" ? "General" : alert.type}
                       </Badge>
                     </div>
                   </div>

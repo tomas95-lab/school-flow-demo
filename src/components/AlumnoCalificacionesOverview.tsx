@@ -74,10 +74,10 @@ export default function AlumnoCalificacionesOverview() {
         if (!calificacionesAlumno.length) {
             return {
                 totalGrades: 0,
-                averageGrade: "0.00",
+                averageGrade: "Sin datos",
                 passingGrades: 0,
                 failingGrades: 0,
-                passingRate: "0.0",
+                passingRate: "Sin datos",
                 subjects: 0,
                 recentGrades: 0
             };

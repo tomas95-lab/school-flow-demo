@@ -77,7 +77,7 @@ export default function TeacherCalificacionesOverview() {
 
     // Calcular estadísticas
     const averageGrade = useMemo(() => {
-        if (!teacherGrades.length) return "0.00";
+        if (!teacherGrades.length) return "Sin datos";
         const total = teacherGrades.reduce(
             (sum: number, { valor }: any) => sum + valor,
             0
@@ -87,7 +87,7 @@ export default function TeacherCalificacionesOverview() {
 
     const [pctAprob, pctReprob] = useMemo(() => {
         const total = teacherGrades.length;
-        if (!total) return ["0.00", "0.00"];
+        if (!total) return ["Sin datos", "Sin datos"];
         const aprobCount = teacherGrades.filter(c => c.valor >= 7).length;
         const pctA = ((aprobCount / total) * 100).toFixed(2);
         const pctR = (100 - parseFloat(pctA)).toFixed(2);

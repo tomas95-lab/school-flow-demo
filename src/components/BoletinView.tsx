@@ -130,11 +130,15 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500">
-                  {row.fechaLectura ? 
-                    `Leído: ${new Date(row.fechaLectura).toLocaleDateString('es-ES')}` : 
-                    'No leído'
+                  {row.fechaGeneracion && 
+                    `Generado: ${new Date(row.fechaGeneracion).toLocaleDateString('es-ES')}`
                   }
                 </p>
+                {row.fechaLectura && (
+                  <p className="text-xs text-gray-500">
+                    Leído: {new Date(row.fechaLectura).toLocaleDateString('es-ES')}
+                  </p>
+                )}
               </div>
             </div>
           </div>

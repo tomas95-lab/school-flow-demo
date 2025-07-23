@@ -155,16 +155,6 @@ export function BoletinComponent({ row }: { row: any }) {
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-3">
-            <AlertTriangle className="w-5 h-5 text-gray-500" />
-            <div>
-              <p className="text-sm text-gray-600">Alertas</p>
-              <p className={`font-semibold ${row.alertas > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                {row.alertas}
-              </p>
-            </div>
-          </div>
 
           {row.asistencia && (
             <>

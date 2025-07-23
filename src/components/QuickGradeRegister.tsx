@@ -261,11 +261,11 @@ export default function QuickGradeRegister() {
             )}
             
             <div>
-              <Label htmlFor="date">Fecha</Label>
+              <Label className="text-sm font-medium text-gray-700">Fecha</Label>
               <Input
-                id="date"
                 type="date"
                 value={selectedDate}
+                max={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setSelectedDate(e.target.value)}
               />
             </div>

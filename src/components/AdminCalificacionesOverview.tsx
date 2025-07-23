@@ -28,7 +28,7 @@ export default function AdminCalificacionesOverview() {
   const { data: calificaciones } = useFirestoreCollection("calificaciones");
 
   const averageGrade = useMemo(() => {
-    if (!calificaciones.length) return "0.00";
+    if (!calificaciones.length) return "Sin datos";
     const total = calificaciones.reduce(
       (sum: number, { valor }: any) => sum + valor,
       0
@@ -38,7 +38,7 @@ export default function AdminCalificacionesOverview() {
 
   const [pctAprob, pctReprob] = useMemo(() => {
     const total = calificaciones.length;
-    if (!total) return ["0.00", "0.00"];
+    if (!total) return ["Sin datos", "Sin datos"];
     const aprobCount = calificaciones.filter(c => c.valor >= 7).length;
     const pctA = ((aprobCount / total) * 100).toFixed(2);
     const pctR = (100 - parseFloat(pctA)).toFixed(2);

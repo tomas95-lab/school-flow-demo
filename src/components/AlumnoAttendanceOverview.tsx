@@ -208,23 +208,35 @@ export default function AlumnoAttendanceOverview(){
                   </div>
                   {!isCollapsed && (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <DataTable<AttendanceRow, any>
-                        columns={useColumnsDetalle(user)}
-                        data={data}
-                        placeholder="Buscar estudiante..."
-                        filters={[
-                          { 
-                            type: "button", 
-                            label: "Solo presentes", 
-                            onClick: t => t.getColumn("present")?.setFilterValue(true) 
-                          },
-                          { 
-                            type: "button", 
-                            label: "Solo ausentes", 
-                            onClick: t => t.getColumn("present")?.setFilterValue(false) 
-                          }
-                        ]}
-                      />
+                      {data.length === 0 ? (
+                        <div className="text-center py-8">
+                          <UserX className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            No hay asistencias registradas
+                          </h3>
+                          <p className="text-gray-600">
+                            No se han registrado asistencias para esta materia aún.
+                          </p>
+                        </div>
+                      ) : (
+                        <DataTable<AttendanceRow, any>
+                          columns={useColumnsDetalle(user)}
+                          data={data}
+                          placeholder="Buscar estudiante..."
+                          filters={[
+                            { 
+                              type: "button", 
+                              label: "Solo presentes", 
+                              onClick: t => t.getColumn("present")?.setFilterValue(true) 
+                            },
+                            { 
+                              type: "button", 
+                              label: "Solo ausentes", 
+                              onClick: t => t.getColumn("present")?.setFilterValue(false) 
+                            }
+                          ]}
+                        />
+                      )}
                     </div>
                   )}
                 </div>

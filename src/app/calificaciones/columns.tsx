@@ -164,6 +164,7 @@ export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
             <ReutilizableDialog 
               small
               open={open}
+              onOpenChange={setOpen}
               title={
                 <div className="flex items-center gap-2">
                   <Edit className="h-6 w-6 text-blue-600" />

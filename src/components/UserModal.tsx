@@ -210,7 +210,7 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
 
 
   const formContent = (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" id="user-form">
       {errors.general && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           <div className="flex items-center gap-2">
@@ -365,7 +365,7 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
       </Button>
       <Button
         type="submit"
-        onClick={handleSubmit}
+        form="user-form"
         disabled={loading}
         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium"
       >

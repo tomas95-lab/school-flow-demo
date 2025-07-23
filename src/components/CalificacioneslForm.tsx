@@ -306,6 +306,7 @@ export default function CrearCalificacion({
               className={`w-full ${errors.fecha ? 'border-red-500 focus:ring-red-500' : ''}`}
               type="date"
               value={formData.fecha}
+              max={new Date().toISOString().split('T')[0]}
               onChange={(e) => handleInputChange('fecha', e.target.value)}
             />
             {errors.fecha && (

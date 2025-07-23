@@ -691,7 +691,7 @@ export default function GestionCursosMaterias() {
                     <h3 className="text-xl font-semibold text-gray-900">
                       {user?.role === "alumno" ? "Mis Cursos Inscritos" : "Mis Cursos"}
                     </h3>
-                    {(user?.role === "admin" || user?.role === "docente") && (
+                    {user?.role === "admin" && (
                       <Button onClick={handleCreateCurso} className="flex items-center gap-2">
                         <Plus className="h-4 w-4" />
                         Crear Curso
@@ -700,13 +700,13 @@ export default function GestionCursosMaterias() {
                   </div>
                   {mappedCourses.length > 0 ? (
                     <DataTable 
-                      columns={useColumnsCursos(handleEditCurso, handleDeleteCurso, handleViewCurso)} 
+                      columns={useColumnsCursos(handleEditCurso, handleDeleteCurso, handleViewCurso, user?.role)} 
                       data={mappedCourses} 
                     />
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-gray-500">No hay cursos disponibles para mostrar.</p>
-                      {(user?.role === "admin" || user?.role === "docente") && (
+                      {user?.role === "admin" && (
                         <Button onClick={handleCreateCurso} className="mt-4" variant="outline">
                           <Plus className="h-4 w-4 mr-2" />
                           Crear primer curso
@@ -721,7 +721,7 @@ export default function GestionCursosMaterias() {
                     <h3 className="text-xl font-semibold text-gray-900">
                       {user?.role === "alumno" ? "Mis Materias Inscritas" : "Mis Materias"}
                     </h3>
-                    {(user?.role === "admin" || user?.role === "docente") && (
+                    {user?.role === "admin" && (
                       <Button onClick={handleCreateMateria} className="flex items-center gap-2">
                         <Plus className="h-4 w-4" />
                         Crear Materia
@@ -730,13 +730,13 @@ export default function GestionCursosMaterias() {
                   </div>
                   {mappedSubjects.length > 0 ? (
                     <DataTable 
-                      columns={useColumnsMaterias(handleEditMateria, handleDeleteMateria, handleViewMateria)} 
+                      columns={useColumnsMaterias(handleEditMateria, handleDeleteMateria, handleViewMateria, user?.role)} 
                       data={mappedSubjects} 
                     />
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-gray-500">No hay materias disponibles para mostrar.</p>
-                      {(user?.role === "admin" || user?.role === "docente") && (
+                      {user?.role === "admin" && (
                         <Button onClick={handleCreateMateria} className="mt-4" variant="outline">
                           <Plus className="h-4 w-4 mr-2" />
                           Crear primera materia
