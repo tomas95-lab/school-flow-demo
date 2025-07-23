@@ -21,12 +21,16 @@ export default function AlumnoAttendanceOverview(){
     // Define studentsInCourse before using it
     const studentsInCourse = studentInfo ? [studentInfo] : []
 
+
+    console.log("***subjects****:", subjects);
     const subjectsInCourse = useMemo(() => {
-        const base = subjects.filter(s => s.cursoId === studentInfo?.cursoId);
+        const base = subjects.filter(s => s.cursoId.map((id: string) => id === studentInfo?.cursoId));
         if (user?.role === "admin" || user?.role === "alumno") return base;
         return base;
     }, [subjects, user, studentInfo]);
 
+
+    console.log("AlumnoAttendanceOverview - Student Info:", studentInfo);
     // Inicializar estado como vacío
     const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set());
 
@@ -51,7 +55,7 @@ export default function AlumnoAttendanceOverview(){
             a.studentId == studentId &&
             a.subject === subject.nombre
         );
-        
+    
         // Contar presentes y ausentes directamente de los registros
         const presentRecords = subjectAttendances.filter(a => a.present === true).length;
         const absentRecords = subjectAttendances.filter(a => a.present === false).length;
@@ -110,6 +114,8 @@ export default function AlumnoAttendanceOverview(){
         };
     }, [studentsInCourse, subjectsInCourse, asistencias]);
 
+
+    console.log("AlumnoAttendanceOverview - Course Stats:", courseStats);
     const getAttendanceColor = (percentage: number) => {
         if (percentage >= 90) return "green";
         if (percentage >= 80) return "blue";
@@ -123,6 +129,8 @@ export default function AlumnoAttendanceOverview(){
         setCollapsedSubjects(c);
     };
 
+
+    console.log("AlumnoAttendanceOverview - Collapsed Subjects:", subjectsInCourse);
     return (
         <Card className="border-0 shadow-sm">
           <CardHeader>

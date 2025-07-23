@@ -101,7 +101,7 @@ export default function AttendanceCalendar() {
       return courses.filter(course => teacherCourseIds.has(course.firestoreId));
     } else if (user?.role === "alumno") {
       // Alumno ve solo su curso
-      const student = students?.find(s => s.firestoreId === user.uid);
+      const student = students?.find(s => s.firestoreId === user.studentId);
       if (student) {
         return courses.filter(c => c.firestoreId === student.cursoId);
       }
@@ -111,6 +111,8 @@ export default function AttendanceCalendar() {
     return [];
   }, [courses, students, subjects, user]);
 
+
+  console.log("AttendanceCalendar - Available Courses:", availableCourses);
   // Calcular días del mes
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
