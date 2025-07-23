@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { setDoc, doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
+import { toast } from 'sonner';
 import { UserPlus, Edit, Loader2 } from 'lucide-react';
 import ReutilizableDialog from './DialogReutlizable';
 
@@ -35,7 +36,6 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
 
   // Cargar datos del usuario si estamos en modo edición
   useEffect(() => {
-    console.log('UserModal useEffect - mode:', mode, 'user:', user);
     if (mode === 'edit' && user) {
       setFormData({
         name: user.name || '',
@@ -136,6 +136,9 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
         });
 
         onUserCreated?.();
+        toast.success('Usuario creado exitosamente', {
+          description: 'El usuario ha sido creado y puede iniciar sesión.'
+        });
       } else {
         // Actualizar usuario existente
         if (user?.id) {
@@ -150,6 +153,9 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
         }
 
         onUserUpdated?.();
+        toast.success('Usuario actualizado exitosamente', {
+          description: 'Los datos del usuario han sido actualizados.'
+        });
       }
 
       // Resetear formulario
@@ -169,12 +175,24 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
       // Manejar errores específicos de Firebase Auth
       if (error.code === 'auth/email-already-in-use') {
         setErrors({ email: 'Este email ya está registrado en el sistema.' });
+        toast.error('Email ya registrado', {
+          description: 'Este email ya está registrado en el sistema.'
+        });
       } else if (error.code === 'auth/weak-password') {
         setErrors({ password: 'La contraseña debe tener al menos 6 caracteres.' });
+        toast.error('Contraseña débil', {
+          description: 'La contraseña debe tener al menos 6 caracteres.'
+        });
       } else if (error.code === 'auth/invalid-email') {
         setErrors({ email: 'El formato del email no es válido.' });
+        toast.error('Email inválido', {
+          description: 'El formato del email no es válido.'
+        });
       } else {
         setErrors({ general: 'Error al procesar la solicitud. Inténtalo de nuevo.' });
+        toast.error('Error al procesar la solicitud', {
+          description: 'Inténtalo de nuevo.'
+        });
       }
     } finally {
       setLoading(false);

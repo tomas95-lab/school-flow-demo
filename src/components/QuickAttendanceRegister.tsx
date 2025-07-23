@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { CheckCircle, XCircle, Save, RotateCcw, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { db } from "@/firebaseConfig";
@@ -42,7 +43,6 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [existingAttendanceWarning, setExistingAttendanceWarning] = useState(false);
 
   // Obtener datos
@@ -141,7 +141,6 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
     if (!canRegisterAttendance) return;
 
     setIsLoading(true);
-    setSaveSuccess(false);
 
     try {
       const batch = [];
@@ -178,12 +177,15 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
       }
 
       await Promise.all(batch);
-      setSaveSuccess(true);
       
-      // Limpiar éxito después de 3 segundos
-      setTimeout(() => setSaveSuccess(false), 3000);
+      toast.success('Asistencias guardadas', {
+        description: `${teacherStudents.length} asistencias ${existingAttendanceForDate.length > 0 ? 'actualizadas' : 'guardadas'} exitosamente`
+      });
     } catch (error) {
       console.error("Error al guardar asistencias:", error);
+      toast.error('Error al guardar asistencias', {
+        description: 'Inténtalo de nuevo.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -362,12 +364,6 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
               );
             })}
           </div>
-        </div>
-      )}
-
-      {saveSuccess && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-          ¡Asistencias {existingAttendanceWarning ? 'actualizadas' : 'guardadas'} exitosamente!
         </div>
       )}
     </div>

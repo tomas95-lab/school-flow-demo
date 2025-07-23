@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   BookOpen,
-  AlertTriangle,
   TrendingUp,
   FileText,
   Calendar,

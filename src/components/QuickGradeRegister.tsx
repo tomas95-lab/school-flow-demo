@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { 
   Plus, 
   Save, 
@@ -54,7 +55,6 @@ export default function QuickGradeRegister() {
   const [gradeType, setGradeType] = useState("parcial");
   const [grades, setGrades] = useState<{[key: string]: number}>({});
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   // Obtener datos
   const { data: courses } = useFirestoreCollection("courses");
@@ -165,12 +165,13 @@ export default function QuickGradeRegister() {
 
   const saveGrades = async () => {
     if (!selectedSubject || Object.keys(grades).length === 0) {
-      setMessage({ type: 'error', text: 'Selecciona una materia y ingresa al menos una calificación' });
+      toast.error('Datos incompletos', {
+        description: 'Selecciona una materia y ingresa al menos una calificación'
+      });
       return;
     }
 
     setLoading(true);
-    setMessage(null);
 
     try {
       const subject = teacherSubjects.find(s => s.nombre === selectedSubject);
@@ -195,14 +196,15 @@ export default function QuickGradeRegister() {
 
       await Promise.all(gradePromises);
       
-      setMessage({ type: 'success', text: `${Object.keys(grades).length} calificaciones guardadas exitosamente` });
+      toast.success('Calificaciones guardadas', {
+        description: `${Object.keys(grades).length} calificaciones guardadas exitosamente`
+      });
       setGrades({});
-      
-      // Limpiar mensaje después de 3 segundos
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error saving grades:', error);
-      setMessage({ type: 'error', text: 'Error al guardar las calificaciones. Inténtalo de nuevo.' });
+      toast.error('Error al guardar calificaciones', {
+        description: 'Inténtalo de nuevo.'
+      });
     } finally {
       setLoading(false);
     }
@@ -455,17 +457,6 @@ export default function QuickGradeRegister() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               Selecciona una materia para comenzar a registrar calificaciones.
-            </div>
-          )}
-
-          {/* Mensaje de estado */}
-          {message && (
-            <div className={`mt-4 p-4 rounded-lg ${
-              message.type === 'success' 
-                ? 'bg-green-50 border border-green-200 text-green-800' 
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}>
-              {message.text}
             </div>
           )}
 

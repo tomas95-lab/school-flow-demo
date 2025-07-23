@@ -22,8 +22,7 @@ export default function AdminAlertasOverview() {
     return <div>Cargando...</div>;
   }
 
-  console.log("AdminAlertasOverview - User role:", user?.role);
-  console.log("AdminAlertasOverview - Alerts count:", alerts.length);
+
 
   // Calcular estadísticas de alertas
   const totalAlerts = alerts.length;

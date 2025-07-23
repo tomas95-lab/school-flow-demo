@@ -93,7 +93,7 @@ export default function TeacherAttendanceOverview() {
     cursoIds.map((c) => c.includes(s.cursoId))
   );
 
-  console.log("Teacher Students:", teacherStudents);
+
   const validStudentIds = new Set(teacherStudents.map((s) => s.firestoreId));
   // 6. Asistencias válidas: alumno + curso + materia
   const teacherAttendances = attendances.filter(

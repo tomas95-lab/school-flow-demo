@@ -22,8 +22,7 @@ export default function TeacherAlertasOverview() {
     return <div>Cargando...</div>;
   }
 
-  console.log("TeacherAlertasOverview - User role:", user?.role);
-  console.log("TeacherAlertasOverview - Teacher ID:", user?.teacherId);
+
 
   // Filtrar alertas del docente
   const teacherAlerts = alerts.filter((a: any) => {

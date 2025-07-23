@@ -40,14 +40,14 @@ export default function ReutilizableDialog ({
                 </DialogTrigger>
             )}
             <DialogContent small={small} className={`overflow-y-auto overflow-x-hidden`}>
-                <DialogHeader>
+                <DialogHeader className="pb-2">
                     <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="py-2">
                         {description}
                     </DialogDescription>
                 </DialogHeader>
                 {content}
-                <DialogFooter>{footer}</DialogFooter>
+                <DialogFooter className="pt-4">{footer}</DialogFooter>
             </DialogContent>
         </Dialog>
     )

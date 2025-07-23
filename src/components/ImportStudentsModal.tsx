@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import { 
   Upload, 
   FileText, 
@@ -190,6 +191,16 @@ export default function ImportStudentsModal() {
       total: csvData.length
     });
     setIsProcessing(false);
+    
+    if (success > 0) {
+      toast.success('Importación completada', {
+        description: `${success} estudiantes importados exitosamente${errors > 0 ? `, ${errors} errores` : ''}`
+      });
+    } else if (errors > 0) {
+      toast.error('Error en la importación', {
+        description: `${errors} errores durante la importación`
+      });
+    }
   };
 
   const downloadTemplate = () => {

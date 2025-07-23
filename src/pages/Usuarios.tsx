@@ -53,7 +53,6 @@ export default function Usuarios() {
 
   // Función para manejar la edición de usuarios
   const handleEditUser = (user: any) => {
-    console.log('Editando usuario:', user);
     setSelectedUser(user);
     setShowEditModal(true);
   };
@@ -199,7 +198,7 @@ export default function Usuarios() {
                       }
                     },
                   ]}
-                  exportable={true}
+                  exportable={false}
                   emptyMessage="No se encontraron usuarios. Comienza creando el primer usuario del sistema."
                 />
               )}

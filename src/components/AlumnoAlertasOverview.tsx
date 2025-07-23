@@ -33,7 +33,7 @@ export default function AlumnoAlertasOverview() {
     return false;
   });
 
-  console.log("📊 Filtered alerts count:", studentAlerts.length);
+
 
   if (alertsLoading) {
     return (

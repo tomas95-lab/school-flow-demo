@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Calendar, Users, BookOpen, Check, Minus, Search, Clock, AlertCircle, Save, X, RotateCcw } from "lucide-react"
 import { db } from "@/firebaseConfig"
 import { updateDoc, doc, setDoc } from "firebase/firestore"
@@ -43,7 +44,6 @@ export function AttendanceModal({
   const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [saveSuccess, setSaveSuccess] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -87,7 +87,6 @@ export function AttendanceModal({
 
   const save = useCallback(async () => {
     setIsLoading(true)
-    setSaveSuccess(false)
     try {
       for (const s of students) {
         const present = attendanceMap[s.id] ?? false
@@ -114,10 +113,15 @@ export function AttendanceModal({
           })
         }
       }
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
+      
+      toast.success('Asistencias guardadas', {
+        description: `${students.length} asistencias ${history.length > 0 ? 'actualizadas' : 'guardadas'} exitosamente`
+      });
     } catch (error) {
       console.error("Error saving attendance:", error)
+      toast.error('Error al guardar asistencias', {
+        description: 'Inténtalo de nuevo.'
+      });
     } finally {
       setIsLoading(false)
     }
@@ -394,17 +398,7 @@ export function AttendanceModal({
         )}
       </div>
 
-      {/* Success message */}
-      {saveSuccess && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 animate-in slide-in-from-bottom-2">
-          <div className="flex items-center space-x-2">
-            <Check className="w-5 h-5 text-green-600" />
-            <p className="text-sm font-medium text-green-800">
-              Asistencias guardadas exitosamente
-            </p>
-          </div>
-        </div>
-      )}
+
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-100">

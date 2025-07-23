@@ -5,8 +5,9 @@ import { Percent, TriangleAlert } from "lucide-react";
 import { db } from "@/firebaseConfig";
 import { setDoc, doc } from "firebase/firestore";
 import { Button } from "./ui/button";
-import { useContext, useMemo, useCallback } from "react";
+import { useContext, useMemo, useCallback, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import { toast } from "sonner";
 import {
   getPeriodoActual,
   filtrarCalificacionesTrimestre,
@@ -23,6 +24,7 @@ interface Course {
 
 export default function AdminBoletinesOverview() {
   const { user } = useContext(AuthContext);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Usar hooks optimizados con cache
   const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
@@ -36,6 +38,7 @@ export default function AdminBoletinesOverview() {
   // Memoizar cálculos pesados
   const boletinesCalculados = useMemo(() => {
     if (!alumnos || !subjects || !calificaciones) return [];
+    const currentDate = new Date();
 
     const periodoActual = getPeriodoActual();
     const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones);
@@ -58,6 +61,7 @@ export default function AdminBoletinesOverview() {
         promedioTotal,
         asistenciasTotales: alumno.asistenciasTotales ?? 0,
         comentario: "",
+        fechaGeneracion: currentDate.toISOString(),
         abierto: false,
         alertas: [],
       };
@@ -74,7 +78,14 @@ export default function AdminBoletinesOverview() {
 
   // Memoizar función de subida de boletines
   const subirBoletines = useCallback(async () => {
-    if (!boletinesCalculados.length) return;
+    if (!boletinesCalculados.length) {
+      toast.error('No hay boletines para generar', {
+        description: 'Verifica que haya alumnos y calificaciones disponibles'
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
     
     try {
       // Usar Promise.all para subir en paralelo (más eficiente)
@@ -84,8 +95,17 @@ export default function AdminBoletinesOverview() {
       });
       
       await Promise.all(uploadPromises);
+      
+      toast.success('Boletines generados exitosamente', {
+        description: `Se generaron ${boletinesCalculados.length} boletines para el período actual`
+      });
     } catch (error) {
       console.error("Error subiendo boletines:", error);
+      toast.error('Error al generar boletines', {
+        description: 'Hubo un problema al procesar la solicitud. Inténtalo de nuevo.'
+      });
+    } finally {
+      setIsGenerating(false);
     }
   }, [boletinesCalculados]);
 
@@ -188,8 +208,12 @@ export default function AdminBoletinesOverview() {
       </div>
 
       {user?.role === "admin" && (
-        <Button onClick={subirBoletines} className="mb-6">
-          Subir boletines a Firestore
+        <Button 
+          onClick={subirBoletines} 
+          disabled={isGenerating}
+          className="mb-6"
+        >
+          {isGenerating ? 'Generando...' : 'Generar Boletines'}
         </Button>
       )}
 

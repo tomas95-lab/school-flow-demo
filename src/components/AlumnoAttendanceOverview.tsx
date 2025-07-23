@@ -22,7 +22,7 @@ export default function AlumnoAttendanceOverview(){
     const studentsInCourse = studentInfo ? [studentInfo] : []
 
 
-    console.log("***subjects****:", subjects);
+
     const subjectsInCourse = useMemo(() => {
         const base = subjects.filter(s => s.cursoId.map((id: string) => id === studentInfo?.cursoId));
         if (user?.role === "admin" || user?.role === "alumno") return base;
@@ -30,7 +30,7 @@ export default function AlumnoAttendanceOverview(){
     }, [subjects, user, studentInfo]);
 
 
-    console.log("AlumnoAttendanceOverview - Student Info:", studentInfo);
+
     // Inicializar estado como vacío
     const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set());
 
@@ -115,7 +115,7 @@ export default function AlumnoAttendanceOverview(){
     }, [studentsInCourse, subjectsInCourse, asistencias]);
 
 
-    console.log("AlumnoAttendanceOverview - Course Stats:", courseStats);
+
     const getAttendanceColor = (percentage: number) => {
         if (percentage >= 90) return "green";
         if (percentage >= 80) return "blue";

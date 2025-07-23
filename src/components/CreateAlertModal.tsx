@@ -12,6 +12,7 @@ import { AuthContext } from '../context/AuthContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useFirestoreCollection } from '@/hooks/useFirestoreCollection';
+import { toast } from 'sonner';
 import { 
   AlertTriangle, 
   Bell, 
@@ -177,8 +178,14 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
       setErrors({});
       setOpen(false);
       onAlertCreated?.();
+      toast.success('Alerta creada exitosamente', {
+        description: 'La alerta ha sido creada y enviada a los destinatarios seleccionados.'
+      });
     } catch (error) {
       console.error('Error creating alert:', error);
+      toast.error('Error al crear la alerta', {
+        description: 'No se pudo crear la alerta. Inténtalo de nuevo.'
+      });
     } finally {
       setLoading(false);
     }
@@ -308,8 +315,8 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
 
           {/* Destinatarios */}
           <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
                 <Users className="h-5 w-5 text-green-600" />
                 Destinatarios
               </CardTitle>
@@ -445,8 +452,8 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
 
           {/* Descripción */}
           <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
                 <FileText className="h-5 w-5 text-purple-600" />
                 Descripción
               </CardTitle>

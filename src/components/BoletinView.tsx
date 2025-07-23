@@ -125,7 +125,7 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">Estado del Boletín</p>
-                  <p className="text-xs text-gray-600">{status.description}</p>
+                  <p className="text-sm text-gray-700 font-medium">{status.description}</p>
                 </div>
               </div>
               <div className="text-right">

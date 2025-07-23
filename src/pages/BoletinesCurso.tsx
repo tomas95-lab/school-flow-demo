@@ -29,6 +29,7 @@ export default function BoletinesCurso() {
 	}
 
 	const rows: BoletinceRow[] = boletinesCurso.map((b: any) => {
+	const fechaGeneracion = b.fechaGeneracion ? new Date(b.fechaGeneracion).toLocaleDateString('es-ES') : 'N/A';	
 	const materias = b.materias.map((m: any) => {
 		const promedio = (m.T1 + m.T2 + m.T3) / 3 || 0;
 		return {
@@ -60,7 +61,6 @@ export default function BoletinesCurso() {
 		Nombre: b.alumnoNombre,
 		promediototal: promedioTotal,
 		estado: b.abierto ? "abierto" : "cerrado",
-		alertas: b.alertas?.length || 0,
 		periodo: b.periodo,
 		materias,
 		comentario: b.comentario || "",
@@ -71,7 +71,8 @@ export default function BoletinesCurso() {
 			presentes: asistenciasPresentes,
 			ausentes: totalAsistencias - asistenciasPresentes,
 			porcentaje: porcentajeAsistencia
-		}
+		},
+		fechaGeneracion: fechaGeneracion,
 	};
 	});
 
@@ -152,7 +153,7 @@ export default function BoletinesCurso() {
 				/>
 
 			</div>
-				<DataTable columns={useColumnsDetalle(null)} data={rows} />
+				<DataTable columns={useColumnsDetalle()} data={rows} />
 			</div>
 		
 		</div>

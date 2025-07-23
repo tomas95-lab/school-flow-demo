@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addDoc, updateDoc, deleteDoc, doc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+import { toast } from "sonner";
 
 export default function GestionCursosMaterias() {
   const { user, loading: userLoading } = useContext(AuthContext)
@@ -21,11 +22,12 @@ export default function GestionCursosMaterias() {
   const [showMateriaModal, setShowMateriaModal] = useState(false);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view'>('create');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const { loading: coursesLoading, data: courses, refetch: refetchCourses } =  useFirestoreCollection("courses");
   const { loading: subjectsLoading, data: subjects, refetch: refetchSubjects } =  useFirestoreCollection("subjects");
   const { loading: teachersLoading, data: teachers } = useFirestoreCollection("teachers");
   const { loading: studentsLoading, data: students } = useFirestoreCollection("students");
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'curso' | 'materia', data: any } | null>(null);
 
   // Form states for curso modal
   const [cursoForm, setCursoForm] = useState({
@@ -49,7 +51,6 @@ export default function GestionCursosMaterias() {
     } else if (modalType === 'edit' && selectedCurso) {
       // Buscar el curso original en los datos de Firestore
       const originalCurso = courses.find(c => c.firestoreId === selectedCurso.id);
-      console.log('Editando curso:', { selectedCurso, originalCurso });
       setCursoForm({
         nombre: originalCurso?.nombre || selectedCurso.name || '',
         division: originalCurso?.division || selectedCurso.division || '',
@@ -86,12 +87,13 @@ export default function GestionCursosMaterias() {
   // Handle form submissions
   const handleCursoSubmit = async () => {
     if (!cursoForm.nombre.trim() || !cursoForm.division.trim()) {
-      setMessage({ type: 'error', text: 'Por favor completa todos los campos requeridos' });
+      toast.error('Campos requeridos', {
+        description: 'Por favor completa todos los campos requeridos'
+      });
       return;
     }
 
     setLoading(true);
-    setMessage(null);
 
     try {
       if (modalType === 'create') {
@@ -104,7 +106,9 @@ export default function GestionCursosMaterias() {
         };
 
         await addDoc(collection(db, "courses"), cursoData);
-        setMessage({ type: 'success', text: 'Curso creado exitosamente' });
+        toast.success('Curso creado', {
+          description: 'Curso creado exitosamente'
+        });
         await refetchCourses();
       } else if (modalType === 'edit' && selectedCurso) {
         const cursoData = {
@@ -115,16 +119,18 @@ export default function GestionCursosMaterias() {
         };
 
         await updateDoc(doc(db, "courses", selectedCurso.id), cursoData);
-        setMessage({ type: 'success', text: 'Curso actualizado exitosamente' });
+        toast.success('Curso actualizado', {
+          description: 'Curso actualizado exitosamente'
+        });
         await refetchCourses();
       }
       
       setShowCursoModal(false);
-      // Limpiar mensaje después de 3 segundos
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error:', error);
-      setMessage({ type: 'error', text: 'Error al procesar la solicitud. Inténtalo de nuevo.' });
+      toast.error('Error al procesar la solicitud', {
+        description: 'Inténtalo de nuevo.'
+      });
     } finally {
       setLoading(false);
     }
@@ -132,12 +138,13 @@ export default function GestionCursosMaterias() {
 
   const handleMateriaSubmit = async () => {
     if (!materiaForm.nombre.trim() || materiaForm.cursoId.length === 0) {
-      setMessage({ type: 'error', text: 'Por favor completa todos los campos requeridos' });
+      toast.error('Campos requeridos', {
+        description: 'Por favor completa todos los campos requeridos'
+      });
       return;
     }
 
     setLoading(true);
-    setMessage(null);
 
     try {
       if (modalType === 'create') {
@@ -150,7 +157,9 @@ export default function GestionCursosMaterias() {
         };
 
         await addDoc(collection(db, "subjects"), materiaData);
-        setMessage({ type: 'success', text: 'Materia creada exitosamente' });
+        toast.success('Materia creada', {
+          description: 'Materia creada exitosamente'
+        });
         await refetchSubjects();
       } else if (modalType === 'edit' && selectedMateria) {
         const materiaData = {
@@ -162,16 +171,18 @@ export default function GestionCursosMaterias() {
         };
 
         await updateDoc(doc(db, "subjects", selectedMateria.id), materiaData);
-        setMessage({ type: 'success', text: 'Materia actualizada exitosamente' });
+        toast.success('Materia actualizada', {
+          description: 'Materia actualizada exitosamente'
+        });
         await refetchSubjects();
       }
       
       setShowMateriaModal(false);
-      // Limpiar mensaje después de 3 segundos
-      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       console.error('Error:', error);
-      setMessage({ type: 'error', text: 'Error al procesar la solicitud. Inténtalo de nuevo.' });
+      toast.error('Error al procesar la solicitud', {
+        description: 'Inténtalo de nuevo.'
+      });
     } finally {
       setLoading(false);
     }
@@ -211,25 +222,9 @@ export default function GestionCursosMaterias() {
     setShowCursoModal(true);
   };
 
-  const handleDeleteCurso = async (curso: any) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el curso "${curso.name}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
-
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      await deleteDoc(doc(db, "courses", curso.id));
-      setMessage({ type: 'success', text: 'Curso eliminado exitosamente' });
-      await refetchCourses();
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
-      console.error('Error:', error);
-      setMessage({ type: 'error', text: 'Error al eliminar el curso. Inténtalo de nuevo.' });
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteCurso = (curso: any) => {
+    setDeleteTarget({ type: 'curso', data: curso });
+    setShowConfirmDelete(true);
   };
 
   // Funciones de gestión de materias
@@ -251,24 +246,30 @@ export default function GestionCursosMaterias() {
     setShowMateriaModal(true);
   };
 
-  const handleDeleteMateria = async (materia: any) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar la materia "${materia.name}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+  const handleDeleteMateria = (materia: any) => {
+    setDeleteTarget({ type: 'materia', data: materia });
+    setShowConfirmDelete(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setShowConfirmDelete(false);
     setLoading(true);
-    setMessage(null);
-
     try {
-      await deleteDoc(doc(db, "subjects", materia.id));
-      setMessage({ type: 'success', text: 'Materia eliminada exitosamente' });
-      await refetchSubjects();
-      setTimeout(() => setMessage(null), 3000);
+      if (deleteTarget.type === 'curso') {
+        await deleteDoc(doc(db, "courses", deleteTarget.data.id));
+        toast.success('Curso eliminado', { description: 'Curso eliminado exitosamente' });
+        await refetchCourses();
+      } else if (deleteTarget.type === 'materia') {
+        await deleteDoc(doc(db, "subjects", deleteTarget.data.id));
+        toast.success('Materia eliminada', { description: 'Materia eliminada exitosamente' });
+        await refetchSubjects();
+      }
     } catch (error) {
-      console.error('Error:', error);
-      setMessage({ type: 'error', text: 'Error al eliminar la materia. Inténtalo de nuevo.' });
+      toast.error('Error al eliminar', { description: 'Inténtalo de nuevo.' });
     } finally {
       setLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -597,8 +598,6 @@ export default function GestionCursosMaterias() {
     </div>
   );
 
-
-
   return (
       <div className="min-h-screen">
           <div className="min-h-screen bg-gray-50">
@@ -628,23 +627,7 @@ export default function GestionCursosMaterias() {
                 </div>
               </div>
 
-              {/* Mensajes de feedback */}
-              {message && (
-                <div className={`mb-6 p-4 rounded-lg border ${
-                  message.type === 'success' 
-                    ? 'bg-green-50 border-green-200 text-green-800' 
-                    : 'bg-red-50 border-red-200 text-red-800'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    {message.type === 'success' ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-5 w-5 text-red-600" />
-                    )}
-                    <span className="font-medium">{message.text}</span>
-                  </div>
-                </div>
-              )}
+
 
               {/* Estadísticas rápidas */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -805,6 +788,26 @@ export default function GestionCursosMaterias() {
               content={materiaModalContent}
               footer={materiaModalFooter}
               small={false}
+            />
+
+            {/* Modal de confirmación de eliminación */}
+            <ReutilizableDialog
+              open={showConfirmDelete}
+              onOpenChange={setShowConfirmDelete}
+              small={true}
+              title="Confirmar eliminación"
+              description={deleteTarget ? `¿Estás seguro de que quieres eliminar el ${deleteTarget.type === 'curso' ? 'curso' : 'materia'} "${deleteTarget.data.name || deleteTarget.data.nombre}"? Esta acción no se puede deshacer.` : ''}
+              content={<></>}
+              footer={
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowConfirmDelete(false)}>
+                    Cancelar
+                  </Button>
+                  <Button variant="destructive" onClick={confirmDelete} disabled={loading}>
+                    {loading ? 'Eliminando...' : 'Eliminar'}
+                  </Button>
+                </div>
+              }
             />
 
             {/* Custom Styles */}

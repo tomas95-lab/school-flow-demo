@@ -5,6 +5,7 @@ import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig"; // Ajusta la ruta según tu estructura
 import { Button } from "./ui/button";
+import { toast } from "sonner";
 
 // Tipos mejorados
 interface FormData {
@@ -135,9 +136,15 @@ export default function CrearCalificacion({
       setSelectedStudentIds([]);
       setAbsentStudentIds([]);
       if (onSubmit) onSubmit(formData, selectedStudentIds);
+      
+      toast.success('Calificaciones guardadas', {
+        description: `${selectedStudentIds.length} calificación${selectedStudentIds.length !== 1 ? 'es' : ''} guardada${selectedStudentIds.length !== 1 ? 's' : ''} exitosamente`
+      });
     } catch (err) {
-      console.log(err)
       setErrors({ general: "Error al guardar la calificación. Intente nuevamente." });
+      toast.error('Error al guardar calificaciones', {
+        description: 'Inténtalo de nuevo.'
+      });
     } finally {
       setSaving(false);
     }

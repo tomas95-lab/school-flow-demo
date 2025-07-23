@@ -1,17 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Edit, Trash2, Users, GraduationCap, Eye, BookOpen } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { DataTable } from "@/components/data-table";
+import { Trash2, Users, GraduationCap, Eye, BookOpen } from "lucide-react"
 import { BoletinView } from "@/components/BoletinView";
 import { generarPDFBoletin } from "@/utils/boletines";
 
@@ -20,7 +10,6 @@ export interface BoletinceRow {
   Nombre: string;
   promediototal: number;
   estado: "cerrado" | "abierto" | "generado" | "leido" | "pendiente";
-  alertas: number;
   periodo?: string;
   fechaGeneracion?: string;
   fechaLectura?: string;
@@ -39,7 +28,7 @@ export interface BoletinceRow {
 	};
 }
 
-const getBoletinStatus = (estado: string, leido?: boolean) => {
+const getBoletinStatus = (estado: string) => {
 	switch (estado) {
 		case "generado":
 			return {
@@ -72,17 +61,16 @@ const getBoletinStatus = (estado: string, leido?: boolean) => {
 	}
 };
 
-export function useColumnsDetalle(user: any): ColumnDef<BoletinceRow>[] {
+export function useColumnsDetalle(): ColumnDef<BoletinceRow>[] {
 	return [
 		{
 			accessorKey: "Nombre",
 			header: "Estudiante",
 			cell: ({ row }) => {
-				const alertas = row.getValue<number>("alertas");
 				return (
 					<div className="flex items-center space-x-2">
-						<Users className={`w-4 h-4 ${alertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
-						<span className={alertas > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
+						<Users className={`w-4 h-4 ${row.getValue<number>("alertas") > 0 ? 'text-red-500' : 'text-green-500'}`} />
+						<span className={row.getValue<number>("alertas") > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
 							{row.getValue("Nombre")}
 						</span>
 					</div>
@@ -119,21 +107,6 @@ export function useColumnsDetalle(user: any): ColumnDef<BoletinceRow>[] {
 			},
 		},
 		{
-			accessorKey: "alertas",
-			header: "Alertas",
-			cell: ({ row }) => {
-				const alertas = row.getValue<number>("alertas");
-				return (
-					<div className="flex items-center space-x-2">
-						<Users className={`w-4 h-4 ${alertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
-						<span className={alertas > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-							{alertas}
-						</span>
-					</div>
-				);
-			},
-		},
-		{
 			accessorKey: "fechaGeneracion",
 			header: "Fecha",
 			cell: ({ row }) => {
@@ -142,7 +115,7 @@ export function useColumnsDetalle(user: any): ColumnDef<BoletinceRow>[] {
 				
 				return (
 					<div className="text-sm text-gray-600">
-						<div>Generado: {fecha ? new Date(fecha).toLocaleDateString('es-ES') : 'N/A'}</div>
+						<div>Generado: {fecha}</div>
 						{fechaLectura && (
 							<div className="text-xs text-green-600">
 								Leído: {new Date(fechaLectura).toLocaleDateString('es-ES')}
@@ -161,7 +134,6 @@ export function useColumnsDetalle(user: any): ColumnDef<BoletinceRow>[] {
 					await generarPDFBoletin(row.original);
 				} catch (error) {
 					console.error('Error al generar PDF:', error);
-					alert('Error al generar el PDF. Inténtalo de nuevo.');
 				}
 			};
 

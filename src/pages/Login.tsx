@@ -9,6 +9,7 @@ import backgound from "../assets/media/auth/auth-bg.png";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "../context/AuthContext";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
+import { toast } from "sonner";
 
 async function signInWithEmailAndPassword(auth: Auth, email: string, password: string) {
   return firebaseSignInWithEmailAndPassword(auth, email, password);
@@ -18,7 +19,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { handleError } = useGlobalError();
@@ -26,11 +26,12 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      console.log("Inicio de sesión exitoso");
+      toast.success('Inicio de sesión exitoso', {
+        description: 'Bienvenido de vuelta'
+      });
       navigate("/dashboard");
     } catch (err: any) {
       console.error("Error de Firebase:", err.code, err.message);
@@ -38,19 +39,31 @@ export default function Login() {
       // Usar el sistema global de manejo de errores
       handleError(err, "Login");
       
-      // Mantener el manejo local para mostrar en el formulario
+      // Mostrar errores con toast
       if (err.code === 'auth/user-not-found') {
-        setError("No existe una cuenta con este email");
+        toast.error('Usuario no encontrado', {
+          description: 'No existe una cuenta con este email'
+        });
       } else if (err.code === 'auth/wrong-password') {
-        setError("Contraseña incorrecta");
+        toast.error('Contraseña incorrecta', {
+          description: 'Verifica tu contraseña e intenta de nuevo'
+        });
       } else if (err.code === 'auth/invalid-email') {
-        setError("Formato de email inválido");
+        toast.error('Email inválido', {
+          description: 'El formato del email no es válido'
+        });
       } else if (err.code === 'auth/user-disabled') {
-        setError("Esta cuenta ha sido deshabilitada");
+        toast.error('Cuenta deshabilitada', {
+          description: 'Esta cuenta ha sido deshabilitada'
+        });
       } else if (err.code === 'auth/too-many-requests') {
-        setError("Demasiados intentos fallidos. Intenta más tarde");
+        toast.error('Demasiados intentos', {
+          description: 'Demasiados intentos fallidos. Intenta más tarde'
+        });
       } else {
-        setError("Error al iniciar sesión. Verifica tus credenciales");
+        toast.error('Error de inicio de sesión', {
+          description: 'Verifica tus credenciales e intenta de nuevo'
+        });
       }
     } finally {
       setLoading(false);
@@ -58,7 +71,6 @@ export default function Login() {
   };
 
   useEffect(() => {
-    console.log("Usuario desde contexto:", user);
     if (user) {
       navigate("/dashboard");
     }
@@ -119,7 +131,7 @@ export default function Login() {
               onChange={e => setPassword(e.target.value)}
               disabled={loading}
             />
-            {error && <div className="text-red-500 text-sm">{error}</div>}
+
           </form>
         </ReutilizableCard>
       </div>
