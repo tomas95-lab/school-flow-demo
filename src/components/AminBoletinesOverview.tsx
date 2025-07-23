@@ -31,6 +31,7 @@ export default function AdminBoletinesOverview() {
   const { data: boletines } = useFirestoreCollection("boletines", { enableCache: true });
   const { data: alumnos } = useFirestoreCollection("students", { enableCache: true });
   const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
+  const teacherCourses = courses.filter(c => c.teacherId == user?.teacherId);
 
   // Memoizar cálculos pesados
   const boletinesCalculados = useMemo(() => {
@@ -195,7 +196,7 @@ export default function AdminBoletinesOverview() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {courses.map((course: any, index: number) => {
+        {(user?.role === "docente" ? teacherCourses : courses).map((course: any, index: number) => {
           const safeCourse: Course = {
             firestoreId: course.firestoreId,
             nombre: course.nombre || "",
