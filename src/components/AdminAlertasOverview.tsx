@@ -12,7 +12,6 @@ import { db } from "@/firebaseConfig";
 import { CreateAlertModal } from "./CreateAlertModal";
 
 export default function AdminAlertasOverview() {
-  const { user } = useContext(AuthContext);
   const { data: alerts } = useFirestoreCollection("alerts");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
