@@ -1,42 +1,21 @@
 import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
-import { useContext, useState, useEffect, useMemo } from "react";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import {
   Users, 
   Calendar,
   BookOpen,
-  Clock, 
-  TrendingUp, 
-  CheckCircle,
-  XCircle
+  TrendingUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { format, startOfDay, subDays, eachDayOfInterval, isToday, isYesterday, parseISO, isAfter, isBefore } from "date-fns";
-import { es } from "date-fns/locale";
+import { format, startOfDay, subDays, parseISO, isAfter, isBefore } from "date-fns";
 import { StatsCard } from "./StatCards";
 import { SchoolSpinner } from "./SchoolSpinner";
-import { DataTable } from "./data-table";
-import { useColumnsDetalle } from "@/app/asistencias/columns";
-import { Button } from "./ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
-import { addDoc, collection, serverTimestamp, doc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
-import QuickAttendanceRegister from "./QuickAttendanceRegister";
-import ReutilizableDialog from "./DialogReutlizable";
 import { CourseCard } from "./CourseCard";
 import type { Course } from "@/components/CourseCard";
 
 export default function TeacherAttendanceOverview() {
   const { user } = useContext(AuthContext);
-  const [showQuickRegister, setShowQuickRegister] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const { data: courses, loading: loadingCourses = false } =
     useFirestoreCollection("courses");
@@ -68,6 +47,7 @@ export default function TeacherAttendanceOverview() {
   
   // Obtener cursos del docente a través de las materias
   const teacherCourses = courses.filter(c => c.teacherId == teacherUserId )
+  
   // 2. Materias del docente
   const subjectsTeacher = subjects.filter(
     (subj) => subj.teacherId == teacherUserId
@@ -100,8 +80,6 @@ export default function TeacherAttendanceOverview() {
     );
   }
 
-  console.log(teacherUserId)
-  console.log(subjectsTeacher)
   // 3. IDs de cursos (soporta cursoId o cursoIds[])
   const cursoIds = Array.isArray(teacher?.cursoIds)
     ? teacher.cursoIds
@@ -112,23 +90,21 @@ export default function TeacherAttendanceOverview() {
 
   // 5. Estudiantes de esos cursos
   const teacherStudents = students.filter((s) =>
-    cursoIds.includes(s.cursoId)
+    cursoIds.map((c) => c.includes(s.cursoId))
   );
 
+  console.log("Teacher Students:", teacherStudents);
   const validStudentIds = new Set(teacherStudents.map((s) => s.firestoreId));
-
   // 6. Asistencias válidas: alumno + curso + materia
   const teacherAttendances = attendances.filter(
     (a) =>
       validStudentIds.has(a.studentId) &&
-      cursoIds.includes(a.courseId) &&
+      cursoIds[0].includes(a.courseId) &&
       subjectsTeacher.some((subj) => subj.nombre === a.subject)
   );
-
   // dates de referencia
   const today = startOfDay(new Date());
   const weekAgo = subDays(today, 7);
-  const monthAgo = subDays(today, 30);
   const twoWeeksAgo = subDays(today, 14);
 
   // 7. Asistencia promedio últimos 7 días
@@ -264,78 +240,6 @@ export default function TeacherAttendanceOverview() {
   };
 
   const trend = getAttendanceTrend();
-
-  // Funciones para el registro rápido
-  const toggleAttendance = (studentId: string) => {
-    setAttendanceMap(prev => ({
-      ...prev,
-      [studentId]: !prev[studentId]
-    }));
-  };
-
-  const markAllPresent = () => {
-    const newMap: Record<string, boolean> = {};
-    teacherStudents.forEach(student => {
-      newMap[student.firestoreId] = true;
-    });
-    setAttendanceMap(newMap);
-  };
-
-  const markAllAbsent = () => {
-    const newMap: Record<string, boolean> = {};
-    teacherStudents.forEach(student => {
-      newMap[student.firestoreId] = false;
-    });
-    setAttendanceMap(newMap);
-  };
-
-  const saveAttendance = async () => {
-    if (!selectedSubject || !selectedDate) return;
-    
-    setIsLoading(true);
-    setSaveSuccess(false);
-    
-    try {
-      for (const student of teacherStudents) {
-        const present = attendanceMap[student.firestoreId] ?? false;
-        const docId = `${student.firestoreId}_${student.cursoId}_${selectedSubject}_${selectedDate}`;
-        
-        const existingAttendance = attendances.find(att => 
-          att.studentId === student.firestoreId &&
-          att.courseId === student.cursoId &&
-          att.subject === selectedSubject &&
-          att.date === selectedDate
-        );
-
-        if (existingAttendance) {
-          await updateDoc(doc(db, "attendances", existingAttendance.firestoreId), {
-            present,
-            updatedAt: new Date()
-          });
-        } else {
-          await setDoc(doc(db, "attendances", docId), {
-            studentId: student.firestoreId,
-            courseId: student.cursoId,
-            subject: selectedSubject,
-            date: selectedDate,
-            present,
-            createdAt: new Date()
-          });
-        }
-      }
-      
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      console.error("Error saving attendance:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const presentCount = Object.values(attendanceMap).filter(Boolean).length;
-  const totalStudents = teacherStudents.length;
-  const attendancePercentage = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
 
   return (
     <div className="space-y-6">

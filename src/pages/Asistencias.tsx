@@ -2,20 +2,16 @@ import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { Calendar, Users, BookOpen, Plus, Clock, TrendingUp, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, BookOpen} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Componentes de vista por rol
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
 import TeacherAttendanceOverview from "@/components/TeacherAttendanceOverview";
 import AlumnoAttendanceOverview from "@/components/AlumnoAttendanceOverview";
-
-// Nuevo componente de registro rápido
-
 
 // Componente de alerta de asistencias pendientes
 import AttendanceAlert from "@/components/AttendanceAlert";
@@ -84,15 +80,6 @@ export default function Asistencias() {
                   </div>
                 </div>
               </div>
-              {user?.role === "docente" && (
-                <Button 
-                  onClick={() => setActiveView("register")}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Registrar Asistencia
-                </Button>
-              )}
             </div>
           </div>
 

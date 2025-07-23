@@ -53,6 +53,8 @@ export default function DetallesCalificaciones() {
         }
     }, []);
 
+
+
     // Mover todos los useMemo al inicio para evitar problemas con hooks
     // Verificar permisos de acceso
     const canAccessCourse = useMemo(() => {
@@ -159,6 +161,47 @@ export default function DetallesCalificaciones() {
     });
     }, [calificacionesFiltradas, subjects, studentsInCourse]);
 
+    const exportCalificacionesToCSV = useCallback(() => {
+        if (!course) return;
+        // Cabeceras
+        const rows = [
+            ["Alumno", "Materia", "Actividad", "Valor", "Comentario", "Fecha"]
+        ];
+
+        resultado.forEach(item => {
+            const raw = item.fecha as any;
+            const dateObj = raw?.toDate ? raw.toDate() : new Date(raw);
+            const dateStr = dateObj.toLocaleString("es-AR", {
+            day: "2-digit", month: "2-digit", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+            });
+
+            rows.push([
+            item.Nombre,
+            item.Materia,
+            item.Actividad,
+            item.Valor.toString(),
+            item.Comentario,
+            dateStr
+            ]);
+        });
+
+        // Prepend BOM para UTF-8
+        const bom = "\uFEFF";
+        const csvContent = bom + rows
+            .map(row => row.map(f => `"${f.replace(/"/g, '""')}"`).join(","))
+            .join("\n");
+
+        // Crear blob con charset UTF-8
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `calificaciones_${course.nombre}_div_${course.division}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, [course, resultado]);
+
     const averageGrade = useMemo(() => {
         if (!calificacionesFiltradas.length) return "0.00";
         const total = calificacionesFiltradas.reduce((sum: number, { valor }: any) => sum + valor, 0);
@@ -206,47 +249,6 @@ export default function DetallesCalificaciones() {
     if (user?.role === "alumno") {
         return <Navigate to="/calificaciones" replace />;
     }
-    
-    const exportCalificacionesToCSV = useCallback(() => {
-        if (!course) return;
-        // Cabeceras
-        const rows = [
-            ["Alumno", "Materia", "Actividad", "Valor", "Comentario", "Fecha"]
-        ];
-
-        resultado.forEach(item => {
-            const raw = item.fecha as any;
-            const dateObj = raw?.toDate ? raw.toDate() : new Date(raw);
-            const dateStr = dateObj.toLocaleString("es-AR", {
-            day: "2-digit", month: "2-digit", year: "numeric",
-            hour: "2-digit", minute: "2-digit"
-            });
-
-            rows.push([
-            item.Nombre,
-            item.Materia,
-            item.Actividad,
-            item.Valor.toString(),
-            item.Comentario,
-            dateStr
-            ]);
-        });
-
-        // Prepend BOM para UTF-8
-        const bom = "\uFEFF";
-        const csvContent = bom + rows
-            .map(row => row.map(f => `"${f.replace(/"/g, '""')}"`).join(","))
-            .join("\n");
-
-        // Crear blob con charset UTF-8
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `calificaciones_${course.nombre}_div_${course.division}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }, [course, resultado]);
 
     if (loading) {
         return (
