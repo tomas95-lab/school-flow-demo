@@ -84,10 +84,8 @@ export default function AdminBoletinesOverview() {
       });
       
       await Promise.all(uploadPromises);
-      alert("¡Boletines subidos a Firestore!");
     } catch (error) {
       console.error("Error subiendo boletines:", error);
-      alert("Error al subir boletines");
     }
   }, [boletinesCalculados]);
 

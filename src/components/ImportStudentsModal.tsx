@@ -47,7 +47,7 @@ export default function ImportStudentsModal() {
   // Obtener cursos para validación
   const { data: courses } = useFirestoreCollection("courses");
 
-  const validateStudent = (student: CSVStudent, index: number): ValidationResult => {
+  const validateStudent = (student: CSVStudent): ValidationResult => {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -141,12 +141,12 @@ export default function ImportStudentsModal() {
         setCsvData(students);
         
         // Validar todos los estudiantes
-        const results = students.map((student, index) => 
-          validateStudent(student, index + 2) // +2 porque empezamos en línea 2 (después del header)
+        const results = students.map((student) => 
+          validateStudent(student)
         );
         setValidationResults(results);
       } catch (error) {
-        alert(`Error al procesar el CSV: ${error}`);
+        console.error("Error al procesar el CSV:", error);
       }
     };
     reader.readAsText(file);
@@ -218,13 +218,6 @@ Carlos,Rodríguez,xwJLTZ0InAN52zIzVYJg,carlos.rodriguez@email.com,active`;
 
   const validStudents = validationResults.filter((r: ValidationResult) => r.isValid).length;
   const invalidStudents = validationResults.filter((r: ValidationResult) => !r.isValid).length;
-
-  const trigger = (
-    <Button className="bg-green-600 hover:bg-green-700">
-      <Upload className="h-4 w-4 mr-2" />
-      Importar Estudiantes
-    </Button>
-  );
 
   const content = (
     <div className="space-y-6">
@@ -430,7 +423,13 @@ Carlos,Rodríguez,xwJLTZ0InAN52zIzVYJg,carlos.rodriguez@email.com,active`;
 
   return (
     <ReutilizableDialog
-      triger={trigger}
+      triger={
+        <span className="flex items-center gap-2">
+          <Upload className="" />
+          Importar Estudiantes
+        </span>
+      }
+      background
       title="Importar Estudiantes desde CSV"
       description="Sube un archivo CSV para importar múltiples estudiantes de una vez"
       content={content}

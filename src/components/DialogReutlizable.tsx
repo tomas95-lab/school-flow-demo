@@ -35,7 +35,7 @@ export default function ReutilizableDialog ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             {/* Trigger solo si se pasa */}
             {triger && (
-                <DialogTrigger className={`${background ? "bg-primary cursor-pointer text-primary-foreground hover:bg-primary/90": "" } rounded-md shadow-xs h-9 px-4 py-2 has-[>svg]:px-3`}>
+                <DialogTrigger className={`${background ? "bg-primary cursor-pointer text-primary-foreground hover:bg-primary/90": "" } cursor-pointer rounded-md shadow-xs h-9 px-4 py-2 has-[>svg]:px-3`}>
                     {triger}
                 </DialogTrigger>
             )}

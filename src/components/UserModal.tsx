@@ -207,21 +207,7 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
   // Usar el estado externo si se proporciona, sino el interno
   const isOpen = externalOpen !== undefined ? externalOpen : open;
 
-  const triggerButton = (
-    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-      {mode === 'create' ? (
-        <>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Crear Usuario
-        </>
-      ) : (
-        <>
-          <Edit className="h-4 w-4 mr-2" />
-          Editar Usuario
-        </>
-      )}
-    </Button>
-  );
+
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -396,18 +382,28 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
   );
 
       return (
-      <ReutilizableDialog
-        triger={externalOpen === undefined ? triggerButton : undefined}
-        title={mode === 'create' ? 'Crear Nuevo Usuario' : 'Editar Usuario'}
-        description={mode === 'create' 
-          ? 'Completa el formulario para crear un nuevo usuario en el sistema.'
-          : 'Modifica la información del usuario seleccionado.'
-        }
-        content={formContent}
-        footer={footerContent}
-        open={isOpen}
-        onOpenChange={handleOpenChange}
-        small={true}
-      />
-    );
-} 
+    <ReutilizableDialog
+      triger={externalOpen === undefined ?       mode === 'create' ? (
+      <span className="flex items-center gap-2">
+        <UserPlus className="h-4 w-4 mr-2" />
+        Crear Usuario
+      </span>
+    ) : (
+      <span className="flex items-center gap-2">
+        <Edit className="h-4 w-4 mr-2" />
+        Editar Usuario
+      </span>
+    ) : undefined}
+      title={mode === 'create' ? 'Crear Nuevo Usuario' : 'Editar Usuario'}
+      description={mode === 'create' 
+        ? 'Completa el formulario para crear un nuevo usuario en el sistema.'
+        : 'Modifica la información del usuario seleccionado.'
+      }
+      content={formContent}
+      footer={footerContent}
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+      small={true}
+    />
+  );
+}

@@ -27,7 +27,6 @@ export function BoletinComponent({ row }: { row: any }) {
       await generarPDFBoletin(row);
     } catch (error) {
       console.error('Error al generar PDF:', error);
-      alert('Error al generar el PDF. Inténtalo de nuevo.');
     } finally {
       setIsDownloading(false);
     }

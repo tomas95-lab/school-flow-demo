@@ -130,7 +130,6 @@ export default function AlumnoBoletinesOverview() {
       await generarPDFBoletin(boletinActual);
     } catch (error) {
       console.error('Error al generar PDF:', error);
-      alert('Error al generar el PDF. Inténtalo de nuevo.');
     } finally {
       setIsDownloading(false);
     }
