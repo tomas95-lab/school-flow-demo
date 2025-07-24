@@ -6,7 +6,6 @@ import { BookOpen, TrendingUp, ClipboardList, CheckCircle2, AlertTriangle, Downl
 
 import { DataTable } from "@/components/data-table";
 import { useColumnsDetalle } from "@/app/calificaciones/columns";
-import type { CalificacionesRow } from "@/app/calificaciones/columns";
 import { StatsCard } from "@/components/StatCards";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -36,53 +35,10 @@ export default function DetallesCalificaciones() {
     const [startDate, setStartDate] = useState<Date>();
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
-    // Funciones optimizadas con useCallback
-    const handleStudentSelection = useCallback((studentId: string) => {
-        setSelectedStudentIds(prev => 
-            prev.includes(studentId) 
-                ? prev.filter(id => id !== studentId)
-                : [...prev, studentId]
-        );
-    }, []);
-
-    const handleDateChange = useCallback((date: Date | undefined, type: 'start' | 'end') => {
-        if (type === 'start') {
-            setStartDate(date);
-        } else {
-            setEndDate(date);
-        }
-    }, []);
-
-
-
-    // Mover todos los useMemo al inicio para evitar problemas con hooks
-    // Verificar permisos de acceso
-    const canAccessCourse = useMemo(() => {
-        if (!user) return false;
-        
-        if (user.role === "admin") return true;
-        
-        if (user.role === "docente") {
-            const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
-            if (id) {
-                return teacherSubjects.some(s => {
-                    if (Array.isArray(s.cursoId)) {
-                        return s.cursoId.includes(id);
-                    }
-                    return s.cursoId === id;
-                });
-            }
-            return teacherSubjects.length > 0;
-        }
-        
-        return false;
-    }, [user, id, subjects]);
-
     const course = useMemo(() => {
         if (user?.role === "admin" && id) {
             return courses.find(c => c.firestoreId === id);
         } else if (user?.role === "docente") {
-            const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
             const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
             
             if (id) {
@@ -208,7 +164,7 @@ export default function DetallesCalificaciones() {
         return (total / calificacionesFiltradas.length).toFixed(2);
     }, [calificacionesFiltradas]);
 
-    const [pctAprob, pctReprob] = useMemo(() => {
+    const [pctAprob] = useMemo(() => {
         const total = calificacionesFiltradas.length;
         if (!total) return ["0.00", "0.00"];
         const aprobCount = calificacionesFiltradas.filter(c => c.valor >= 7).length;

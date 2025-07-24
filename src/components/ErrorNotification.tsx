@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertTriangle, X, RefreshCw, Wifi, Shield, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 import { isPermissionError, isNetworkError, isValidationError } from '@/hooks/useErrorHandler';

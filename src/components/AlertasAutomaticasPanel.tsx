@@ -41,7 +41,6 @@ export default function AlertasAutomaticasPanel({
   const { data: asistencias } = useFirestoreCollection("attendances");
   const { data: students } = useFirestoreCollection("students");
   const { data: teachers } = useFirestoreCollection("teachers");
-  const { data: subjects } = useFirestoreCollection("subjects");
 
   // Función helper para obtener período anterior
   const obtenerPeriodoAnterior = (periodoActual: string): string | undefined => {

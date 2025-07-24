@@ -13,7 +13,6 @@ import {
   TrendingUp, 
   CheckCircle, 
   XCircle,
-  BookOpen
 } from "lucide-react";
 import { 
   format, 
@@ -21,7 +20,6 @@ import {
   endOfMonth, 
   eachDayOfInterval, 
   isSameMonth, 
-  isSameDay, 
   isToday,
   addMonths,
   subMonths,
@@ -29,8 +27,6 @@ import {
   endOfWeek
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { subjectBelongsToCourse } from "@/utils/subjectUtils";
-
 type Student = {
   firestoreId: string;
   nombre: string;

@@ -18,8 +18,6 @@ import {
 import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
-import { collection, getDocs } from "firebase/firestore"
-import { db } from "@/firebaseConfig"
 import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
@@ -27,9 +25,6 @@ import { Button } from "@/components/ui/button"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 import { 
   generarAlertasAutomaticas, 
-  filtrarAlertasCriticas,
-  obtenerEstadisticasAlertas,
-  type AlertaAutomatica,
   type DatosAlumno
 } from "@/utils/alertasAutomaticas";
 

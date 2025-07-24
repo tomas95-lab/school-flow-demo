@@ -16,15 +16,12 @@ import {
   CheckCircle, 
   XCircle, 
   ArrowLeft,
-  Filter,
   Download,
-  Eye,
-  Edit,
   Table,
   List,
   Plus
 } from "lucide-react";
-import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { useColumnsDetalle } from "@/app/asistencias/columns";
 import { DataTable } from "@/components/data-table";

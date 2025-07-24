@@ -1,5 +1,5 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useContext, useState, useEffect, useMemo } from "react";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { format, subDays, isToday, isYesterday } from "date-fns";
 import { es } from "date-fns/locale";
@@ -9,13 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   AlertTriangle, 
   Calendar, 
-  Users, 
   Clock, 
-  TrendingUp, 
   CheckCircle, 
-  XCircle,
-  ChevronDown,
-  ChevronUp,
   X
 } from "lucide-react";
 
@@ -188,7 +183,7 @@ export default function AttendanceAlert() {
 
           {isExpanded && (
             <div className="space-y-2">
-              {missingAttendances.slice(0, 5).map((missing, index) => {
+              {missingAttendances.slice(0, 5).map((missing) => {
                 const severity = getSeverity(missing.date);
                 return (
                   <div

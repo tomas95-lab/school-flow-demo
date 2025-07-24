@@ -2,7 +2,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { Calendar, BookOpen, GraduationCap, Plus, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar, BookOpen, GraduationCap, Plus } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useColumnsCursos, useColumnsMaterias } from "@/app/cursos_materias/colums";
 import { Button } from "@/components/ui/button";
@@ -306,33 +306,8 @@ export default function GestionCursosMaterias() {
       })
     : subjects
 
-
-
-  // Para cada curso, obtener los teachers relacionados
-  const coursesWithTeachers = myCourses.map((course: any) => {
-    const relatedTeachers = teachers.filter((t: any) => {
-      return t.firestoreId === course.teacherId;
-    });
-    return {
-      ...course,
-      teachers: relatedTeachers
-    };
-  });
-
-  // Para cada materia, obtener los teachers relacionados
-  const subjectsWithTeachers = mySubjects.map((subject: any) => {
-    const relatedTeachers = teachers.filter((t: any) => {
-      return t.firestoreId === subject.teacherId;
-    });
-    return {
-      ...subject,
-      teachers: relatedTeachers
-    };
-  });
-
   // Map Firestore data to Curso type
   const mappedCourses = myCourses.map((course: any) => {
-    const courseWithTeachers = coursesWithTeachers.find((c: any) => c.firestoreId === course.firestoreId);
     const teacher = teachers.find((t: any) => t.firestoreId === course.teacherId);
     return {
       id: course.firestoreId,

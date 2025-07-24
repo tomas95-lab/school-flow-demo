@@ -1,10 +1,8 @@
-import React from 'react';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { 
   TrendingUp, 
   TrendingDown, 
-  AlertTriangle, 
   Trophy, 
   Info,
   Brain,

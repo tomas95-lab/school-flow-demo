@@ -17,7 +17,6 @@ import {
   getPromedioPorMateriaPorTrimestre,
   generarObservacionAutomaticaBoletin,
 } from "@/utils/boletines";
-import ObservacionAutomatica from "./ObservacionAutomatica";
 
 // Función para obtener el período anterior
 function obtenerPeriodoAnterior(periodoActual: string): string | undefined {

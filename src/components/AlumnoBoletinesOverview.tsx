@@ -1,4 +1,4 @@
-import { useContext, useState, useMemo } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
@@ -10,14 +10,12 @@ import {
   AlertTriangle,
   Download,
   Eye,
-  Brain
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { StatsCard } from "./StatCards";
 import { getPromedioTotal, observacionPorPromedio, generarPDFBoletin, generarObservacionAutomaticaBoletin } from "@/utils/boletines";
 import { getPeriodoActual } from "@/utils/boletines";
-import ObservacionAutomatica from "./ObservacionAutomatica";
 
 // Función para obtener el período anterior
 function obtenerPeriodoAnterior(periodoActual: string): string | undefined {
@@ -47,28 +45,6 @@ export default function AlumnoBoletinesOverview() {
   const { data: courses } = useFirestoreCollection("courses");
   const { data: calificaciones } = useFirestoreCollection("calificaciones");
 
-
-
-  // Función para generar observación automática en tiempo real
-  const generarObservacionEnTiempoReal = useMemo(() => {
-    if (!studentId || !calificaciones || !asistencias) return null;
-    
-    const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === studentId);
-    const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === studentId);
-    
-    if (calificacionesAlumno.length === 0) return null;
-    
-    const periodoActual = getPeriodoActual();
-    const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
-    
-    return generarObservacionAutomaticaBoletin(
-      calificacionesAlumno,
-      asistenciasAlumno,
-      studentId,
-      periodoActual,
-      periodoAnterior
-    );
-  }, [studentId, calificaciones, asistencias]);
 
   const studentInfo = students.find((student) => student.firestoreId === studentId);
   const course = courses.find((c) => c.firestoreId === studentInfo?.cursoId);
