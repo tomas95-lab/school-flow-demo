@@ -11,6 +11,7 @@ import { Button } from "./ui/button";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar as CalendarComponent } from "./ui/calendar";
 
 export interface CalificacionesRow {
   id: string | undefined;
@@ -101,29 +102,8 @@ export default function AlumnoCalificacionesOverview() {
     };
   }, [calificacionesAlumno]);
 
-  // Filtrar por fechas si están seleccionadas
-  const filteredGrades = useMemo(() => {
-    let filtered = calificacionesAlumno;
-    
-    if (startDate) {
-      filtered = filtered.filter(cal => {
-        const gradeDate = new Date(cal.fecha);
-        return gradeDate >= startDate;
-      });
-    }
-    
-    if (endDate) {
-      filtered = filtered.filter(cal => {
-        const gradeDate = new Date(cal.fecha);
-        return gradeDate <= endDate;
-      });
-    }
-    
-    return filtered;
-  }, [calificacionesAlumno, startDate, endDate]);
-
-  // Preparar datos para la tabla
-  const tableData: CalificacionesRow[] = filteredGrades.map(cal => ({
+  // Preparar datos para la tabla (sin filtrar por fechas aquí, se hará en la tabla)
+  const tableData: CalificacionesRow[] = calificacionesAlumno.map(cal => ({
     id: cal.firestoreId,
     Actividad: cal.Actividad || "Evaluación",
     Nombre: cal.Nombre,
@@ -238,66 +218,6 @@ export default function AlumnoCalificacionesOverview() {
         />
       </div>
 
-      {/* Filtros y controles */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Historial de Calificaciones
-              </h3>
-              {filteredGrades.length !== calificacionesAlumno.length && (
-                <Badge variant="secondary">
-                  {filteredGrades.length} de {calificacionesAlumno.length}
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {/* Filtro de fecha inicial */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" />
-                    {startDate ? format(startDate, "dd/MM/yyyy") : "Desde"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  {/* Removed CalendarComponent as it's not imported */}
-                </PopoverContent>
-              </Popover>
-
-              {/* Filtro de fecha final */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" />
-                    {endDate ? format(endDate, "dd/MM/yyyy") : "Hasta"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  {/* Removed CalendarComponent as it's not imported */}
-                </PopoverContent>
-              </Popover>
-
-              {/* Limpiar filtros */}
-              {(startDate || endDate) && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setStartDate(undefined);
-                    setEndDate(undefined);
-                  }}
-                >
-                  Limpiar
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Tabla de calificaciones */}
       <Card>
         <CardContent className="pt-6">
@@ -311,6 +231,91 @@ export default function AlumnoCalificacionesOverview() {
                   columnId: "Materia",
                   label: "Materia",
                   options: materiaOptions
+                },
+                {
+                  type: "custom",
+                  columnId: "fecha",
+                  label: "Fecha",
+                  placeholder: "Seleccionar fecha",
+                  element: (table) => (
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4" />
+                            {startDate ? format(startDate, "dd/MM/yyyy") : "Desde"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <CalendarComponent
+                            mode="single"
+                            selected={startDate}
+                            onSelect={(date) => {
+                              setStartDate(date);
+                              // Aplicar filtro de fecha a la tabla
+                              if (date && endDate) {
+                                table.getColumn("fecha")?.setFilterValue([
+                                  format(date, "yyyy-MM-dd"),
+                                  format(endDate, "yyyy-MM-dd")
+                                ]);
+                              } else if (date) {
+                                table.getColumn("fecha")?.setFilterValue([
+                                  format(date, "yyyy-MM-dd"),
+                                  format(new Date(), "yyyy-MM-dd")
+                                ]);
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex items-center gap-2">
+                            <CalendarIcon className="h-4 w-4" />
+                            {endDate ? format(endDate, "dd/MM/yyyy") : "Hasta"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <CalendarComponent
+                            mode="single"
+                            selected={endDate}
+                            onSelect={(date) => {
+                              setEndDate(date);
+                              // Aplicar filtro de fecha a la tabla
+                              if (startDate && date) {
+                                table.getColumn("fecha")?.setFilterValue([
+                                  format(startDate, "yyyy-MM-dd"),
+                                  format(date, "yyyy-MM-dd")
+                                ]);
+                              } else if (date) {
+                                table.getColumn("fecha")?.setFilterValue([
+                                  format(new Date(0), "yyyy-MM-dd"),
+                                  format(date, "yyyy-MM-dd")
+                                ]);
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {(startDate || endDate) && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            setStartDate(undefined);
+                            setEndDate(undefined);
+                            table.getColumn("fecha")?.setFilterValue(undefined);
+                          }}
+                        >
+                          Limpiar
+                        </Button>
+                      )}
+                    </div>
+                  )
                 },
                 {
                   type: "button",
@@ -330,16 +335,10 @@ export default function AlumnoCalificacionesOverview() {
             <div className="text-center py-12">
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {filteredGrades.length === 0 && calificacionesAlumno.length > 0 
-                  ? "No hay calificaciones en el período seleccionado"
-                  : "No hay calificaciones registradas"
-                }
+                No hay calificaciones registradas
               </h3>
               <p className="text-gray-600">
-                {filteredGrades.length === 0 && calificacionesAlumno.length > 0
-                  ? "Intenta ajustar los filtros de fecha para ver más resultados."
-                  : "Tus calificaciones aparecerán aquí una vez que sean registradas por tus docentes."
-                }
+                Tus calificaciones aparecerán aquí una vez que sean registradas por tus docentes.
               </p>
             </div>
           )}
