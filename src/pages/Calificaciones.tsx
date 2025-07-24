@@ -188,7 +188,7 @@ export default function Calificaciones() {
           )}
 
           {activeView === "observaciones" && (
-            <ObservacionesAutomaticasPanel role={user?.role as any} context="calificaciones" className="mb-8" />
+            <ObservacionesAutomaticasPanel role={user?.role as "admin" | "docente" | "alumno"} context="calificaciones" className="mb-8" />
           )}
           
           {/* Estado vacío cuando no hay vista activa */}

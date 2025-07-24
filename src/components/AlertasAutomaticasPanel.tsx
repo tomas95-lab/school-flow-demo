@@ -63,67 +63,91 @@ export default function AlertasAutomaticasPanel({
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
 
     switch (role) {
-      case 'admin':
+      case 'admin': {
         // Para admin: alertas de todos los estudiantes
-                 return students.flatMap((student: any) => {
-           const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
-           const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
-           
-           if (calificacionesAlumno.length === 0) return [];
+        return students.flatMap((student) => {
+          const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+          const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+          
+          if (calificacionesAlumno.length === 0) return [];
 
-           const datosAlumno: DatosAlumno = {
-             studentId: student.firestoreId,
-             calificaciones: calificacionesAlumno as any,
-             asistencias: asistenciasAlumno as any,
-             periodoActual,
-             periodoAnterior
-           };
+          const datosAlumno: DatosAlumno = {
+            studentId: student.firestoreId || '',
+            calificaciones: calificacionesAlumno.map(cal => ({
+              valor: cal.valor || 0,
+              fecha: cal.fecha || '',
+              subjectId: cal.subjectId || ''
+            })),
+            asistencias: asistenciasAlumno.map(asist => ({
+              present: asist.presente || false,
+              fecha: asist.fecha || ''
+            })),
+            periodoActual,
+            periodoAnterior
+          };
 
           return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
         });
+      }
 
-      case 'docente':
+      case 'docente': {
         // Para docente: alertas de sus estudiantes
-        const teacher = teachers.find((t: any) => t.firestoreId === user?.teacherId);
+        const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
         if (!teacher) return [];
 
-        const teacherStudents = students.filter((student: any) => student.cursoId === teacher.cursoId);
+        const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
         
-                 return teacherStudents.flatMap((student: any) => {
-           const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
-           const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
-           
-           if (calificacionesAlumno.length === 0) return [];
+        return teacherStudents.flatMap((student) => {
+          const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+          const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+          
+          if (calificacionesAlumno.length === 0) return [];
 
-           const datosAlumno: DatosAlumno = {
-             studentId: student.firestoreId,
-             calificaciones: calificacionesAlumno as any,
-             asistencias: asistenciasAlumno as any,
-             periodoActual,
-             periodoAnterior
-           };
+          const datosAlumno: DatosAlumno = {
+            studentId: student.firestoreId || '',
+            calificaciones: calificacionesAlumno.map(cal => ({
+              valor: cal.valor || 0,
+              fecha: cal.fecha || '',
+              subjectId: cal.subjectId || ''
+            })),
+            asistencias: asistenciasAlumno.map(asist => ({
+              present: asist.presente || false,
+              fecha: asist.fecha || ''
+            })),
+            periodoActual,
+            periodoAnterior
+          };
 
           return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
         });
+      }
 
-      case 'alumno':
+      case 'alumno': {
         // Para alumno: sus propias alertas
         if (!user?.studentId) return [];
 
-        const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === user.studentId);
-        const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === user.studentId);
+        const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === user.studentId);
+        const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === user.studentId);
         
         if (calificacionesAlumno.length === 0) return [];
 
-                 const datosAlumno: DatosAlumno = {
-           studentId: user.studentId,
-           calificaciones: calificacionesAlumno as any,
-           asistencias: asistenciasAlumno as any,
-           periodoActual,
-           periodoAnterior
-         };
+        const datosAlumno: DatosAlumno = {
+          studentId: user.studentId || '',
+          calificaciones: calificacionesAlumno.map(cal => ({
+            valor: cal.valor || 0,
+            fecha: cal.fecha || '',
+            subjectId: cal.subjectId || ''
+          })),
+          asistencias: asistenciasAlumno.map(asist => ({
+            present: asist.presente || false,
+            fecha: asist.fecha || ''
+          })),
+          periodoActual,
+          periodoAnterior
+        };
 
         return generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
+      }
 
       default:
         return [];

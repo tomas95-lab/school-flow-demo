@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { collection, onSnapshot, getFirestore, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, getFirestore, query, orderBy, limit, Query, CollectionReference, QuerySnapshot, DocumentSnapshot } from "firebase/firestore";
 import type { DocumentData } from "firebase/firestore";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 
 // Cache global para evitar múltiples listeners
-const cache = new Map<string, { data: any[], timestamp: number, listeners: number }>();
+const cache = new Map<string, { data: DocumentData[], timestamp: number, listeners: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 export function useFirestoreCollection<T extends DocumentData & { firestoreId?: string }>(
@@ -13,7 +13,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
     limit?: number; 
     orderBy?: string; 
     enableCache?: boolean;
-    dependencies?: any[];
+    dependencies?: unknown[];
   }
 ) {
   const [data, setData] = useState<T[]>([]);
@@ -33,14 +33,14 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       if (options?.enableCache !== false && cache.has(cacheKey)) {
         const cached = cache.get(cacheKey)!;
         if (Date.now() - cached.timestamp < CACHE_DURATION) {
-          setData(cached.data);
+          setData(cached.data as T[]);
           setLoading(false);
           return;
         }
       }
 
       // Crear query con opciones
-      let q: any = collection(db, path);
+      let q: CollectionReference<DocumentData> | Query<DocumentData> = collection(db, path);
       if (options?.orderBy) {
         q = query(q, orderBy(options.orderBy));
       }
@@ -50,8 +50,8 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
 
       const unsubscribe = onSnapshot(
         q, 
-        (snapshot: any) => {
-          const docs = snapshot.docs.map((doc: any) => ({
+        (snapshot: QuerySnapshot<DocumentData>) => {
+          const docs = snapshot.docs.map((doc: DocumentSnapshot<DocumentData>) => ({
             ...(doc.data() as T),
             firestoreId: doc.id,
           }));
@@ -68,10 +68,10 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
             });
           }
         },
-        (error: any) => {
+        (error: Error) => {
           console.error(`Error loading collection ${path}:`, error);
-          const appError = handleError(error, `Loading collection: ${path}`);
-          setError(appError.message);
+          handleError(error, `Loading collection: ${path}`);
+          setError(error instanceof Error ? error.message : 'Unknown error');
           setLoading(false);
         }
       );
@@ -79,11 +79,11 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       unsubscribeRef.current = unsubscribe;
     } catch (err) {
       console.error(`Error setting up collection listener for ${path}:`, err);
-      const appError = handleError(err, `Setting up listener for: ${path}`);
-      setError(appError.message);
+      handleError(err, `Setting up listener for: ${path}`);
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
     }
-  }, [path, options?.limit, options?.orderBy, options?.enableCache, ...(options?.dependencies || [])]);
+  }, [path, options?.limit, options?.orderBy, options?.enableCache, cacheKey, db, handleError, ...(options?.dependencies || [])]);
 
   useEffect(() => {
     fetchData();
@@ -103,7 +103,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
         }
       }
     };
-  }, [fetchData]);
+  }, [fetchData, cacheKey]);
 
   return { data, loading, error, refetch: fetchData };
 }
@@ -125,7 +125,7 @@ export function useFirestoreCollectionOnce<T extends DocumentData & { firestoreI
 
       try {
         const { getDocs } = await import('firebase/firestore');
-        let q: any = collection(db, path);
+        let q: CollectionReference<DocumentData> | Query<DocumentData> = collection(db, path);
         
         if (options?.orderBy) {
           q = query(q, orderBy(options.orderBy));
@@ -150,7 +150,7 @@ export function useFirestoreCollectionOnce<T extends DocumentData & { firestoreI
     };
 
     fetchData();
-  }, [path, options?.limit, options?.orderBy]);
+  }, [path, options?.limit, options?.orderBy, db]);
 
   return { data, loading, error };
 } 

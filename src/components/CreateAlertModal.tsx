@@ -11,7 +11,7 @@ import { Separator } from './ui/separator';
 import { AuthContext } from '../context/AuthContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection';
+import { useFirestoreCollection } from '@/hooks/useFireStoreCollection';
 import { toast } from 'sonner';
 import { 
   AlertTriangle, 
@@ -102,7 +102,7 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -362,8 +362,8 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
                       <SelectValue placeholder="Selecciona un curso" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courses?.map((course: any) => (
-                        <SelectItem key={course.firestoreId} value={course.firestoreId}>
+                      {courses?.map((course) => (
+                        <SelectItem key={course.firestoreId || ''} value={course.firestoreId || ''}>
                           <div className="flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
                             {course.nombre} - {course.division}
@@ -401,8 +401,8 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
                           Todos los cursos
                         </div>
                       </SelectItem>
-                      {courses?.map((course: any) => (
-                        <SelectItem key={course.firestoreId} value={course.firestoreId}>
+                      {courses?.map((course) => (
+                        <SelectItem key={course.firestoreId || ''} value={course.firestoreId || ''}>
                           <div className="flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
                             {course.nombre} - {course.division}
@@ -424,19 +424,19 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
                     Selecciona los estudiantes específicos que recibirán esta alerta
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto border p-3 rounded-lg bg-gray-50">
-                    {students?.map((student: any) => (
-                      <Badge
-                        key={student.firestoreId}
-                        variant={formData.selectedStudents.includes(student.firestoreId) ? "default" : "outline"}
-                        className={`cursor-pointer transition-colors ${
-                          formData.selectedStudents.includes(student.firestoreId) 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                            : 'hover:bg-blue-50 hover:border-blue-300'
-                        }`}
-                        onClick={() => handleStudentToggle(student.firestoreId)}
-                      >
-                        {student.nombre} {student.apellido}
-                      </Badge>
+                    {students?.map((student) => (
+                                              <Badge
+                          key={student.firestoreId || ''}
+                          variant={formData.selectedStudents.includes(student.firestoreId || '') ? "default" : "outline"}
+                          className={`cursor-pointer transition-colors ${
+                            formData.selectedStudents.includes(student.firestoreId || '') 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : 'hover:bg-blue-50 hover:border-blue-300'
+                          }`}
+                          onClick={() => handleStudentToggle(student.firestoreId || '')}
+                        >
+                          {student.nombre} {student.apellido}
+                        </Badge>
                     ))}
                   </div>
                   {errors.selectedStudents && (

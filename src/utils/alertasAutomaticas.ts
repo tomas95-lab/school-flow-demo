@@ -1,7 +1,7 @@
 // Sistema de Alertas Críticas Automáticas
 // Genera alertas automáticas basadas en rendimiento, asistencia y tendencias
 
-import { getPeriodoActual } from './boletines';
+
 
 export interface DatosAlumno {
   studentId: string;
@@ -51,7 +51,7 @@ type ReglaAlerta = {
 // Reglas para generar alertas automáticas
 const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   RENDIMIENTO_CRITICO: {
-    condicion: (datos: DatosAlumno, promedioActual: number) => promedioActual < 5.0,
+    condicion: ((promedioActual: number) => promedioActual < 5.0) as (...args: unknown[]) => boolean,
     titulo: "Rendimiento Crítico Detectado",
     descripcion: "El estudiante presenta un rendimiento académico crítico que requiere intervención inmediata.",
     tipo: 'rendimiento_critico',
@@ -59,7 +59,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   RENDIMIENTO_BAJO: {
-    condicion: (datos: DatosAlumno, promedioActual: number) => promedioActual >= 5.0 && promedioActual < 6.0,
+    condicion: (promedioActual: number) => promedioActual >= 5.0 && promedioActual < 6.0,
     titulo: "Rendimiento Bajo",
     descripcion: "El estudiante presenta un rendimiento académico bajo que necesita atención.",
     tipo: 'rendimiento_critico',
@@ -67,7 +67,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   ASISTENCIA_CRITICA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, ausencias: number, porcentajeAsistencia: number) => 
+    condicion: (ausencias: number, porcentajeAsistencia: number) => 
       porcentajeAsistencia < 70 || ausencias > 5,
     titulo: "Asistencia Crítica",
     descripcion: "El estudiante presenta problemas graves de asistencia que afectan su aprendizaje.",
@@ -76,7 +76,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   ASISTENCIA_BAJA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, ausencias: number, porcentajeAsistencia: number) => 
+    condicion: (ausencias: number, porcentajeAsistencia: number) => 
       (porcentajeAsistencia >= 70 && porcentajeAsistencia < 80) || (ausencias > 3 && ausencias <= 5),
     titulo: "Asistencia Baja",
     descripcion: "El estudiante presenta una asistencia baja que puede afectar su rendimiento.",
@@ -85,7 +85,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   TENDENCIA_NEGATIVA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number) => {
+    condicion: (promedioActual: number, promedioAnterior?: number) => {
       if (!promedioAnterior) return false;
       return (promedioActual - promedioAnterior) < -1.0;
     },
@@ -96,7 +96,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   MATERIAS_EN_RIESGO: {
-    condicion: (datos: DatosAlumno, promedioActual: number, materiasEnRiesgo: string[]) => 
+    condicion: (materiasEnRiesgo: string[]) => 
       materiasEnRiesgo.length >= 2,
     titulo: "Múltiples Materias en Riesgo",
     descripcion: "El estudiante tiene múltiples materias con rendimiento bajo.",
@@ -105,7 +105,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   MEJORA_SIGNIFICATIVA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number) => {
+    condicion: (promedioActual: number, promedioAnterior?: number) => {
       if (!promedioAnterior) return false;
       return (promedioActual - promedioAnterior) > 1.0;
     },
@@ -195,7 +195,7 @@ export function generarAlertasParaEstudiantes(
 ): AlertaAutomatica[] {
   const todasLasAlertas: AlertaAutomatica[] = [];
   
-  estudiantes.forEach(({ studentId, studentName, datos }) => {
+  estudiantes.forEach(({ studentName, datos }) => {
     const alertas = generarAlertasAutomaticas(datos, studentName);
     todasLasAlertas.push(...alertas);
   });

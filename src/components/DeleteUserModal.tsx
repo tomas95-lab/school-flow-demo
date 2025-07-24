@@ -6,7 +6,15 @@ import { db } from '../firebaseConfig';
 import ReutilizableDialog from './DialogReutlizable';
 
 interface DeleteUserModalProps {
-  user: any;
+  user: {
+    id: string;
+    firestoreId: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+    role: string;
+    name: string;
+  };
   onUserDeleted?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;

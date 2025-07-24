@@ -7,7 +7,20 @@ import { db } from "@/firebaseConfig";
 import { updateDoc, doc } from "firebase/firestore";
 
 interface BoletinViewProps {
-  row: any;
+  row: {
+    id?: string;
+    estado?: string;
+    leido?: boolean;
+    fechaLectura?: string;
+    firestoreId?: string;
+    alumnoId?: string;
+    alumnoNombre?: string;
+    periodo?: string;
+    curso?: string;
+    promedioTotal?: number;
+    fechaGeneracion?: string;
+    abierto?: boolean;
+  };
   trigger?: React.ReactNode;
   showDownloadButton?: boolean;
   onDownload?: () => void;
@@ -57,7 +70,7 @@ const getBoletinStatus = (estado: string) => {
 
 export function BoletinView({ row, trigger, showDownloadButton = false, onDownload }: BoletinViewProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(row.estado);
+  const [currentStatus, setCurrentStatus] = useState(row.estado || 'pendiente');
 
   // Marcar como leído cuando se abre el boletín
   const handleOpen = async () => {

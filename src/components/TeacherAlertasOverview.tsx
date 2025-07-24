@@ -26,7 +26,7 @@ export default function TeacherAlertasOverview() {
 
 
   // Filtrar alertas del docente
-  const teacherAlerts = alerts.filter((a: any) => {
+  const teacherAlerts = alerts.filter((a) => {
     // Alerta creada por este docente
     if (a.createdBy === user?.uid) return true;
     
@@ -40,7 +40,7 @@ export default function TeacherAlertasOverview() {
   });
 
   // Filtrar alertas
-  const filteredAlerts = teacherAlerts.filter((alert: any) => {
+  const filteredAlerts = teacherAlerts.filter((alert) => {
     const matchesSearch = alert.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          alert.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || alert.type === filterType;
@@ -51,9 +51,9 @@ export default function TeacherAlertasOverview() {
 
   // Calcular estadísticas de alertas del docente
   const totalAlerts = teacherAlerts.length;
-  const unreadAlerts = teacherAlerts.filter((a: any) => !a.isRead).length;
-  const criticalAlerts = teacherAlerts.filter((a: any) => a.priority === "critical").length;
-  const academicAlerts = teacherAlerts.filter((a: any) => a.type === "academic").length;
+  const unreadAlerts = teacherAlerts.filter((a) => !a.isRead).length;
+  const criticalAlerts = teacherAlerts.filter((a) => a.priority === "critical").length;
+  const academicAlerts = teacherAlerts.filter((a) => a.type === "academic").length;
 
   const markAsRead = async (alertId: string) => {
     try {
@@ -214,7 +214,7 @@ export default function TeacherAlertasOverview() {
             </CardContent>
           </Card>
         ) : (
-          filteredAlerts.map((alert: any) => (
+          filteredAlerts.map((alert) => (
             <Card key={alert.firestoreId || alert.id} className={`${!alert.isRead ? 'border-l-4 border-l-red-500' : ''}`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">

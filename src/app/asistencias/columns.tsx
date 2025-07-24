@@ -5,6 +5,16 @@ import { db } from "@/firebaseConfig"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+
+type AppUser = {
+  uid: string;
+  email: string | null;
+  name: string | null;
+  role: "admin" | "docente" | "alumno";
+  teacherId: string;
+  studentId: string;
+};
+
 export interface AttendanceRow {
   id: string | undefined;  // firestoreId
   Nombre: string;
@@ -13,7 +23,7 @@ export interface AttendanceRow {
   idAsistencia: string;
 }
 
-export function useColumnsDetalle(user: any): ColumnDef<AttendanceRow>[] {
+export function useColumnsDetalle(user: AppUser | null): ColumnDef<AttendanceRow>[] {
   // Verificar permisos para editar asistencias
   const canEditAttendance = user?.role === "admin" || user?.role === "docente";
 

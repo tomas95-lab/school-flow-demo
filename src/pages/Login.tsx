@@ -33,33 +33,40 @@ export default function Login() {
         description: 'Bienvenido de vuelta'
       });
       navigate("/dashboard");
-    } catch (err: any) {
-      console.error("Error de Firebase:", err.code, err.message);
+    } catch (err) {
+      console.error("Error de Firebase:", err);
       
       // Usar el sistema global de manejo de errores
       handleError(err, "Login");
       
       // Mostrar errores con toast
-      if (err.code === 'auth/user-not-found') {
-        toast.error('Usuario no encontrado', {
-          description: 'No existe una cuenta con este email'
-        });
-      } else if (err.code === 'auth/wrong-password') {
-        toast.error('Contraseña incorrecta', {
-          description: 'Verifica tu contraseña e intenta de nuevo'
-        });
-      } else if (err.code === 'auth/invalid-email') {
-        toast.error('Email inválido', {
-          description: 'El formato del email no es válido'
-        });
-      } else if (err.code === 'auth/user-disabled') {
-        toast.error('Cuenta deshabilitada', {
-          description: 'Esta cuenta ha sido deshabilitada'
-        });
-      } else if (err.code === 'auth/too-many-requests') {
-        toast.error('Demasiados intentos', {
-          description: 'Demasiados intentos fallidos. Intenta más tarde'
-        });
+      if (err && typeof err === 'object' && 'code' in err) {
+        const firebaseError = err as { code: string };
+        if (firebaseError.code === 'auth/user-not-found') {
+          toast.error('Usuario no encontrado', {
+            description: 'No existe una cuenta con este email'
+          });
+        } else if (firebaseError.code === 'auth/wrong-password') {
+          toast.error('Contraseña incorrecta', {
+            description: 'Verifica tu contraseña e intenta de nuevo'
+          });
+        } else if (firebaseError.code === 'auth/invalid-email') {
+          toast.error('Email inválido', {
+            description: 'El formato del email no es válido'
+          });
+        } else if (firebaseError.code === 'auth/user-disabled') {
+          toast.error('Cuenta deshabilitada', {
+            description: 'Esta cuenta ha sido deshabilitada'
+          });
+        } else if (firebaseError.code === 'auth/too-many-requests') {
+          toast.error('Demasiados intentos', {
+            description: 'Demasiados intentos fallidos. Intenta más tarde'
+          });
+        } else {
+          toast.error('Error de inicio de sesión', {
+            description: 'Verifica tus credenciales e intenta de nuevo'
+          });
+        }
       } else {
         toast.error('Error de inicio de sesión', {
           description: 'Verifica tus credenciales e intenta de nuevo'

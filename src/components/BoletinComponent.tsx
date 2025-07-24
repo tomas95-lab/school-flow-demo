@@ -14,7 +14,36 @@ import {
 import { generarPDFBoletin } from '@/utils/boletines';
 import { Button } from './ui/button';
 
-export function BoletinComponent({ row }: { row: any }) {
+interface BoletinRow {
+  alumnoId?: string;
+  alumnoNombre?: string;
+  periodo?: string;
+  materias?: Array<{
+    nombre: string;
+    promedio: number;
+    t1: number;
+    t2: number;
+    t3: number;
+  }>;
+  curso?: string;
+  promedioTotal?: number;
+  asistenciasTotales?: number;
+  comentario?: string;
+  fechaGeneracion?: string;
+  abierto?: boolean;
+  alertas?: unknown[];
+  observacionAutomatica?: string;
+  Nombre?: string;
+  promediototal?: number;
+  estado?: string;
+  asistencia?: {
+    porcentaje: number;
+    presentes: number;
+    total: number;
+  };
+}
+
+export function BoletinComponent({ row }: { row: BoletinRow }) {
   const [showComments, setShowComments] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'name'>('name');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -139,8 +168,8 @@ export function BoletinComponent({ row }: { row: any }) {
             <TrendingUp className="w-5 h-5 text-gray-500" />
             <div>
               <p className="text-sm text-gray-600">Promedio</p>
-              <p className={`font-bold ${getGradeColor(row.promediototal)}`}>
-                {row.promediototal.toFixed(1)}
+              <p className={`font-bold ${getGradeColor(row.promediototal || 0)}`}>
+                {(row.promediototal || 0).toFixed(1)}
               </p>
             </div>
           </div>

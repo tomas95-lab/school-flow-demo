@@ -24,12 +24,12 @@ export default function AdminAlertasOverview() {
 
   // Calcular estadísticas de alertas
   const totalAlerts = alerts.length;
-  const unreadAlerts = alerts.filter((a: any) => !a.isRead).length;
-  const criticalAlerts = alerts.filter((a: any) => a.priority === "critical").length;
-  const activeAlerts = alerts.filter((a: any) => a.isActive).length;
+  const unreadAlerts = alerts.filter((a) => !a.isRead).length;
+  const criticalAlerts = alerts.filter((a) => a.priority === "critical").length;
+  const activeAlerts = alerts.filter((a) => a.isActive).length;
 
   // Filtrar alertas
-  const filteredAlerts = alerts.filter((alert: any) => {
+  const filteredAlerts = alerts.filter((alert) => {
     const matchesSearch = alert.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          alert.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || alert.type === filterType;
@@ -194,7 +194,7 @@ export default function AdminAlertasOverview() {
             </CardContent>
           </Card>
         ) : (
-          filteredAlerts.map((alert: any) => (
+          filteredAlerts.map((alert) => (
             <Card key={alert.firestoreId || alert.id} className={`${!alert.isRead ? 'border-l-4 border-l-red-500' : ''}`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">

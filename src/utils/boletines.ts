@@ -1,5 +1,5 @@
 // Cache para cálculos pesados
-const calculationCache = new Map<string, any>();
+const calculationCache = new Map<string, { value: unknown; timestamp: number }>();
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
 
 // Importar sistema de observaciones automáticas
@@ -22,7 +22,7 @@ function getCachedOrCalculate<T>(key: string, calculateFn: () => T): T {
   if (calculationCache.has(key)) {
     const cached = calculationCache.get(key)!;
     if (Date.now() - cached.timestamp < CACHE_DURATION) {
-      return cached.value;
+      return cached.value as T;
     }
   }
   
@@ -67,7 +67,7 @@ export function calcPromedio(arr: number[]) {
 }
 
 // Filtra calificaciones del trimestre actual (optimizado)
-export function filtrarCalificacionesTrimestre(calificaciones: any[], fechaRef?: Date) {
+export function filtrarCalificacionesTrimestre(calificaciones: Array<{ fecha: string }>, fechaRef?: Date) {
   const cacheKey = `trimestre_${fechaRef?.getTime() || 'current'}_${calificaciones.length}`;
   
   return getCachedOrCalculate(cacheKey, () => {
@@ -84,15 +84,15 @@ export function filtrarCalificacionesTrimestre(calificaciones: any[], fechaRef?:
 
 // Función optimizada para obtener promedios por materia
 export function getPromedioPorMateriaPorTrimestre(
-  calificaciones: any[],
-  subjects: any[],
+  calificaciones: Array<{ studentId: string; valor: number; subjectId: string; fecha: string }>,
+  subjects: Array<{ firestoreId: string; nombre: string }>,
   alumnoId: string
 ) {
   const cacheKey = `promedio_materia_${alumnoId}_${subjects.length}_${calificaciones.length}`;
   
   return getCachedOrCalculate(cacheKey, () => {
     // Crear map para búsqueda más rápida
-    const califsMap = new Map<string, any[]>();
+    const califsMap = new Map<string, Array<{ studentId: string; valor: number; subjectId: string; fecha: string }>>();
     
     // Agrupar calificaciones por materia una sola vez
     calificaciones.forEach((c) => {
@@ -136,8 +136,8 @@ export function getPromedioPorMateriaPorTrimestre(
 
 // Agrupa calificaciones por materia para un alumno dado (optimizado)
 export function getPromedioPorMateria(
-  calificaciones: any[],
-  subjects: any[],
+  calificaciones: Array<{ studentId: string; valor: number; subjectId: string }>,
+  subjects: Array<{ firestoreId: string; nombre: string }>,
   alumnoId: string
 ) {
   const cacheKey = `promedio_simple_${alumnoId}_${subjects.length}_${calificaciones.length}`;
@@ -218,7 +218,7 @@ export function observacionPorPromedio(prom: number): string {
 }
 
 // Calcula el promedio total de un boletín (de un array de promedios por materia)
-export function getPromedioTotal(materias: any[]) {
+export function getPromedioTotal(materias: Array<{ T1?: number; T2?: number; T3?: number; promedio?: number }>) {
   let totalNotas = 0;
   let cantidadNotas = 0;
 
@@ -242,8 +242,8 @@ export function getPromedioTotal(materias: any[]) {
 
 // Función para generar observación automática para un boletín
 export function generarObservacionAutomaticaBoletin(
-  calificaciones: any[],
-  asistencias: any[],
+  calificaciones: Array<{ valor?: number; fecha: string; subjectId: string }>,
+  asistencias: Array<{ present: boolean; fecha?: string; date?: string }>,
   studentId: string,
   periodoActual: string,
   periodoAnterior?: string
@@ -257,7 +257,7 @@ export function generarObservacionAutomaticaBoletin(
     })),
     asistencias: asistencias.map(asist => ({
       present: asist.present,
-      fecha: asist.fecha || asist.date
+      fecha: asist.fecha || asist.date || new Date().toISOString()
     })),
     periodoActual,
     periodoAnterior
@@ -361,21 +361,21 @@ export async function generarPDFBoletin(row: any) {
     const materias = row.materias || [];
   const stats = {
       totalMaterias: materias.length,
-      materiasAprobadas: materias.filter((m: any) => {
+      materiasAprobadas: materias.filter((m: { t1?: number; T1?: number; t2?: number; T2?: number; t3?: number; T3?: number; promedio?: number }) => {
         const t1 = m.t1 || m.T1 || 0;
         const t2 = m.t2 || m.T2 || 0;
         const t3 = m.t3 || m.T3 || 0;
         const promedio = m.promedio || (t1 + t2 + t3) / 3;
       return promedio >= 7.0;
       }).length,
-      materiasDestacadas: materias.filter((m: any) => {
+      materiasDestacadas: materias.filter((m: { t1?: number; T1?: number; t2?: number; T2?: number; t3?: number; T3?: number; promedio?: number }) => {
         const t1 = m.t1 || m.T1 || 0;
         const t2 = m.t2 || m.T2 || 0;
         const t3 = m.t3 || m.T3 || 0;
         const promedio = m.promedio || (t1 + t2 + t3) / 3;
       return promedio >= 9.0;
       }).length,
-      materiasEnRiesgo: materias.filter((m: any) => {
+      materiasEnRiesgo: materias.filter((m: { t1?: number; T1?: number; t2?: number; T2?: number; t3?: number; T3?: number; promedio?: number }) => {
         const t1 = m.t1 || m.T1 || 0;
         const t2 = m.t2 || m.T2 || 0;
         const t3 = m.t3 || m.T3 || 0;

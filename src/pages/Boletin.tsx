@@ -3,7 +3,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import AdminBoletinesOverview from "@/components/AminBoletinesOverview";
+import AdminBoletinesOverview from "@/components/AdminBoletinesOverview";
 import AlumnoBoletinesOverview from "@/components/AlumnoBoletinesOverview";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 
@@ -60,7 +60,7 @@ export default function Boletines() {
             {user?.role === "alumno" && (
                 <AlumnoBoletinesOverview />
             )}
-            <ObservacionesAutomaticasPanel role={user?.role as any} context="boletines" className="mb-8" />
+            <ObservacionesAutomaticasPanel role={user?.role as "admin" | "docente" | "alumno"} context="boletines" className="mb-8" />
 
             <div className="mt-12 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

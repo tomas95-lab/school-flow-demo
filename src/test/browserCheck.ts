@@ -8,7 +8,7 @@
     pass: 0,
     fail: 0,
     warnings: 0,
-    tests: []
+    tests: [] as Array<{ name: string; passed: boolean; message: string; details?: string }>
   };
 
   function addTest(name: string, passed: boolean, message: string, details?: string) {
@@ -24,19 +24,18 @@
 
   // Test 1: Verificar que estamos en la aplicación correcta
   try {
-    const appElement = document.querySelector('[data-testid="app"]') || document.body;
     addTest('Aplicación cargada', true, 'La aplicación está funcionando');
   } catch (error) {
-    addTest('Aplicación cargada', false, 'Error al verificar la aplicación', error.message);
+    addTest('Aplicación cargada', false, 'Error al verificar la aplicación', (error as Error).message);
   }
 
   // Test 2: Verificar rutas de calificaciones
   try {
     const currentPath = window.location.pathname;
-    const isCalificacionesPath = currentPath.includes('calificaciones');
+    currentPath.includes('calificaciones');
     addTest('Rutas de calificaciones', true, `Ruta actual: ${currentPath}`);
   } catch (error) {
-    addTest('Rutas de calificaciones', false, 'Error al verificar rutas', error.message);
+    addTest('Rutas de calificaciones', false, 'Error al verificar rutas', (error as Error).message);
   }
 
   // Test 3: Verificar componentes principales
@@ -54,7 +53,7 @@
       addTest(`Componente ${component}`, true, 'Componente disponible');
     });
   } catch (error) {
-    addTest('Componentes principales', false, 'Error al verificar componentes', error.message);
+    addTest('Componentes principales', false, 'Error al verificar componentes', (error as Error).message);
   }
 
   // Test 4: Verificar permisos de usuario
@@ -68,7 +67,7 @@
       addTest('Usuario autenticado', false, 'No se encontró información de usuario');
     }
   } catch (error) {
-    addTest('Usuario autenticado', false, 'Error al verificar autenticación', error.message);
+    addTest('Usuario autenticado', false, 'Error al verificar autenticación', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Test 5: Verificar funcionalidades por rol
@@ -91,7 +90,7 @@
       addTest('Permisos', false, 'No se pudo verificar permisos - usuario no autenticado');
     }
   } catch (error) {
-    addTest('Permisos', false, 'Error al verificar permisos', error.message);
+    addTest('Permisos', false, 'Error al verificar permisos', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Test 6: Verificar elementos de UI
@@ -113,7 +112,7 @@
       }
     });
   } catch (error) {
-    addTest('Elementos UI', false, 'Error al verificar elementos UI', error.message);
+    addTest('Elementos UI', false, 'Error al verificar elementos UI', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Test 7: Verificar funcionalidades específicas
@@ -130,7 +129,7 @@
     const forms = document.querySelectorAll('form');
     addTest('Formularios', forms.length > 0, `${forms.length} formularios encontrados`);
   } catch (error) {
-    addTest('Funcionalidades específicas', false, 'Error al verificar funcionalidades', error.message);
+    addTest('Funcionalidades específicas', false, 'Error al verificar funcionalidades', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Test 8: Verificar rendimiento básico
@@ -149,7 +148,7 @@
       addTest('Rendimiento básico', false, `Operación lenta: ${duration.toFixed(2)}ms`);
     }
   } catch (error) {
-    addTest('Rendimiento básico', false, 'Error al verificar rendimiento', error.message);
+    addTest('Rendimiento básico', false, 'Error al verificar rendimiento', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Test 9: Verificar errores en consola
@@ -172,7 +171,7 @@
       }
     }, 1000);
   } catch (error) {
-    addTest('Errores en consola', false, 'Error al verificar errores', error.message);
+    addTest('Errores en consola', false, 'Error al verificar errores', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Generar reporte final

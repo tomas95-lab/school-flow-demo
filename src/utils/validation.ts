@@ -5,7 +5,7 @@ export interface ValidationRule {
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
-  custom?: (value: any) => string | null;
+  custom?: (value: unknown) => string | null;
 }
 
 export interface ValidationResult {
@@ -102,7 +102,7 @@ export const commonValidations = {
 };
 
 // Función principal de validación
-export function validateField(value: any, rules: ValidationRule): string | null {
+export function validateField(value: unknown, rules: ValidationRule): string | null {
   // Validación requerida
   if (rules.required && (value === null || value === undefined || value === '')) {
     return 'Este campo es requerido';
@@ -137,7 +137,7 @@ export function validateField(value: any, rules: ValidationRule): string | null 
 }
 
 // Validar múltiples campos
-export function validateForm(data: any, schema: ValidationSchema): ValidationResult {
+export function validateForm(data: Record<string, unknown>, schema: ValidationSchema): ValidationResult {
   const errors: string[] = [];
   
   for (const [field, rules] of Object.entries(schema)) {
@@ -267,7 +267,7 @@ export const formValidations = {
 // Utilidades de validación
 export const validationUtils = {
   // Validar email único
-  async validateUniqueEmail(email: string, excludeUserId?: string): Promise<string | null> {
+  async validateUniqueEmail(): Promise<string | null> {
     // Esta función debería hacer una consulta a Firestore
     // Por ahora retorna null (válido)
     return null;

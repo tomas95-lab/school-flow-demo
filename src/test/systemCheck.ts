@@ -20,7 +20,7 @@ class SystemChecker {
     
     try {
       // Verificar importaciones principales
-      const { generarPDFBoletin } = await import('../utils/boletines');
+      await import('../utils/boletines');
       this.addResult({
         component: 'Importaciones',
         status: 'PASS',
@@ -42,23 +42,23 @@ class SystemChecker {
     try {
       const { generarPDFBoletin } = await import('../utils/boletines');
       
-      // Datos de prueba
-      const testData = {
-        Nombre: 'Estudiante Test',
-        periodo: '2024-1',
-        promediototal: 8.5,
-        estado: 'abierto',
-        alertas: 2,
-        materias: [
-          {
-            nombre: 'Matemáticas',
-            t1: 8.5,
-            t2: 9.0,
-            t3: 8.0,
-            promedio: 8.5
-          }
-        ]
-      };
+      // Datos de prueba (no utilizados en esta verificación)
+      // const testData = {
+      //   Nombre: 'Estudiante Test',
+      //   periodo: '2024-1',
+      //   promediototal: 8.5,
+      //   estado: 'abierto',
+      //   alertas: 2,
+      //   materias: [
+      //     {
+      //       nombre: 'Matemáticas',
+      //       t1: 8.5,
+      //       t2: 9.0,
+      //       t3: 8.0,
+      //       promedio: 8.5
+      //     }
+      //   ]
+      // };
 
       // Verificar que la función existe
       if (typeof generarPDFBoletin === 'function') {

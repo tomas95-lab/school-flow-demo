@@ -4,7 +4,7 @@ import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { ErrorList } from './ErrorNotification';
 
 interface GlobalErrorContextType {
-  handleError: (error: unknown, context?: string) => any;
+  handleError: (error: unknown, context?: string) => void;
   clearErrors: () => void;
   removeError: (index: number) => void;
   hasErrors: () => boolean;

@@ -179,7 +179,7 @@ export default function Asistencias() {
             <AttendanceCalendar />
           )}
           {activeView === "observaciones" && (
-            <ObservacionesAutomaticasPanel role={user?.role as any} context="asistencias" className="mb-8" />
+            <ObservacionesAutomaticasPanel role={user?.role as "admin" | "docente" | "alumno"} context="asistencias" className="mb-8" />
           )}
         </div>
 

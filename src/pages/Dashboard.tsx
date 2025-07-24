@@ -210,7 +210,22 @@ function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
 
 export default function Dashboard() {
   const { user, loading } = useContext(AuthContext)
-  const [stats, setStats] = useState<any>({})
+  const [stats, setStats] = useState<{
+    totalStudents?: number;
+    totalTeachers?: number;
+    totalCourses?: number;
+    avgAttendance?: string;
+    avgGrades?: string;
+    criticalAlerts?: number;
+    myCourses?: number;
+    myStudents?: number;
+    myAttendanceDocente?: string;
+    myGrades?: string;
+    myAverage?: string;
+    myAttendance?: string;
+    approvedSubjects?: number;
+    totalSubjects?: number;
+  }>({})
   const [alertStats, setAlertStats] = useState({
     total: 0,
     critical: 0,
@@ -246,16 +261,16 @@ export default function Dashboard() {
 
     // Calcular promedios generales de forma optimizada
     const avgGrades = calificaciones.length > 0 
-      ? (calificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0) / calificaciones.length).toFixed(1)
+      ? (calificaciones.reduce((sum: number, c) => sum + (c.valor || 0), 0) / calificaciones.length).toFixed(1)
       : "0.0";
 
-    const presentCount = asistencias.filter((a: any) => a.present).length;
+    const presentCount = asistencias.filter((a) => a.present).length;
     const avgAttendance = asistencias.length > 0
       ? `${Math.round((presentCount / asistencias.length) * 100)}%`
       : "0%";
 
     // Calcular estadísticas específicas por rol
-    const roleStats: any = {
+    const roleStats = {
       totalStudents,
       totalTeachers,
       totalCourses,
@@ -293,7 +308,7 @@ export default function Dashboard() {
           teacherSubjectIds.has(c.subjectId)
         );
         
-        const teacherGradesSum = teacherCalificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
+        const teacherGradesSum = teacherCalificaciones.reduce((sum: number, c) => sum + (c.valor || 0), 0);
         const teacherGrades = teacherCalificaciones.length > 0
           ? (teacherGradesSum / teacherCalificaciones.length).toFixed(1)
           : "0.0";
@@ -338,7 +353,7 @@ export default function Dashboard() {
         const studentAsistencias = asistencias.filter(a => a.studentId === user.studentId);
         
         // Calcular promedio del alumno de forma optimizada
-        const gradesSum = studentCalificaciones.reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
+        const gradesSum = studentCalificaciones.reduce((sum: number, c) => sum + (c.valor || 0), 0);
         const myAverage = studentCalificaciones.length > 0
           ? (gradesSum / studentCalificaciones.length).toFixed(1)
           : "0.0";
@@ -419,14 +434,14 @@ export default function Dashboard() {
     switch (user?.role) {
       case 'admin':
         // Para admin: alertas de todos los estudiantes
-        return students.flatMap((student: any) => {
-          const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
-          const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
+        return students.flatMap((student) => {
+          const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+          const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
           
           if (calificacionesAlumno.length === 0) return [];
 
           const datosAlumno: DatosAlumno = {
-            studentId: student.firestoreId,
+            studentId: student.firestoreId || '',
             calificaciones: calificacionesAlumno as any,
             asistencias: asistenciasAlumno as any,
             periodoActual,
@@ -436,12 +451,12 @@ export default function Dashboard() {
           return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
         });
 
-      case 'docente':
+      case 'docente': {
         // Para docente: alertas de sus estudiantes
-        const teacher = teachers.find((t: any) => t.firestoreId === user?.teacherId);
+        const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
         if (!teacher) return [];
 
-        const teacherStudents = students.filter((student: any) => student.cursoId === teacher.cursoId);
+        const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
         
         return teacherStudents.flatMap((student: any) => {
           const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
@@ -450,7 +465,7 @@ export default function Dashboard() {
           if (calificacionesAlumno.length === 0) return [];
 
           const datosAlumno: DatosAlumno = {
-            studentId: student.firestoreId,
+            studentId: student.firestoreId || '',
             calificaciones: calificacionesAlumno as any,
             asistencias: asistenciasAlumno as any,
             periodoActual,
@@ -459,8 +474,9 @@ export default function Dashboard() {
 
           return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
         });
+      }
 
-      case 'alumno':
+      case 'alumno': {
         // Para alumno: sus propias alertas
         if (!user?.studentId) return [];
 
@@ -469,15 +485,16 @@ export default function Dashboard() {
         
         if (calificacionesAlumno.length === 0) return [];
 
-        const datosAlumno: DatosAlumno = {
-          studentId: user.studentId,
-          calificaciones: calificacionesAlumno as any,
-          asistencias: asistenciasAlumno as any,
-          periodoActual,
-          periodoAnterior
-        };
+                  const datosAlumno: DatosAlumno = {
+            studentId: user.studentId || '',
+            calificaciones: calificacionesAlumno as any,
+            asistencias: asistenciasAlumno as any,
+            periodoActual,
+            periodoAnterior
+          };
 
         return generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
+      }
 
       default:
         return [];
@@ -492,22 +509,22 @@ export default function Dashboard() {
     
     // Filtrar alertas según el rol
     if (user?.role === "docente" && user?.teacherId) {
-      filteredAlerts = alerts.filter((a: any) => a.createdBy === user.teacherId || a.targetUserRole === "docente");
+      filteredAlerts = alerts.filter((a) => a.createdBy === user.teacherId || a.targetUserRole === "docente");
     } else if (user?.role === "alumno" && user?.studentId) {
-      filteredAlerts = alerts.filter((a: any) => a.targetUserId === user.studentId);
+      filteredAlerts = alerts.filter((a) => a.targetUserId === user.studentId);
     }
     
     const normalAlertStatsData = {
       total: filteredAlerts.length,
-      critical: filteredAlerts.filter((a: any) => a.priority === "critical").length,
-      pending: filteredAlerts.filter((a: any) => a.status === "pending").length,
+      critical: filteredAlerts.filter((a) => a.priority === "critical").length,
+      pending: filteredAlerts.filter((a) => a.status === "pending").length,
     };
     
     setAlertStats(normalAlertStatsData);
     
     // Actualizar estadísticas de admin con alertas críticas normales
     if (user?.role === "admin") {
-      setStats((prev: any) => ({
+      setStats((prev) => ({
         ...prev,
         criticalAlerts: normalAlertStatsData.critical
       }));
@@ -518,8 +535,8 @@ export default function Dashboard() {
   useEffect(() => {
     const automaticAlertStatsData = {
       total: alertasAutomaticas.length,
-      critical: alertasAutomaticas.filter((a: any) => a.prioridad === "critica").length,
-      pending: alertasAutomaticas.filter((a: any) => !a.leida).length,
+      critical: alertasAutomaticas.filter((a) => a.prioridad === "critica").length,
+      pending: alertasAutomaticas.filter((a) => !a.leida).length,
     };
     
     setAutomaticAlertStats(automaticAlertStatsData);
@@ -611,7 +628,7 @@ export default function Dashboard() {
   )
 }
 
-function WelcomeMessage({ user }: { user: any }) {
+function WelcomeMessage({ user }: { user: { name: string | null; role: string } | null }) {
   const currentHour = new Date().getHours();
   let greeting = "";
   let IconComponent = Sun;

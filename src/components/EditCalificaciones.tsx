@@ -14,7 +14,14 @@ export default function EditCalificaciones({
   handleSubmit,
   handleCancel,
 }: {
-  formData: any,
+  formData: {
+    student: string;
+    subject: string;
+    activity: string;
+    grade: string;
+    date: string;
+    comment: string;
+  },
   errors: { [key: string]: string | null },
   handleGradeChange: (value: string) => void,
   handleDateChange: (value: string) => void,

@@ -56,7 +56,7 @@ export function convertirUndefinedANull<T extends Record<string, any>>(obj: T): 
  * Valida si un objeto es seguro para Firebase
  * Verifica que no contenga valores undefined
  */
-export function esObjetoSeguroParaFirebase(obj: any): boolean {
+export function esObjetoSeguroParaFirebase(obj: unknown): boolean {
   if (obj === undefined) return false;
   if (obj === null) return true;
   

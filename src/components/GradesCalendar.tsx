@@ -59,7 +59,7 @@ type Grade = {
   tipo: string;
   fecha: string;
   comentario?: string;
-  createdAt?: any;
+  createdAt?: Date | string;
 };
 
 export default function GradesCalendar() {

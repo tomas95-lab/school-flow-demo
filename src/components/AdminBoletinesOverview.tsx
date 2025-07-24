@@ -55,32 +55,35 @@ export default function AdminBoletinesOverview() {
 
   // Memoizar cálculos pesados
   const boletinesCalculados = useMemo(() => {
-    if (!alumnos || !subjects || !calificaciones) return [];
+    if (!alumnos || !subjects || !calificaciones || !asistencias) return [];
     const currentDate = new Date();
 
     const periodoActual = getPeriodoActual();
-    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones);
+    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones as any);
 
-    return alumnos.map((alumno: any) => {
+    return alumnos.map((alumno) => {
+      // Filtrar solo las materias del alumno actual si subjects tiene más campos
       const materias = getPromedioPorMateriaPorTrimestre(
-        calificacionesTrimestre,
-        subjects,
-        alumno.firestoreId
+        calificacionesTrimestre as any,
+        Array.isArray(subjects)
+          ? subjects.filter((s) => !!s && typeof s === "object" && "firestoreId" in s) as any
+          : [],
+        alumno.firestoreId || ''
       );
 
       const promedioTotal = getPromedioTotal(materias);
 
       // Generar observación automática
-      const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === alumno.firestoreId);
-      const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === alumno.firestoreId);
-      
+      const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === alumno.firestoreId);
+      const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === alumno.firestoreId);
+
       // Obtener período anterior (simplificado)
       const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
-      
+
       const observacionAutomatica = generarObservacionAutomaticaBoletin(
-        calificacionesAlumno,
-        asistenciasAlumno,
-        alumno.firestoreId,
+        calificacionesAlumno as any,
+        asistenciasAlumno as any,
+        alumno.firestoreId || '',
         periodoActual,
         periodoAnterior
       );
@@ -100,14 +103,14 @@ export default function AdminBoletinesOverview() {
         observacionAutomatica,
       };
     });
-  }, [alumnos, subjects, calificaciones]);
+  }, [alumnos, subjects, calificaciones, asistencias]);
 
   // Memoizar promedio global
   const promedioGlobal = useMemo(() => {
     if (!calificaciones) return "0.00";
-    
-    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones);
-    return calcPromedio(calificacionesTrimestre.map((c: any) => c.valor)).toFixed(2);
+
+    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones as any);
+    return calcPromedio(calificacionesTrimestre.map((c) => (c as any).valor)).toFixed(2);
   }, [calificaciones]);
 
   // Memoizar función de subida de boletines
@@ -164,7 +167,7 @@ export default function AdminBoletinesOverview() {
     return {
       coverage: boletines.length,
       globalAverage: promedioGlobal,
-      readCount: boletines.filter((b: any) => b.abierto).length,
+      readCount: boletines.filter((b) => b.abierto).length,
       criticalAlerts: boletinesCalculados.reduce(
         (count, b) => count + (b.alertas.length > 0 ? 1 : 0),
         0
@@ -259,9 +262,9 @@ export default function AdminBoletinesOverview() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {(user?.role === "docente" ? teacherCourses : courses).map((course: any, index: number) => {
+        {(user?.role === "docente" ? teacherCourses : courses).map((course, index: number) => {
           const safeCourse: Course = {
-            firestoreId: course.firestoreId,
+            firestoreId: course.firestoreId || '',
             nombre: course.nombre || "",
             division: course.division || "",
           };

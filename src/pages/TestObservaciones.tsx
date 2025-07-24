@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Plus, Trash2 } from 'lucide-react';
+import { Brain, Plus } from 'lucide-react';
 import { generarObservacionAutomatica, type DatosAlumno } from '@/utils/observacionesAutomaticas';
 import ObservacionAutomatica from '@/components/ObservacionAutomatica';
 
@@ -27,7 +26,18 @@ export default function TestObservaciones() {
     periodoAnterior: "2024-T3"
   });
 
-  const [observacionGenerada, setObservacionGenerada] = useState<any>(null);
+  const [observacionGenerada, setObservacionGenerada] = useState<{
+    texto: string;
+    tipo: 'rendimiento' | 'tendencia' | 'asistencia' | 'excelencia' | 'neutral';
+    prioridad: 'alta' | 'media' | 'baja';
+    reglaAplicada: string;
+    datosSoporte: {
+      promedioActual: number;
+      promedioAnterior?: number;
+      ausencias: number;
+      tendencia: 'mejora' | 'descenso' | 'estable' | 'sin_datos';
+    };
+  } | null>(null);
 
   const generarObservacion = () => {
     try {
@@ -63,7 +73,7 @@ export default function TestObservaciones() {
   const cambiarPromedio = (nuevoPromedio: number) => {
     setDatosPrueba(prev => ({
       ...prev,
-      calificaciones: prev.calificaciones.map((cal, index) => ({
+      calificaciones: prev.calificaciones.map((cal) => ({
         ...cal,
         valor: nuevoPromedio
       }))

@@ -37,8 +37,10 @@ export default function ObservacionesAutomaticasPanel({
   };
 
   // Función para filtrar observaciones según el contexto
-  const filtrarObservacionesPorContexto = (observaciones: any[]) => {
-    return observaciones.filter((item: any) => {
+  const filtrarObservacionesPorContexto = (observaciones: Array<{ studentId: string | undefined; studentName: string; observacion: any } | null>) => {
+    return observaciones.filter((item): item is { studentId: string | undefined; studentName: string; observacion: any } => {
+      return item !== null;
+    }).filter((item) => {
       const tipo = item.observacion.tipo;
       
       switch (context) {
@@ -69,16 +71,16 @@ export default function ObservacionesAutomaticasPanel({
     switch (role) {
       case 'admin':
         // Para admin: observaciones de todos los estudiantes
-        return students.map((student: any) => {
-          const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
-          const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
+            return students.map((student) => {
+      const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+      const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
           
           if (calificacionesAlumno.length === 0) return null;
 
           const observacion = generarObservacionAutomaticaBoletin(
-            calificacionesAlumno,
-            asistenciasAlumno,
-            student.firestoreId,
+            calificacionesAlumno as any,
+            asistenciasAlumno as any,
+            student.firestoreId || '',
             periodoActual,
             periodoAnterior
           );
@@ -90,46 +92,47 @@ export default function ObservacionesAutomaticasPanel({
           };
         }).filter(Boolean);
 
-      case 'docente':
+      case 'docente': {
         // Para docente: observaciones de sus estudiantes
-        const teacher = teachers.find((t: any) => t.firestoreId === user?.teacherId);
+        const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
         if (!teacher) return [];
 
-        const teacherStudents = students.filter((student: any) => student.cursoId === teacher.cursoId);
+        const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
         
-        return teacherStudents.map((student: any) => {
-          const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
-          const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
+        return teacherStudents.map((student) => {
+          const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+          const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
           
           if (calificacionesAlumno.length === 0) return null;
 
           const observacion = generarObservacionAutomaticaBoletin(
-            calificacionesAlumno,
-            asistenciasAlumno,
-            student.firestoreId,
+            calificacionesAlumno as any,
+            asistenciasAlumno as any,
+            student.firestoreId || '',
             periodoActual,
             periodoAnterior
           );
 
-          return {
-            studentId: student.firestoreId,
-            studentName: `${student.nombre} ${student.apellido}`,
-            observacion
-          };
+                      return {
+              studentId: student.firestoreId!,
+              studentName: `${student.nombre} ${student.apellido}`,
+              observacion
+            };
         }).filter(Boolean);
+      }
 
-      case 'alumno':
+      case 'alumno': {
         // Para alumno: su propia observación
         if (!user?.studentId) return [];
 
-        const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === user.studentId);
-        const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === user.studentId);
+        const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === user.studentId);
+        const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === user.studentId);
         
         if (calificacionesAlumno.length === 0) return [];
 
         const observacion = generarObservacionAutomaticaBoletin(
-          calificacionesAlumno,
-          asistenciasAlumno,
+          calificacionesAlumno as any,
+          asistenciasAlumno as any,
           user.studentId,
           periodoActual,
           periodoAnterior
@@ -140,6 +143,7 @@ export default function ObservacionesAutomaticasPanel({
           studentName: user.name || "Estudiante",
           observacion
         }];
+      }
 
       default:
         return [];
@@ -148,7 +152,7 @@ export default function ObservacionesAutomaticasPanel({
 
   // Filtrar observaciones por contexto y relevancia
   const observacionesFiltradas = filtrarObservacionesPorContexto(
-    observacionesGeneradas.filter((item: any) => item.observacion.tipo !== 'neutral')
+    observacionesGeneradas.filter((item) => item && item.observacion.tipo !== 'neutral')
   );
 
   // Obtener título según el contexto
@@ -199,7 +203,7 @@ export default function ObservacionesAutomaticasPanel({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {observacionesFiltradas.map((item: any, index: number) => (
+          {observacionesFiltradas.map((item, index: number) => (
             <div key={`${item.studentId}-${index}`} className="border-l-4 border-purple-200 pl-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-semibold text-sm text-gray-700">

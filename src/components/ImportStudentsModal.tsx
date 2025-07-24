@@ -65,7 +65,7 @@ export default function ImportStudentsModal() {
 
     // Validar que el curso existe
     if (student.cursoId && courses) {
-      const courseExists = courses.some((c: any) => c.firestoreId === student.cursoId);
+      const courseExists = courses.some((c) => c.firestoreId === student.cursoId);
       if (!courseExists) {
         errors.push(`Curso con ID "${student.cursoId}" no existe`);
       }

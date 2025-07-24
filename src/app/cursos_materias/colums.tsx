@@ -116,7 +116,7 @@ export const useColumnsCursos = (
           </div>
         )
       },
-      filterFn: (row: any, id: any, filterValue: any) => {
+      filterFn: (row, id, filterValue) => {
         if (filterValue === "all" || !filterValue) return true;
         const teachers = row.getValue(id) as string[];
         return teachers.some(teacher => 
@@ -214,7 +214,6 @@ export const useColumnsMaterias = (
       header: "Cursos donde se imparte",
       cell: ({ row }) => {
         const cursoIds = row.getValue("cursoIds") as string[]
-        console
         if (!cursoIds || cursoIds.length === 0) {
           return (
             <div className="flex items-center text-slate-400">
@@ -275,7 +274,7 @@ export const useColumnsMaterias = (
           </div>
         )
       },
-      filterFn: (row: any, id: any, filterValue: any) => {
+      filterFn: (row, id, filterValue) => {
         if (filterValue === "all" || !filterValue) return true;
         const teachers = row.getValue(id) as string[];
         return teachers.some(teacher => 
@@ -409,7 +408,7 @@ export const useColumnsMateriaCurso = (onEditMateriaCurso?: (materiaCurso: Mater
         </div>
       )
     },
-    filterFn: (row: any, id: any, filterValue: any) => {
+    filterFn: (row, id, filterValue) => {
       if (filterValue === "all" || !filterValue) return true;
       const teachers = row.getValue(id) as string[];
       return teachers.some(teacher => 

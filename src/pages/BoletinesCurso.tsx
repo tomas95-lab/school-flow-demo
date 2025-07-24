@@ -17,8 +17,11 @@ export default function BoletinesCurso() {
   const [id] = useState(searchParams.get("id") || "");
   const periodoActual = (getPeriodoActual()).split("T")[1];
 
-  const boletinesCurso = boletines.filter((b: any) => b.curso ==id);
-  const course = courses.find((c: any) => c.firestoreId === id);
+  const boletinesCurso = boletines.filter((b) => b.curso === id);
+  const course = courses.find((c) => c.firestoreId === id);
+
+  // Get columns for the table
+  const columns = useColumnsDetalle();
 
 	if (boletines.length === 0) {
 		return (
@@ -28,9 +31,9 @@ export default function BoletinesCurso() {
 		);
 	}
 
-	const rows: BoletinceRow[] = boletinesCurso.map((b: any) => {
+	const rows: BoletinceRow[] = boletinesCurso.map((b) => {
 	const fechaGeneracion = b.fechaGeneracion ? new Date(b.fechaGeneracion).toLocaleDateString('es-ES') : 'N/A';	
-	const materias = b.materias.map((m: any) => {
+	const materias = b.materias.map((m: { T1: number; T2: number; T3: number; nombre: string }) => {
 		const promedio = (m.T1 + m.T2 + m.T3) / 3 || 0;
 		return {
 			nombre: m.nombre,
@@ -45,13 +48,13 @@ export default function BoletinesCurso() {
 	const promedioTotal = getPromedioTotal(b.materias);
 
 	// Calcular datos de asistencia del alumno
-	const asistenciasAlumno = asistencias.filter((a: any) => 
+	const asistenciasAlumno = asistencias.filter((a) => 
 		a.studentId === b.alumnoId && 
 		a.courseId === id
 	);
 	
 	const totalAsistencias = asistenciasAlumno.length;
-	const asistenciasPresentes = asistenciasAlumno.filter((a: any) => a.present).length;
+	const asistenciasPresentes = asistenciasAlumno.filter((a) => a.present).length;
 	const porcentajeAsistencia = totalAsistencias > 0 
 		? Math.round((asistenciasPresentes / totalAsistencias) * 100) 
 		: 0;
@@ -122,7 +125,7 @@ export default function BoletinesCurso() {
 					value={
 						boletinesCurso.length
 							? (
-									boletinesCurso.reduce((acc: number, b: any) => acc + (b.promedioTotal ?? 0), 0) /
+									boletinesCurso.reduce((acc: number, b) => acc + (b.promedioTotal ?? 0), 0) /
 									boletinesCurso.length
 								).toFixed(2)
 							: "-"
@@ -133,7 +136,7 @@ export default function BoletinesCurso() {
 				/>
 				<StatsCard
 					label="Alumnos con Bajo Rendimiento"
-					value={boletinesCurso.filter((b: any) => b.promedioTotal <= 6).length}
+					value={boletinesCurso.filter((b) => b.promedioTotal <= 6).length}
 					icon={Book}
 					color="orange"
 					subtitle="Cantidad de alumnos con promedio menor a seis."
@@ -142,7 +145,7 @@ export default function BoletinesCurso() {
 					label="Top Alumno"
 					value={
 						boletinesCurso.length
-							? boletinesCurso.reduce((max: any, b: any) =>
+							? boletinesCurso.reduce((max, b) =>
 									b.promedioTotal > (max.promedioTotal ?? -1) ? b : max,
 								{}).alumnoNombre || "-"
 							: "-"
@@ -153,7 +156,7 @@ export default function BoletinesCurso() {
 				/>
 
 			</div>
-				<DataTable columns={useColumnsDetalle()} data={rows} />
+				<DataTable columns={columns} data={rows} />
 			</div>
 		
 		</div>

@@ -112,7 +112,7 @@ export default function AlumnoAttendanceOverview(){
         totalRecordsProcessed: totalAllRecords,
         totalPresentRecords
         };
-    }, [studentsInCourse, subjectsInCourse, asistencias]);
+    }, [studentsInCourse, subjectsInCourse, asistencias, studentId, studentInfo?.cursoId]);
 
 
 
@@ -129,8 +129,10 @@ export default function AlumnoAttendanceOverview(){
         setCollapsedSubjects(c);
     };
 
+    // Get columns for the table
+    const columns = useColumnsDetalle(user);
 
-    console.log("AlumnoAttendanceOverview - Collapsed Subjects:", subjectsInCourse);
+
     return (
         <div className="space-y-6">
             <Card className="border-0 shadow-sm">
@@ -142,7 +144,6 @@ export default function AlumnoAttendanceOverview(){
           </CardHeader>
           <CardContent className="space-y-6">
             {subjectsInCourse.map(subject => {
-            // const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre);
             const isCollapsed = collapsedSubjects.has(subject.firestoreId!);
             const stat = courseStats.subjectStats.find(s => s.subject === subject.nombre);
 
@@ -220,20 +221,20 @@ export default function AlumnoAttendanceOverview(){
                           </p>
                         </div>
                       ) : (
-                        <DataTable<AttendanceRow, any>
-                          columns={useColumnsDetalle(user)}
+                        <DataTable<AttendanceRow, unknown>
+                          columns={columns}
                           data={data}
                           placeholder="Buscar estudiante..."
                           filters={[
                             { 
                               type: "button", 
                               label: "Solo presentes", 
-                              onClick: t => t.getColumn("present")?.setFilterValue(true) 
+                              onClick: (t: { getColumn: (column: string) => { setFilterValue: (value: boolean) => void } | undefined }) => t.getColumn("present")?.setFilterValue(true) 
                             },
                             { 
                               type: "button", 
                               label: "Solo ausentes", 
-                              onClick: t => t.getColumn("present")?.setFilterValue(false) 
+                              onClick: (t: { getColumn: (column: string) => { setFilterValue: (value: boolean) => void } | undefined }) => t.getColumn("present")?.setFilterValue(false) 
                             }
                           ]}
                         />

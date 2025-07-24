@@ -1,28 +1,10 @@
+import { useMemo } from "react";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { CourseCard } from "./CourseCard";
 import { StatsCard } from "./StatCards";
+import { CourseCard } from "./CourseCard";
 import { Percent, TriangleAlert } from "lucide-react";
-import { useMemo, useContext } from "react";
-import { AuthContext } from "@/context/AuthContext";
 
 export default function AdminCalificacionesOverview() {
-  const { user } = useContext(AuthContext);
-  
-  // Verificar permisos de acceso
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-white p-8 rounded-lg shadow-sm border">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Denegado</h2>
-            <p className="text-gray-600">Solo los administradores pueden acceder a esta vista.</p>
-            <p className="text-gray-500 text-sm mt-2">Contacta al administrador si crees que esto es un error.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
   const { data: courses } = useFirestoreCollection("courses");
   const { data: subjects } = useFirestoreCollection("subjects");
   const { data: calificaciones } = useFirestoreCollection("calificaciones");
@@ -30,7 +12,7 @@ export default function AdminCalificacionesOverview() {
   const averageGrade = useMemo(() => {
     if (!calificaciones.length) return "Sin datos";
     const total = calificaciones.reduce(
-      (sum: number, { valor }: any) => sum + valor,
+      (sum: number, calificacion) => sum + (calificacion.valor || 0),
       0
     );
     return (total / calificaciones.length).toFixed(2);
@@ -44,6 +26,18 @@ export default function AdminCalificacionesOverview() {
     const pctR = (100 - parseFloat(pctA)).toFixed(2);
     return [pctA, pctR];
   }, [calificaciones]);
+
+  // Early return after all hooks
+  if (!courses || !subjects || !calificaciones) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -101,13 +95,14 @@ export default function AdminCalificacionesOverview() {
             </p>
         </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {courses.map((course: any) => (
+            {courses.map((course) => (
                     <CourseCard
                         key={course.firestoreId}
                         course={{
                             ...course,
                             nombre: course.nombre,
                             division: course.division,
+                            firestoreId: course.firestoreId || '',
                         }}
                         descripcion="Ver y gestionar calificaciones"
                         link={`/calificaciones/detalles?id=${course.firestoreId}`}

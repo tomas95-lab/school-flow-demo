@@ -117,6 +117,9 @@ export default function DetallesCalificaciones() {
     });
     }, [calificacionesFiltradas, subjects, studentsInCourse]);
 
+    // Get columns for the table
+    const columns = useColumnsDetalle();
+
     const exportCalificacionesToCSV = useCallback(() => {
         if (!course) return;
         // Cabeceras
@@ -125,8 +128,8 @@ export default function DetallesCalificaciones() {
         ];
 
         resultado.forEach(item => {
-            const raw = item.fecha as any;
-            const dateObj = raw?.toDate ? raw.toDate() : new Date(raw);
+            const raw = item.fecha;
+            const dateObj = typeof raw === 'object' && raw?.toDate ? raw.toDate() : new Date(raw);
             const dateStr = dateObj.toLocaleString("es-AR", {
             day: "2-digit", month: "2-digit", year: "numeric",
             hour: "2-digit", minute: "2-digit"
@@ -160,7 +163,7 @@ export default function DetallesCalificaciones() {
 
     const averageGrade = useMemo(() => {
         if (!calificacionesFiltradas.length) return "0.00";
-        const total = calificacionesFiltradas.reduce((sum: number, { valor }: any) => sum + valor, 0);
+        const total = calificacionesFiltradas.reduce((sum: number, { valor }) => sum + (valor || 0), 0);
         return (total / calificacionesFiltradas.length).toFixed(2);
     }, [calificacionesFiltradas]);
 
@@ -384,7 +387,7 @@ export default function DetallesCalificaciones() {
             <div className="flex flex-col gap-2 h-full">
               {user?.role === "admin" ? (
                 <DataTable 
-                  columns={useColumnsDetalle()}
+                  columns={columns}
                   data={resultado}
                   filters={[
                     {
@@ -517,7 +520,7 @@ export default function DetallesCalificaciones() {
                 />
               ): (
                 <DataTable
-                  columns={useColumnsDetalle()}
+                  columns={columns}
                   data={resultado}
                   filters={[
                     {
@@ -666,7 +669,7 @@ export default function DetallesCalificaciones() {
                 <div className="border-t border-gray-100 mb-6" />
                 <div className="bg-blue-50/40 rounded-xl shadow-inner p-4">
                   <CrearCalificacion
-                    studentsInCourse={studentsInCourse}
+                    studentsInCourse={studentsInCourse as any}
                     selectedStudentIds={selectedStudentIds}
                     setSelectedStudentIds={setSelectedStudentIds}
                     subjectId={teacherSubjectId}

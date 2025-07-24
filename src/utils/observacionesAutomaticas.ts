@@ -46,48 +46,48 @@ export interface ObservacionLimpia {
 // Reglas de observación
 const REGLAS_OBSERVACION = {
   RENDIMIENTO_INSUFICIENTE: {
-    condicion: (datos: DatosAlumno, promedioActual: number) => promedioActual < 6,
+    condicion: (promedioActual: number) => promedioActual < 6,
     mensaje: "Rendimiento académico insuficiente. Se recomienda intervención pedagógica.",
     tipo: 'rendimiento' as const,
     prioridad: 'alta' as const
   },
   MEJORA_SIGNIFICATIVA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number) => 
+    condicion: (promedioActual: number, promedioAnterior?: number) => 
       promedioAnterior && (promedioActual - promedioAnterior) > 1,
     mensaje: "Mejora significativa observada. Seguir reforzando hábitos de estudio.",
     tipo: 'tendencia' as const,
     prioridad: 'media' as const
   },
   DESCENSO_RENDIMIENTO: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number) => 
+    condicion: (promedioActual: number, promedioAnterior?: number) => 
       promedioAnterior && (promedioAnterior - promedioActual) > 1,
     mensaje: "Descenso en el rendimiento. Se recomienda revisar dificultades y reforzar acompañamiento.",
     tipo: 'tendencia' as const,
     prioridad: 'alta' as const
   },
   AUSENCIAS_REITERADAS: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number, ausencias?: number) => 
+    condicion: (ausencias?: number) => 
       (ausencias || 0) > 3,
     mensaje: "Ausencias reiteradas detectadas. Sugerimos comunicación con la familia.",
     tipo: 'asistencia' as const,
     prioridad: 'media' as const
   },
   AUSENCIAS_CRITICAS: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number, ausencias?: number) => 
+    condicion: (ausencias?: number) => 
       (ausencias || 0) > 5,
     mensaje: "Ausencias críticas detectadas. Se requiere intervención inmediata y comunicación urgente con la familia.",
     tipo: 'asistencia' as const,
     prioridad: 'alta' as const
   },
   ASISTENCIA_PERFECTA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number, ausencias?: number) => 
+    condicion: (datos: DatosAlumno, ausencias?: number) => 
       (ausencias || 0) === 0 && datos.asistencias.length > 0,
     mensaje: "Asistencia perfecta. Felicitaciones por el compromiso y responsabilidad demostrados.",
     tipo: 'asistencia' as const,
     prioridad: 'baja' as const
   },
   MEJORA_ASISTENCIA: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number, ausencias?: number) => {
+    condicion: (datos: DatosAlumno, ausencias?: number) => {
       // Comparar ausencias del período actual vs anterior (simplificado)
       const ausenciasActuales = ausencias || 0;
       const totalAsistencias = datos.asistencias.length;
@@ -99,7 +99,7 @@ const REGLAS_OBSERVACION = {
     prioridad: 'media' as const
   },
   EXCELENTE_DESEMPEÑO: {
-    condicion: (datos: DatosAlumno, promedioActual: number, promedioAnterior?: number) => 
+    condicion: (promedioActual: number, promedioAnterior?: number) => 
       promedioActual > 8 && (!promedioAnterior || promedioActual >= promedioAnterior),
     mensaje: "Excelente desempeño académico. Felicitaciones por el esfuerzo sostenido.",
     tipo: 'excelencia' as const,
@@ -134,7 +134,30 @@ export function generarObservacionAutomatica(datos: DatosAlumno): ObservacionGen
 
   // Verificar cada regla
   Object.entries(REGLAS_OBSERVACION).forEach(([nombreRegla, regla]) => {
-    if (regla.condicion(datos, promedioActual, promedioAnterior, ausencias)) {
+    let seCumple = false;
+    
+    switch (nombreRegla) {
+      case 'RENDIMIENTO_INSUFICIENTE':
+      case 'EXCELENTE_DESEMPEÑO':
+        seCumple = (regla.condicion as any)(datos, promedioActual, promedioAnterior);
+        break;
+      case 'MEJORA_SIGNIFICATIVA':
+        seCumple = (regla.condicion as any)(datos, promedioActual, promedioAnterior);
+        break;
+      case 'DESCENSO_RENDIMIENTO':
+        seCumple = (regla.condicion as any)(promedioActual, promedioAnterior);
+        break;
+      case 'AUSENCIAS_REITERADAS':
+      case 'AUSENCIAS_CRITICAS':
+        seCumple = (regla.condicion as any)(ausencias);
+        break;
+      case 'ASISTENCIA_PERFECTA':
+      case 'MEJORA_ASISTENCIA':
+        seCumple = (regla.condicion as any)(datos, ausencias);
+        break;
+    }
+    
+    if (seCumple) {
       observacionesAplicables.push({
         regla: nombreRegla,
         mensaje: regla.mensaje,
@@ -375,13 +398,19 @@ export function generarResumenObservaciones(observaciones: ObservacionGenerada[]
 }
 
 // Función para validar datos de entrada
-export function validarDatosAlumno(datos: any): datos is DatosAlumno {
-  return (
+export function validarDatosAlumno(datos: unknown): datos is DatosAlumno {
+  return Boolean(
     datos &&
-    typeof datos.studentId === 'string' &&
-    Array.isArray(datos.calificaciones) &&
-    Array.isArray(datos.asistencias) &&
-    typeof datos.periodoActual === 'string'
+    typeof datos === 'object' &&
+    datos !== null &&
+    'studentId' in datos &&
+    typeof (datos as any).studentId === 'string' &&
+    'calificaciones' in datos &&
+    Array.isArray((datos as any).calificaciones) &&
+    'asistencias' in datos &&
+    Array.isArray((datos as any).asistencias) &&
+    'periodoActual' in datos &&
+    typeof (datos as any).periodoActual === 'string'
   );
 }
 

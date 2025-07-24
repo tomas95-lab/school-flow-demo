@@ -16,7 +16,12 @@ interface FormData {
 }
 
 interface CrearCalificacionProps {
-  studentsInCourse: Array<any>;
+  studentsInCourse: Array<{
+    firestoreId: string;
+    nombre: string;
+    apellido: string;
+    cursoId: string;
+  }>;
   selectedStudentIds: string[];
   setSelectedStudentIds: React.Dispatch<React.SetStateAction<string[]>>;
   onSubmit?: (data: FormData, studentIds: string[]) => void;
@@ -140,7 +145,8 @@ export default function CrearCalificacion({
       toast.success('Calificaciones guardadas', {
         description: `${selectedStudentIds.length} calificación${selectedStudentIds.length !== 1 ? 'es' : ''} guardada${selectedStudentIds.length !== 1 ? 's' : ''} exitosamente`
       });
-    } catch (err) {
+    } catch (error) {
+      console.error('Error saving grades:', error);
       setErrors({ general: "Error al guardar la calificación. Intente nuevamente." });
       toast.error('Error al guardar calificaciones', {
         description: 'Inténtalo de nuevo.'

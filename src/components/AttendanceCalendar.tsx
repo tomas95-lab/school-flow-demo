@@ -54,7 +54,7 @@ type Attendance = {
   subject: string;
   date: string;
   present: boolean;
-  createdAt?: any;
+  createdAt?: Date | string;
 };
 
 export default function AttendanceCalendar() {

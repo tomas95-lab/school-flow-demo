@@ -17,6 +17,125 @@ export interface CalificacionesRow {
   fecha: string;
 }
 
+// Separate component to handle the cell with hooks
+function EditGradeCell({ row }: { row: { original: CalificacionesRow } }) {
+  const [formData, setFormData] = React.useState({
+    student: row.original.Nombre,
+    subject: row.original.Materia,
+    activity: row.original.Actividad || "",
+    grade: row.original.Valor?.toString() ?? "",
+    date: row.original.fecha || "",
+    comment: row.original.Comentario || "",
+  });
+  const [errors, setErrors] = React.useState<{ [key: string]: string | null }>({ grade: null, date: null, comment: null });
+  const [loading, setLoading] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [open, setOpen] = React.useState(false);
+
+  // Handlers for form fields
+  const handleGradeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, grade: value }));
+    const num = Number(value);
+    setErrors((prev) => ({
+      ...prev,
+      grade: isNaN(num) || num < 0 || num > 10 ? "Debe ser un número entre 0 y 10" : null,
+    }));
+  };
+  
+  const handleDateChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, date: value }));
+    setErrors((prev) => ({
+      ...prev,
+      date: !value ? "La fecha es obligatoria" : null,
+    }));
+  };
+  
+  const handleCommentChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, comment: value }));
+    setErrors((prev) => ({
+      ...prev,
+      comment: value.length > 500 ? "Máximo 500 caracteres" : null,
+    }));
+  };
+  
+  const handleActivityChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, activity: value }));
+  };
+  
+  const handleSubmit = async () => {
+    setLoading(true);
+    setSubmitError(null);
+    try {
+      if (!row.original.id) throw new Error("ID de calificación no definido");
+      await updateDoc(doc(db, "calificaciones", row.original.id), {
+        Actividad: formData.activity,
+        valor: Number(formData.grade),
+        fecha: formData.date,
+        Comentario: formData.comment,
+        Materia: formData.subject,
+        Nombre: formData.student,
+      });
+      setLoading(false);
+      setOpen(false); // Cierra el diálogo al guardar
+      // Opcional: feedback visual, cerrar modal, refrescar datos, etc.
+    } catch (error) {
+      setLoading(false);
+      const errorMessage = error instanceof Error ? error.message : "Error al actualizar la calificación";
+      setSubmitError(errorMessage);
+    }
+  };
+  
+  const handleCancel = () => {
+    setOpen(false); // Cierra el diálogo al cancelar
+  };
+
+  return (
+    <div className="pl-4">
+      <ReutilizableDialog 
+        small
+        open={open}
+        onOpenChange={setOpen}
+        title={
+          <div className="flex items-center gap-2">
+            <Edit className="h-6 w-6 text-blue-600" />
+            Editar Calificación
+          </div>
+        }             
+        description={`Modifica los detalles de la evaluación del estudiante`}
+        content={
+          <>
+            <EditCalificaciones
+              formData={formData}
+              errors={errors}
+              handleGradeChange={handleGradeChange}
+              handleDateChange={handleDateChange}
+              handleCommentChange={handleCommentChange}
+              handleActivityChange={handleActivityChange}
+              handleSubmit={handleSubmit}
+              handleCancel={handleCancel}
+            />
+            {loading && (
+              <div className="text-blue-600 text-sm mt-2">Guardando cambios...</div>
+            )}
+            {submitError && (
+              <div className="text-red-600 text-sm mt-2">{submitError}</div>
+            )}
+          </>
+        }
+        triger={
+          <button
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0"
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">Editar</span>
+          </button>
+        }
+      />
+    </div>
+  );
+}
+
 export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
   const columns: ColumnDef<CalificacionesRow>[] = [
     {
@@ -91,118 +210,8 @@ export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
     {
       accessorKey: "id",
       header: "Acción",
-      cell: ({ row }) => {
-        // Local state for dialog form
-        const [formData, setFormData] = React.useState({
-          student: row.original.Nombre,
-          subject: row.original.Materia,
-          activity: row.original.Actividad || "",
-          grade: row.original.Valor?.toString() ?? "",
-          date: row.original.fecha || "",
-          comment: row.original.Comentario || "",
-        });
-        const [errors, setErrors] = React.useState<{ [key: string]: string | null }>({ grade: null, date: null, comment: null });
-        const [loading, setLoading] = React.useState(false);
-        const [submitError, setSubmitError] = React.useState<string | null>(null);
-
-        // Estado para controlar el diálogo
-        const [open, setOpen] = React.useState(false);
-
-        // Handlers for form fields
-        const handleGradeChange = (value: string) => {
-          setFormData((prev) => ({ ...prev, grade: value }));
-          const num = Number(value);
-          setErrors((prev) => ({
-            ...prev,
-            grade: isNaN(num) || num < 0 || num > 10 ? "Debe ser un número entre 0 y 10" : null,
-          }));
-        };
-        const handleDateChange = (value: string) => {
-          setFormData((prev) => ({ ...prev, date: value }));
-          setErrors((prev) => ({
-            ...prev,
-            date: !value ? "La fecha es obligatoria" : null,
-          }));
-        };
-        const handleCommentChange = (value: string) => {
-          setFormData((prev) => ({ ...prev, comment: value }));
-          setErrors((prev) => ({
-            ...prev,
-            comment: value.length > 500 ? "Máximo 500 caracteres" : null,
-          }));
-        };
-        const handleActivityChange = (value: string) => {
-          setFormData((prev) => ({ ...prev, activity: value }));
-        };
-        const handleSubmit = async () => {
-          setLoading(true);
-          setSubmitError(null);
-          try {
-            if (!row.original.id) throw new Error("ID de calificación no definido");
-            await updateDoc(doc(db, "calificaciones", row.original.id), {
-              Actividad: formData.activity,
-              valor: Number(formData.grade),
-              fecha: formData.date,
-              Comentario: formData.comment,
-              Materia: formData.subject,
-              Nombre: formData.student,
-            });
-            setLoading(false);
-            setOpen(false); // Cierra el diálogo al guardar
-            // Opcional: feedback visual, cerrar modal, refrescar datos, etc.
-          } catch (err: any) {
-            setLoading(false);
-            setSubmitError(err.message || "Error al actualizar la calificación");
-          }
-        };
-        const handleCancel = () => {
-          setOpen(false); // Cierra el diálogo al cancelar
-        };
-
-        return (
-          <div className="pl-4">
-            <ReutilizableDialog 
-              small
-              open={open}
-              onOpenChange={setOpen}
-              title={
-                <div className="flex items-center gap-2">
-                  <Edit className="h-6 w-6 text-blue-600" />
-                  Editar Calificación
-                </div>
-              }             
-              description={`Modifica los detalles de la evaluación del estudiante`}
-              content={
-                <>
-                  <EditCalificaciones
-                    formData={formData}
-                    errors={errors}
-                    handleGradeChange={handleGradeChange}
-                    handleDateChange={handleDateChange}
-                    handleCommentChange={handleCommentChange}
-                    handleActivityChange={handleActivityChange}
-                    handleSubmit={handleSubmit}
-                    handleCancel={handleCancel}
-                  />
-                  {loading && (
-                    <div className="text-blue-600 text-sm mt-2">Guardando cambios...</div>
-                  )}
-                  {submitError && (
-                    <div className="text-red-600 text-sm mt-2">{submitError}</div>
-                  )}
-                </>
-              }
-              triger={
-                <Pencil
-                  className="h-4 w-4 cursor-pointer"
-                  onClick={() => setOpen(true)}
-                />
-              }
-            />
-          </div>
-        );
-      },
-    }
+      cell: ({ row }) => <EditGradeCell row={row} />,
+    },
   ];
 
   return columns;

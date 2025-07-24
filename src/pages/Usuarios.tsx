@@ -21,9 +21,25 @@ import ImportStudentsModal from "@/components/ImportStudentsModal";
 
 export default function Usuarios() {
   const { user } = useContext(AuthContext);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: "admin" | "docente" | "alumno";
+    status: "active" | "inactive";
+    lastLogin?: string;
+    createdAt?: string;
+  }>>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<{
+    id: string;
+    firestoreId: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+    role: string;
+    name: string;
+  } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { handleError } = useGlobalError();
@@ -33,10 +49,18 @@ export default function Usuarios() {
     try {
       setLoading(true);
       const usersSnapshot = await getDocs(collection(db, "users"));
-      const usersData = usersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const usersData = usersSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || "",
+          email: data.email || "",
+          role: data.role || "alumno",
+          status: data.status || "active",
+          lastLogin: data.lastLogin,
+          createdAt: data.createdAt
+        };
+      });
       setUsers(usersData);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -52,16 +76,35 @@ export default function Usuarios() {
   }, []);
 
   // Función para manejar la edición de usuarios
-  const handleEditUser = (user: any) => {
-    setSelectedUser(user);
+  const handleEditUser = (user: { id: string; name: string; email: string; role: string }) => {
+    setSelectedUser({
+      id: user.id,
+      firestoreId: user.id,
+      nombre: user.name,
+      apellido: "",
+      email: user.email,
+      role: user.role,
+      name: user.name
+    });
     setShowEditModal(true);
   };
 
   // Función para manejar la eliminación de usuarios
-  const handleDeleteUser = (user: any) => {
-    setSelectedUser(user);
+  const handleDeleteUser = (user: { id: string; name: string; email: string; role: string }) => {
+    setSelectedUser({
+      id: user.id,
+      firestoreId: user.id,
+      nombre: user.name,
+      apellido: "",
+      email: user.email,
+      role: user.role,
+      name: user.name
+    });
     setShowDeleteModal(true);
   };
+
+  // Get columns for the table
+  const columns = useColumnsUsuarios(handleEditUser, handleDeleteUser);
 
   if (user === null) {
     return (
@@ -161,7 +204,7 @@ export default function Usuarios() {
                 </div>
               ) : (
                 <DataTable 
-                  columns={useColumnsUsuarios(handleEditUser, handleDeleteUser)} 
+                  columns={columns} 
                   data={users}
                   placeholder="usuario"
                   filters={[

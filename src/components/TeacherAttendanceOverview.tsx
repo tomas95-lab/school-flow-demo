@@ -275,7 +275,7 @@ export default function TeacherAttendanceOverview() {
           label="Asistencia Semanal"
           value={`${Math.round(avgWeeklyAttendance)}%`}
           subtitle={`${trend.direction === "up" ? "+" : trend.direction === "down" ? "-" : ""}${trend.percentage}% vs semana anterior`}
-          color={trend.color as any}
+          color={trend.color as "blue" | "green" | "red" | "yellow" | "purple" | "gray"}
         />
         <StatsCard
           icon={Calendar}

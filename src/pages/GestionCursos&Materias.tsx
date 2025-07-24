@@ -16,8 +16,20 @@ import { toast } from "sonner";
 
 export default function GestionCursosMaterias() {
   const { user, loading: userLoading } = useContext(AuthContext)
-  const [selectedCurso, setSelectedCurso] = useState<any>(null);
-  const [selectedMateria, setSelectedMateria] = useState<any>(null);
+  const [selectedCurso, setSelectedCurso] = useState<{
+    id: string;
+    name?: string;
+    nombre?: string;
+    division?: string;
+    teacherId?: string;
+  } | null>(null);
+  const [selectedMateria, setSelectedMateria] = useState<{
+    id: string;
+    name?: string;
+    nombre?: string;
+    teacherId?: string;
+    cursoId?: string | string[];
+  } | null>(null);
   const [showCursoModal, setShowCursoModal] = useState(false);
   const [showMateriaModal, setShowMateriaModal] = useState(false);
   const [modalType, setModalType] = useState<'create' | 'edit' | 'view'>('create');
@@ -27,7 +39,17 @@ export default function GestionCursosMaterias() {
   const { loading: teachersLoading, data: teachers } = useFirestoreCollection("teachers");
   const { loading: studentsLoading, data: students } = useFirestoreCollection("students");
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'curso' | 'materia', data: any } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ 
+    type: 'curso' | 'materia', 
+    data: {
+      id: string;
+      name?: string;
+      nombre?: string;
+      division?: string;
+      teacherId?: string;
+      cursoId?: string | string[];
+    } 
+  } | null>(null);
 
   // Form states for curso modal
   const [cursoForm, setCursoForm] = useState({
@@ -210,19 +232,19 @@ export default function GestionCursosMaterias() {
     setShowCursoModal(true);
   };
 
-  const handleEditCurso = (curso: any) => {
+  const handleEditCurso = (curso: { id: string; name?: string; nombre?: string; division?: string; teacherId?: string }) => {
     setSelectedCurso(curso);
     setModalType('edit');
     setShowCursoModal(true);
   };
 
-  const handleViewCurso = (curso: any) => {
+  const handleViewCurso = (curso: { id: string; name?: string; nombre?: string; division?: string; teacherId?: string }) => {
     setSelectedCurso(curso);
     setModalType('view');
     setShowCursoModal(true);
   };
 
-  const handleDeleteCurso = (curso: any) => {
+  const handleDeleteCurso = (curso: { id: string; name?: string; nombre?: string; division?: string; teacherId?: string }) => {
     setDeleteTarget({ type: 'curso', data: curso });
     setShowConfirmDelete(true);
   };
@@ -234,19 +256,19 @@ export default function GestionCursosMaterias() {
     setShowMateriaModal(true);
   };
 
-  const handleEditMateria = (materia: any) => {
+  const handleEditMateria = (materia: { id: string; name?: string; nombre?: string; teacherId?: string; cursoId?: string | string[] }) => {
     setSelectedMateria(materia);
     setModalType('edit');
     setShowMateriaModal(true);
   };
 
-  const handleViewMateria = (materia: any) => {
+  const handleViewMateria = (materia: { id: string; name?: string; nombre?: string; teacherId?: string; cursoId?: string | string[] }) => {
     setSelectedMateria(materia);
     setModalType('view');
     setShowMateriaModal(true);
   };
 
-  const handleDeleteMateria = (materia: any) => {
+  const handleDeleteMateria = (materia: { id: string; name?: string; nombre?: string; teacherId?: string; cursoId?: string | string[] }) => {
     setDeleteTarget({ type: 'materia', data: materia });
     setShowConfirmDelete(true);
   };
@@ -265,13 +287,17 @@ export default function GestionCursosMaterias() {
         toast.success('Materia eliminada', { description: 'Materia eliminada exitosamente' });
         await refetchSubjects();
       }
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar', { description: 'Inténtalo de nuevo.' });
     } finally {
       setLoading(false);
       setDeleteTarget(null);
     }
   };
+
+  // Get columns for the tables - moved before conditional returns
+  const cursoColumns = useColumnsCursos(handleEditCurso as any, handleDeleteCurso as any, handleViewCurso as any, user?.role);
+  const materiaColumns = useColumnsMaterias(handleEditMateria as any, handleDeleteMateria as any, handleViewMateria as any, user?.role);
 
   // Validar que el alumno tenga información
   if (user?.role === "alumno" && !studentInfo) {
@@ -359,7 +385,7 @@ export default function GestionCursosMaterias() {
           <div>
             <Label className="text-sm font-medium text-gray-700">Docentes Asignados</Label>
             <div className="mt-1 space-y-2">
-              {selectedCurso?.teacherId?.length > 0 ? (
+              {selectedCurso?.teacherId && Array.isArray(selectedCurso.teacherId) && selectedCurso.teacherId.length > 0 ? (
                 selectedCurso.teacherId.map((teacher: string, index: number) => (
                   <div key={index} className="flex items-center bg-gray-50 p-3 rounded-md">
                     <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center mr-3">
@@ -435,7 +461,7 @@ export default function GestionCursosMaterias() {
           <div>
             <Label className="text-sm font-medium text-gray-700">Docente Responsable</Label>
             <div className="mt-1 space-y-2">
-              {selectedMateria?.teacherId?.length > 0 ? (
+              {selectedMateria?.teacherId && Array.isArray(selectedMateria.teacherId) && selectedMateria.teacherId.length > 0 ? (
                 selectedMateria.teacherId.map((teacher: string, index: number) => (
                   <div key={index} className="flex items-center bg-gray-50 p-3 rounded-md">
                     <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mr-3">
@@ -454,8 +480,8 @@ export default function GestionCursosMaterias() {
           <div>
             <Label className="text-sm font-medium text-gray-700">Cursos donde se imparte</Label>
             <div className="mt-1 space-y-2">
-              {selectedMateria?.cursoIds?.length > 0 ? (
-                selectedMateria.cursoIds.map((curso: string, index: number) => (
+              {selectedMateria?.cursoId && Array.isArray(selectedMateria.cursoId) && selectedMateria.cursoId.length > 0 ? (
+                selectedMateria.cursoId.map((curso: string, index: number) => (
                   <div key={index} className="bg-gray-50 p-3 rounded-md">
                     <span className="text-sm text-gray-900">{curso}</span>
                   </div>
@@ -658,7 +684,7 @@ export default function GestionCursosMaterias() {
                   </div>
                   {mappedCourses.length > 0 ? (
                     <DataTable 
-                      columns={useColumnsCursos(handleEditCurso, handleDeleteCurso, handleViewCurso, user?.role)} 
+                      columns={cursoColumns} 
                       data={mappedCourses} 
                     />
                   ) : (
@@ -688,7 +714,7 @@ export default function GestionCursosMaterias() {
                   </div>
                   {mappedSubjects.length > 0 ? (
                     <DataTable 
-                      columns={useColumnsMaterias(handleEditMateria, handleDeleteMateria, handleViewMateria, user?.role)} 
+                      columns={materiaColumns} 
                       data={mappedSubjects} 
                     />
                   ) : (

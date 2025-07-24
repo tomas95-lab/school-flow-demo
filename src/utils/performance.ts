@@ -45,8 +45,8 @@ class PerformanceMonitor {
     }
   }
 
-  getMetrics(): Record<string, any> {
-    const result: Record<string, any> = {};
+  getMetrics(): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
     for (const [label, metric] of this.metrics.entries()) {
       result[label] = {
         ...metric,
@@ -81,9 +81,9 @@ class PerformanceMonitor {
 export function measurePerformance(label?: string) {
   return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
-    const timerLabel = label || `${target.constructor.name}.${propertyName}`;
+    const timerLabel = label || `${target.constructor?.name || 'Unknown'}.${propertyName}`;
 
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function (...args: unknown[]) {
       const monitor = PerformanceMonitor.getInstance();
       const endTimer = monitor.startTimer(timerLabel);
       
@@ -139,8 +139,8 @@ export function usePerformanceMeasure(label: string) {
 // Utility for measuring data processing operations
 export function measureDataProcessing<T>(
   label: string,
-  data: any[],
-  processor: (data: any[]) => T
+  data: unknown[],
+  processor: (data: unknown[]) => T
 ): T {
   const monitor = PerformanceMonitor.getInstance();
   const endTimer = monitor.startTimer(`${label} (${data.length} items)`);
@@ -156,7 +156,7 @@ export function measureDataProcessing<T>(
 }
 
 // Debounce utility for expensive operations
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -169,7 +169,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Throttle utility for frequent operations
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -185,13 +185,13 @@ export function throttle<T extends (...args: any[]) => any>(
 }
 
 // Memoization utility with size limit
-export function memoize<T extends (...args: any[]) => any>(
+export function memoize<T extends (...args: unknown[]) => unknown>(
   fn: T,
   maxSize: number = 100
 ): T {
-  const cache = new Map<string, any>();
+  const cache = new Map<string, unknown>();
   
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     const key = JSON.stringify(args) || '';
     
     if (cache.has(key)) {

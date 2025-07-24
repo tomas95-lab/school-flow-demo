@@ -50,23 +50,23 @@ export default function AlumnoBoletinesOverview() {
   const course = courses.find((c) => c.firestoreId === studentInfo?.cursoId);
 
   // Filtrar boletines del alumno actual
-  const boletinesAlumno = boletines.filter((b: any) => b.alumnoId === studentId);
+  const boletinesAlumno = boletines.filter((b) => b.alumnoId === studentId);
 
   // Calcular datos de asistencia del alumno
-  const asistenciasAlumno = asistencias.filter((a: any) => 
+  const asistenciasAlumno = asistencias.filter((a) => 
     a.studentId === studentId && 
     a.courseId === studentInfo?.cursoId
   );
 
   const totalAsistencias = asistenciasAlumno.length;
-  const asistenciasPresentes = asistenciasAlumno.filter((a: any) => a.present).length;
+  const asistenciasPresentes = asistenciasAlumno.filter((a) => a.present).length;
   const porcentajeAsistencia = totalAsistencias > 0 
     ? Math.round((asistenciasPresentes / totalAsistencias) * 100) 
     : 0;
 
   // Procesar boletines para mostrar
-  const boletinesProcesados = boletinesAlumno.map((b: any) => {
-    const materias = b.materias?.map((m: any) => {
+  const boletinesProcesados = boletinesAlumno.map((b) => {
+    const materias = b.materias?.map((m: { T1: number; T2: number; T3: number; nombre: string }) => {
       const promedio = (m.T1 + m.T2 + m.T3) / 3 || 0;
       return {
         nombre: m.nombre,
@@ -81,16 +81,16 @@ export default function AlumnoBoletinesOverview() {
     const promedioTotal = getPromedioTotal(b.materias || []);
 
     // Generar observación automática
-    const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === studentId);
-    const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === studentId);
+      const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === studentId);
+  const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === studentId);
     const periodoActual = b.periodo || getPeriodoActual();
     
     // Obtener período anterior (simplificado)
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
     
     const observacionAutomatica = studentId ? generarObservacionAutomaticaBoletin(
-      calificacionesAlumno,
-      asistenciasAlumno,
+      calificacionesAlumno as any,
+      asistenciasAlumno as any,
       studentId,
       periodoActual || getPeriodoActual(),
       periodoAnterior
@@ -176,9 +176,9 @@ export default function AlumnoBoletinesOverview() {
 
   const stats = {
     totalMaterias: boletinActual.materias?.length || 0,
-    materiasAprobadas: boletinActual.materias?.filter((m: any) => m.promedio >= 7.0).length || 0,
-    materiasDestacadas: boletinActual.materias?.filter((m: any) => m.promedio >= 9.0).length || 0,
-    materiasEnRiesgo: boletinActual.materias?.filter((m: any) => m.promedio < 7.0).length || 0
+    materiasAprobadas: boletinActual.materias?.filter((m: { promedio: number; }) => m.promedio >= 7.0).length || 0,
+    materiasDestacadas: boletinActual.materias?.filter((m: { promedio: number; }) => m.promedio >= 9.0).length || 0,
+    materiasEnRiesgo: boletinActual.materias?.filter((m: { promedio: number; }) => m.promedio < 7.0).length || 0
   };
 
   return (

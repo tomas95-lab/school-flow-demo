@@ -23,7 +23,7 @@ export default function AlumnoAlertasOverview() {
   const course = courses.find((c) => c.firestoreId === studentInfo?.cursoId);
 
   // Filtrar alertas del alumno actual
-  const studentAlerts = alerts.filter((a: any) => {
+  const studentAlerts = alerts.filter((a) => {
     // Alerta dirigida específicamente a este estudiante
     if (a.selectedStudents && a.selectedStudents.includes(studentId)) return true;
     // Alerta para un curso específico y este estudiante está en ese curso
@@ -77,9 +77,9 @@ export default function AlumnoAlertasOverview() {
 
   // Calcular estadísticas
   const totalAlerts = studentAlerts.length;
-  const unreadAlerts = studentAlerts.filter((a: any) => !a.isRead).length;
-  const criticalAlerts = studentAlerts.filter((a: any) => a.priority === "critical").length;
-  const academicAlerts = studentAlerts.filter((a: any) => a.type === "academic").length;
+  const unreadAlerts = studentAlerts.filter((a) => !a.isRead).length;
+  const criticalAlerts = studentAlerts.filter((a) => a.priority === "critical").length;
+  const academicAlerts = studentAlerts.filter((a) => a.type === "academic").length;
 
   return (
     <div className="space-y-6">
@@ -144,7 +144,7 @@ export default function AlumnoAlertasOverview() {
       {/* Lista de alertas */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Tus Notificaciones</h3>
-        {studentAlerts.map((alert: any) => (
+                  {studentAlerts.map((alert) => (
           <Card key={alert.firestoreId || alert.id} className={`${!alert.isRead ? 'border-l-4 border-l-red-500' : ''}`}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">

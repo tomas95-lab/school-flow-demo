@@ -8,33 +8,19 @@ import { AuthContext } from "@/context/AuthContext";
 export default function TeacherCalificacionesOverview() {
     const { user } = useContext(AuthContext)
     
-    // Verificar permisos de acceso
-    if (!user || user.role !== 'docente') {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="bg-white p-8 rounded-lg shadow-sm border">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Denegado</h2>
-                        <p className="text-gray-600">Solo los docentes pueden acceder a esta vista.</p>
-                        <p className="text-gray-500 text-sm mt-2">Contacta al administrador si crees que esto es un error.</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    
+    // All hooks at the top level
     const { data: courses } = useFirestoreCollection("courses");
     const { data: subjects } = useFirestoreCollection("subjects");
     const { data: teachers } = useFirestoreCollection("teachers")
     const { data: calificaciones } = useFirestoreCollection("calificaciones");
     const { data: students } = useFirestoreCollection("students");
-
+    
     // Obtener información del docente
-    const teacher = teachers.find(t => t.firestoreId === user?.teacherId);
+    const teacher = teachers?.find(t => t.firestoreId === user?.teacherId);
     
     // Obtener materias del docente
     const teacherSubjects = useMemo(() => 
-        subjects.filter(s => s.teacherId === user?.teacherId), 
+        subjects?.filter(s => s.teacherId === user?.teacherId) || [], 
         [subjects, user?.teacherId]
     );
 
@@ -79,13 +65,13 @@ export default function TeacherCalificacionesOverview() {
     const averageGrade = useMemo(() => {
         if (!teacherGrades.length) return "Sin datos";
         const total = teacherGrades.reduce(
-            (sum: number, { valor }: any) => sum + valor,
+            (sum: number, { valor }) => sum + (valor || 0),
             0
         );
         return (total / teacherGrades.length).toFixed(2);
     }, [teacherGrades]);
 
-    const [pctAprob, pctReprob] = useMemo(() => {
+    const [pctAprob] = useMemo(() => {
         const total = teacherGrades.length;
         if (!total) return ["Sin datos", "Sin datos"];
         const aprobCount = teacherGrades.filter(c => c.valor >= 7).length;
@@ -114,6 +100,21 @@ export default function TeacherCalificacionesOverview() {
             };
         });
     }, [teacherSubjects, teacherGrades]);
+
+    // Verificar permisos de acceso
+    if (!user || user.role !== 'docente') {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="bg-white p-8 rounded-lg shadow-sm border">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Denegado</h2>
+                        <p className="text-gray-600">Solo los docentes pueden acceder a esta vista.</p>
+                        <p className="text-gray-500 text-sm mt-2">Contacta al administrador si crees que esto es un error.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -222,13 +223,14 @@ export default function TeacherCalificacionesOverview() {
                     </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
-                    {teacherCourses.map((course: any) => (
+                    {teacherCourses.map((course) => (
                         <CourseCard
                             key={course.firestoreId}
                             course={{
                                 ...course,
-                                nombre: course.nombre,
-                                division: course.division,
+                                nombre: course.nombre || "",
+                                division: course.division || "",
+                                firestoreId: course.firestoreId || "",
                             }}
                             descripcion="Ver y gestionar calificaciones"
                             link={`/calificaciones/detalles?id=${course.firestoreId}`}
