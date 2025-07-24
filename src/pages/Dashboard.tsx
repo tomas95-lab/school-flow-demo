@@ -24,8 +24,14 @@ import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection"
-
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
+import { 
+  generarAlertasAutomaticas, 
+  filtrarAlertasCriticas,
+  obtenerEstadisticasAlertas,
+  type AlertaAutomatica,
+  type DatosAlumno
+} from "@/utils/alertasAutomaticas";
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -93,6 +99,7 @@ const statsByRole = {
   docente: ["myCourses", "myStudents", "myAttendanceDocente", "myGrades"],
   alumno: ["myAverage", "myAttendance", "approvedSubjects", "totalSubjects"]
 }
+
 
 // Metadatos de KPIs mejorados - SOLO LOS ESENCIALES
 const kpiMeta = {
@@ -215,6 +222,12 @@ export default function Dashboard() {
     pending: 0,
   });
 
+  const [automaticAlertStats, setAutomaticAlertStats] = useState({
+    total: 0,
+    critical: 0,
+    pending: 0,
+  });
+
 
   // Usar hooks optimizados con cache
   const { data: students } = useFirestoreCollection("students", { enableCache: true });
@@ -223,6 +236,7 @@ export default function Dashboard() {
   const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true });
   const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true });
   const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
+  const { data: alerts } = useFirestoreCollection("alerts", { enableCache: true });
 
   // Memoizar cálculos pesados
   const calculatedStats = useMemo(() => {
@@ -380,42 +394,141 @@ export default function Dashboard() {
     }
   }, [calculatedStats]);
 
-  // Fetch alerts de forma optimizada
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "alerts"));
-        let alerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-        
-        // Filtrar alertas según el rol
-        if (user?.role === "docente" && user?.teacherId) {
-          alerts = alerts.filter((a: any) => a.createdBy === user.teacherId || a.targetUserRole === "docente");
-        } else if (user?.role === "alumno" && user?.studentId) {
-          alerts = alerts.filter((a: any) => a.targetUserId === user.studentId);
-        }
-        
-        const alertStatsData = {
-          total: alerts.length,
-          critical: alerts.filter((a: any) => a.priority === "critical").length,
-          pending: alerts.filter((a: any) => a.status === "pending").length,
-        };
-        
-        setAlertStats(alertStatsData);
-        
-        // Actualizar estadísticas de admin con alertas críticas
-        if (user?.role === "admin") {
-          setStats((prev: any) => ({
-            ...prev,
-            criticalAlerts: alertStatsData.critical
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching alerts:", error);
+  // Calcular alertas automáticas generadas
+  const alertasAutomaticas = useMemo(() => {
+    if (!calificaciones || !asistencias || !students || !teachers) return [];
+
+    const getPeriodoActual = () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const trimestre = Math.ceil(month / 3);
+      return `${year}-T${trimestre}`;
+    };
+
+    const obtenerPeriodoAnterior = (periodoActual: string): string | undefined => {
+      const match = periodoActual.match(/(\d{4})-T(\d)/);
+      if (!match) return undefined;
+      const year = parseInt(match[1]);
+      const trimestre = parseInt(match[2]);
+      if (trimestre === 1) {
+        return `${year - 1}-T3`;
+      } else {
+        return `${year}-T${trimestre - 1}`;
       }
     };
+
+    const periodoActual = getPeriodoActual();
+    const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
+
+    switch (user?.role) {
+      case 'admin':
+        // Para admin: alertas de todos los estudiantes
+        return students.flatMap((student: any) => {
+          const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
+          const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
+          
+          if (calificacionesAlumno.length === 0) return [];
+
+          const datosAlumno: DatosAlumno = {
+            studentId: student.firestoreId,
+            calificaciones: calificacionesAlumno as any,
+            asistencias: asistenciasAlumno as any,
+            periodoActual,
+            periodoAnterior
+          };
+
+          return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
+        });
+
+      case 'docente':
+        // Para docente: alertas de sus estudiantes
+        const teacher = teachers.find((t: any) => t.firestoreId === user?.teacherId);
+        if (!teacher) return [];
+
+        const teacherStudents = students.filter((student: any) => student.cursoId === teacher.cursoId);
+        
+        return teacherStudents.flatMap((student: any) => {
+          const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
+          const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
+          
+          if (calificacionesAlumno.length === 0) return [];
+
+          const datosAlumno: DatosAlumno = {
+            studentId: student.firestoreId,
+            calificaciones: calificacionesAlumno as any,
+            asistencias: asistenciasAlumno as any,
+            periodoActual,
+            periodoAnterior
+          };
+
+          return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
+        });
+
+      case 'alumno':
+        // Para alumno: sus propias alertas
+        if (!user?.studentId) return [];
+
+        const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === user.studentId);
+        const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === user.studentId);
+        
+        if (calificacionesAlumno.length === 0) return [];
+
+        const datosAlumno: DatosAlumno = {
+          studentId: user.studentId,
+          calificaciones: calificacionesAlumno as any,
+          asistencias: asistenciasAlumno as any,
+          periodoActual,
+          periodoAnterior
+        };
+
+        return generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
+
+      default:
+        return [];
+    }
+  }, [user, calificaciones, asistencias, students, teachers]);
+
+  // Calcular estadísticas de alertas normales (de la base de datos)
+  useEffect(() => {
+    if (!alerts) return;
+
+    let filteredAlerts = alerts;
     
-    fetchAlerts();
-  }, [user]);
+    // Filtrar alertas según el rol
+    if (user?.role === "docente" && user?.teacherId) {
+      filteredAlerts = alerts.filter((a: any) => a.createdBy === user.teacherId || a.targetUserRole === "docente");
+    } else if (user?.role === "alumno" && user?.studentId) {
+      filteredAlerts = alerts.filter((a: any) => a.targetUserId === user.studentId);
+    }
+    
+    const normalAlertStatsData = {
+      total: filteredAlerts.length,
+      critical: filteredAlerts.filter((a: any) => a.priority === "critical").length,
+      pending: filteredAlerts.filter((a: any) => a.status === "pending").length,
+    };
+    
+    setAlertStats(normalAlertStatsData);
+    
+    // Actualizar estadísticas de admin con alertas críticas normales
+    if (user?.role === "admin") {
+      setStats((prev: any) => ({
+        ...prev,
+        criticalAlerts: normalAlertStatsData.critical
+      }));
+    }
+  }, [alerts, user]);
+
+  // Actualizar estadísticas de alertas automáticas
+  useEffect(() => {
+    const automaticAlertStatsData = {
+      total: alertasAutomaticas.length,
+      critical: alertasAutomaticas.filter((a: any) => a.prioridad === "critica").length,
+      pending: alertasAutomaticas.filter((a: any) => !a.leida).length,
+    };
+    
+    setAutomaticAlertStats(automaticAlertStatsData);
+  }, [alertasAutomaticas]);
 
   const role = (user?.role || "alumno").toLowerCase();
 
@@ -430,6 +543,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
 
+      {/* Alertas Automáticas Críticas */}
       
       <WelcomeMessage user={user} />
       
@@ -482,13 +596,18 @@ export default function Dashboard() {
         </div>
         
         <div className="lg:col-span-1">
-          <ReutilizableCard full title="Estado del Sistema" description="Información del sistema">
+          <ReutilizableCard full title="Alertas generadas" description="Alertas generadas por IA">
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="p-3 bg-green-100 rounded-full mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <AlertCircle className="h-8 w-8 text-green-600" />
               </div>
-              <span className="text-gray-700 font-medium">Sistema Operativo</span>
-              <span className="text-gray-500 text-sm mt-1">Todos los servicios funcionando correctamente</span>
+              <span className="text-gray-700 font-medium">Alertas generadas</span>
+              <span className="text-2xl font-bold text-green-600 mt-2">{automaticAlertStats.total || 0}</span>
+              <span className="text-gray-500 text-sm mt-1">Alertas generadas por IA</span>
+              <div className="mt-4 text-sm text-gray-600">
+                <p>Rendimiento, asistencia</p>
+                <p>y tendencias detectadas</p>
+              </div>
             </div>
           </ReutilizableCard>
         </div>

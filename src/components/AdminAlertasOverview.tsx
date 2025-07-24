@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { StatsCard } from "./StatCards";
 import { AlertTriangle, Bell, CheckCircle, Search } from "lucide-react";
 import { useContext, useState } from "react";
@@ -10,6 +10,7 @@ import { Input } from "./ui/input";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { CreateAlertModal } from "./CreateAlertModal";
+import AlertasAutomaticasPanel from "./AlertasAutomaticasPanel";
 
 export default function AdminAlertasOverview() {
   const { data: alerts } = useFirestoreCollection("alerts");

@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useMemo, useState, useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";

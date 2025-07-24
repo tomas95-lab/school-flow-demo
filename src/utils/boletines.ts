@@ -2,6 +2,9 @@
 const calculationCache = new Map<string, any>();
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
 
+// Importar sistema de observaciones automáticas
+import { generarObservacionAutomatica, type DatosAlumno, type ObservacionLimpia } from './observacionesAutomaticas';
+
 // Función para limpiar cache expirado
 function cleanExpiredCache() {
   const now = Date.now();
@@ -235,6 +238,50 @@ export function getPromedioTotal(materias: any[]) {
   });
 
   return cantidadNotas > 0 ? Number((totalNotas / cantidadNotas).toFixed(2)) : 0;
+}
+
+// Función para generar observación automática para un boletín
+export function generarObservacionAutomaticaBoletin(
+  calificaciones: any[],
+  asistencias: any[],
+  studentId: string,
+  periodoActual: string,
+  periodoAnterior?: string
+): ObservacionLimpia {
+  const datosAlumno: DatosAlumno = {
+    studentId,
+    calificaciones: calificaciones.map(cal => ({
+      valor: cal.valor || 0,
+      fecha: cal.fecha,
+      subjectId: cal.subjectId
+    })),
+    asistencias: asistencias.map(asist => ({
+      present: asist.present,
+      fecha: asist.fecha || asist.date
+    })),
+    periodoActual,
+    periodoAnterior
+  };
+
+  const observacion = generarObservacionAutomatica(datosAlumno);
+  
+  // Limpiar valores undefined para Firebase
+  const observacionLimpia = {
+    texto: observacion.texto,
+    tipo: observacion.tipo,
+    prioridad: observacion.prioridad,
+    reglaAplicada: observacion.reglaAplicada,
+    datosSoporte: {
+      promedioActual: observacion.datosSoporte.promedioActual,
+      ausencias: observacion.datosSoporte.ausencias,
+      tendencia: observacion.datosSoporte.tendencia,
+      ...(observacion.datosSoporte.promedioAnterior !== undefined && {
+        promedioAnterior: observacion.datosSoporte.promedioAnterior
+      })
+    }
+  };
+
+  return observacionLimpia;
 }
 
 // Función para generar y descargar el PDF del boletín

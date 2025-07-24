@@ -1,6 +1,6 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { 
   BookOpen, 
@@ -9,12 +9,30 @@ import {
   UserCheck, 
   AlertTriangle,
   Download,
-  Eye
+  Eye,
+  Brain
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { StatsCard } from "./StatCards";
-import { getPromedioTotal, observacionPorPromedio, generarPDFBoletin } from "@/utils/boletines";
+import { getPromedioTotal, observacionPorPromedio, generarPDFBoletin, generarObservacionAutomaticaBoletin } from "@/utils/boletines";
+import { getPeriodoActual } from "@/utils/boletines";
+import ObservacionAutomatica from "./ObservacionAutomatica";
+
+// Función para obtener el período anterior
+function obtenerPeriodoAnterior(periodoActual: string): string | undefined {
+  const match = periodoActual.match(/(\d{4})-T(\d)/);
+  if (!match) return undefined;
+  
+  const year = parseInt(match[1]);
+  const trimestre = parseInt(match[2]);
+  
+  if (trimestre === 1) {
+    return `${year - 1}-T3`;
+  } else {
+    return `${year}-T${trimestre - 1}`;
+  }
+}
 import { BoletinView } from "./BoletinView";
 import { SchoolSpinner } from "./SchoolSpinner";
 
@@ -27,6 +45,30 @@ export default function AlumnoBoletinesOverview() {
   const { data: asistencias } = useFirestoreCollection("attendances");
   const { data: students } = useFirestoreCollection("students");
   const { data: courses } = useFirestoreCollection("courses");
+  const { data: calificaciones } = useFirestoreCollection("calificaciones");
+
+
+
+  // Función para generar observación automática en tiempo real
+  const generarObservacionEnTiempoReal = useMemo(() => {
+    if (!studentId || !calificaciones || !asistencias) return null;
+    
+    const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === studentId);
+    const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === studentId);
+    
+    if (calificacionesAlumno.length === 0) return null;
+    
+    const periodoActual = getPeriodoActual();
+    const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
+    
+    return generarObservacionAutomaticaBoletin(
+      calificacionesAlumno,
+      asistenciasAlumno,
+      studentId,
+      periodoActual,
+      periodoAnterior
+    );
+  }, [studentId, calificaciones, asistencias]);
 
   const studentInfo = students.find((student) => student.firestoreId === studentId);
   const course = courses.find((c) => c.firestoreId === studentInfo?.cursoId);
@@ -62,6 +104,24 @@ export default function AlumnoBoletinesOverview() {
 
     const promedioTotal = getPromedioTotal(b.materias || []);
 
+    // Generar observación automática
+    const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === studentId);
+    const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === studentId);
+    const periodoActual = b.periodo || getPeriodoActual();
+    
+    // Obtener período anterior (simplificado)
+    const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
+    
+    const observacionAutomatica = studentId ? generarObservacionAutomaticaBoletin(
+      calificacionesAlumno,
+      asistenciasAlumno,
+      studentId,
+      periodoActual || getPeriodoActual(),
+      periodoAnterior
+    ) : null;
+
+
+
     return {
       id: b.alumnoId,
       Nombre: b.alumnoNombre || `${studentInfo?.nombre} ${studentInfo?.apellido}`,
@@ -72,6 +132,7 @@ export default function AlumnoBoletinesOverview() {
       materias,
       comentario: b.comentario || "",
       observacionGeneral: observacionPorPromedio(promedioTotal),
+      observacionAutomatica,
       asistencia: {
         total: totalAsistencias,
         presentes: asistenciasPresentes,
@@ -117,6 +178,8 @@ export default function AlumnoBoletinesOverview() {
             </div>
           </CardContent>
         </Card>
+
+
       </div>
     );
   }
@@ -226,7 +289,6 @@ export default function AlumnoBoletinesOverview() {
           subtitle="Materias con promedio ≥ 9.0"
         />
       </div>
-
       {/* Información detallada */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Resumen de rendimiento */}

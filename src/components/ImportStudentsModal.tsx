@@ -14,7 +14,7 @@ import {
   Users,
   Plus
 } from "lucide-react";
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { db } from "@/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import ReutilizableDialog from "@/components/DialogReutlizable";

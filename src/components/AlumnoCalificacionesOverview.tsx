@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useMemo } from "react";
 import { BookOpen, TrendingUp, Check, Award, Calendar, Calendar as CalendarIcon } from 'lucide-react';
 

@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useEffect, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { format, subDays, isToday, isYesterday } from "date-fns";

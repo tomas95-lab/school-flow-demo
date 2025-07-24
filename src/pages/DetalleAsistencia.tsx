@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext, useState, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";

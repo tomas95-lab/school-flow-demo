@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 
 export const useTables = () => {
     const { loading: coursesLoading, data: courses } =  useFirestoreCollection("courses");

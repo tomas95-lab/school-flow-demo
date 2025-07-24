@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { CourseCard } from "./CourseCard";
 import { StatsCard } from "./StatCards";
 import { Percent, TriangleAlert, BookOpen, Users, TrendingUp } from "lucide-react";
@@ -117,6 +117,8 @@ export default function TeacherCalificacionesOverview() {
 
     return (
         <div className="space-y-6">
+            {/* Observaciones Automáticas */}
+
             {/* Header con información del docente */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">
                 <div className="flex items-center gap-4 mb-4">

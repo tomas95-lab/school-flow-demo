@@ -1,8 +1,8 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
-import { BookOpen, Plus, Calendar, Lock, AlertTriangle } from "lucide-react";
+import { BookOpen, Plus, Calendar, Lock, AlertTriangle, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import AlumnoCalificacionesOverview from "@/components/AlumnoCalificacionesOverv
 // Nuevos componentes
 import QuickGradeRegister from "@/components/QuickGradeRegister";
 import GradesCalendar from "@/components/GradesCalendar";
+import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 
 export default function Calificaciones() {
   const { user, loading: userLoading } = useContext(AuthContext);
@@ -152,6 +153,14 @@ export default function Calificaciones() {
                 Calendario
               </Button>
             )}
+            <Button
+                variant={activeView === "observaciones" ? "default" : "outline"}
+                onClick={() => setActiveView("observaciones")}
+                className="flex items-center gap-2"
+              >
+                <Brain className="h-4 w-4" />
+                Observaciones Inteligentes
+            </Button>
           </div>
         </div>
 
@@ -176,6 +185,10 @@ export default function Calificaciones() {
 
           {activeView === "calendar" && canViewCalendar && (
             <GradesCalendar />
+          )}
+
+          {activeView === "observaciones" && (
+            <ObservacionesAutomaticasPanel role={user?.role as any} context="calificaciones" className="mb-8" />
           )}
           
           {/* Estado vacío cuando no hay vista activa */}

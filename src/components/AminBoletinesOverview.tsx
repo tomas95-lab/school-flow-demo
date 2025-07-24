@@ -1,9 +1,10 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { CourseCard } from "./CourseCard";
 import { StatsCard } from "./StatCards";
 import { Percent, TriangleAlert } from "lucide-react";
 import { db } from "@/firebaseConfig";
 import { setDoc, doc } from "firebase/firestore";
+import { validarYLimpiarDatosFirebase } from "@/utils/firebaseUtils";
 import { Button } from "./ui/button";
 import { useContext, useMemo, useCallback, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
@@ -14,7 +15,24 @@ import {
   calcPromedio,
   getPromedioTotal,
   getPromedioPorMateriaPorTrimestre,
+  generarObservacionAutomaticaBoletin,
 } from "@/utils/boletines";
+import ObservacionAutomatica from "./ObservacionAutomatica";
+
+// Función para obtener el período anterior
+function obtenerPeriodoAnterior(periodoActual: string): string | undefined {
+  const match = periodoActual.match(/(\d{4})-T(\d)/);
+  if (!match) return undefined;
+  
+  const year = parseInt(match[1]);
+  const trimestre = parseInt(match[2]);
+  
+  if (trimestre === 1) {
+    return `${year - 1}-T3`;
+  } else {
+    return `${year}-T${trimestre - 1}`;
+  }
+}
 
 interface Course {
   firestoreId: string;
@@ -33,6 +51,7 @@ export default function AdminBoletinesOverview() {
   const { data: boletines } = useFirestoreCollection("boletines", { enableCache: true });
   const { data: alumnos } = useFirestoreCollection("students", { enableCache: true });
   const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
+  const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true });
   const teacherCourses = courses.filter(c => c.teacherId == user?.teacherId);
 
   // Memoizar cálculos pesados
@@ -52,6 +71,21 @@ export default function AdminBoletinesOverview() {
 
       const promedioTotal = getPromedioTotal(materias);
 
+      // Generar observación automática
+      const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === alumno.firestoreId);
+      const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === alumno.firestoreId);
+      
+      // Obtener período anterior (simplificado)
+      const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
+      
+      const observacionAutomatica = generarObservacionAutomaticaBoletin(
+        calificacionesAlumno,
+        asistenciasAlumno,
+        alumno.firestoreId,
+        periodoActual,
+        periodoAnterior
+      );
+
       return {
         alumnoId: alumno.firestoreId,
         alumnoNombre: `${alumno.nombre} ${alumno.apellido}`,
@@ -64,6 +98,7 @@ export default function AdminBoletinesOverview() {
         fechaGeneracion: currentDate.toISOString(),
         abierto: false,
         alertas: [],
+        observacionAutomatica,
       };
     });
   }, [alumnos, subjects, calificaciones]);
@@ -90,8 +125,15 @@ export default function AdminBoletinesOverview() {
     try {
       // Usar Promise.all para subir en paralelo (más eficiente)
       const uploadPromises = boletinesCalculados.map(boletin => {
+        // Validar y limpiar datos antes de enviar a Firebase
+        const { datos: boletinLimpio, esValido, errores } = validarYLimpiarDatosFirebase(boletin);
+        
+        if (!esValido) {
+          console.warn(`Boletín ${boletin.alumnoId} tiene errores:`, errores);
+        }
+        
         const boletinRef = doc(db, "boletines", `${boletin.alumnoId}_${boletin.periodo}`);
-        return setDoc(boletinRef, boletin, { merge: true });
+        return setDoc(boletinRef, boletinLimpio, { merge: true });
       });
       
       await Promise.all(uploadPromises);

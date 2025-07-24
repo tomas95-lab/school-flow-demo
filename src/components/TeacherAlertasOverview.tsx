@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { StatsCard } from "./StatCards";
 import { AlertTriangle, Bell, CheckCircle, Search } from "lucide-react";
 import { useContext, useState } from "react";
@@ -10,6 +10,7 @@ import { Input } from "./ui/input";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { CreateAlertModal } from "./CreateAlertModal";
+import ObservacionesAutomaticasPanel from "./ObservacionesAutomaticasPanel";
 
 export default function TeacherAlertasOverview() {
   const { user } = useContext(AuthContext);
@@ -111,6 +112,9 @@ export default function TeacherAlertasOverview() {
 
   return (
     <div>
+      {/* Observaciones Automáticas */}
+      <ObservacionesAutomaticasPanel role="docente" context="general" className="mb-8" />
+
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <StatsCard

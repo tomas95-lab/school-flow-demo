@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { BookOpen,EyeClosed, Eye, UserCheck, UserX } from "lucide-react";
 import { Button } from "./ui/button";
@@ -132,7 +132,8 @@ export default function AlumnoAttendanceOverview(){
 
     console.log("AlumnoAttendanceOverview - Collapsed Subjects:", subjectsInCourse);
     return (
-        <Card className="border-0 shadow-sm">
+        <div className="space-y-6">
+            <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-blue-600" /> 
@@ -244,5 +245,6 @@ export default function AlumnoAttendanceOverview(){
             })}
           </CardContent>
         </Card>
+        </div>
     )
 }

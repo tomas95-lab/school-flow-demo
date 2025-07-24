@@ -1,8 +1,8 @@
-import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { Calendar, BookOpen} from "lucide-react";
+import { Calendar, BookOpen, Brain} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
@@ -18,6 +18,7 @@ import AttendanceAlert from "@/components/AttendanceAlert";
 
 // Componente de calendario
 import AttendanceCalendar from "@/components/AttendanceCalendar";
+import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 
 export default function Asistencias() {
   const { user, loading: userLoading } = useContext(AuthContext);
@@ -145,6 +146,15 @@ export default function Asistencias() {
               <Calendar className="h-4 w-4" />
               Calendario
             </Button>
+
+            <Button
+              variant={activeView === "observaciones" ? "default" : "outline"}
+              onClick={() => setActiveView("observaciones")}
+              className="flex items-center gap-2"
+            >
+              <Brain className="h-4 w-4" />
+              Observaciones Inteligentes
+            </Button>
           </div>
         </div>
 
@@ -167,6 +177,9 @@ export default function Asistencias() {
 
           {activeView === "calendar" && (
             <AttendanceCalendar />
+          )}
+          {activeView === "observaciones" && (
+            <ObservacionesAutomaticasPanel role={user?.role as any} context="asistencias" className="mb-8" />
           )}
         </div>
 
