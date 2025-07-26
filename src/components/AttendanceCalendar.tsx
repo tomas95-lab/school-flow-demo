@@ -1,379 +1,183 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useContext, useState, useMemo } from "react";
+import { useTeacherCourses, useTeacherStudents } from "@/hooks/useTeacherCourses";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Calendar, 
-  Users, 
-  TrendingUp, 
-  CheckCircle, 
-  XCircle,
-} from "lucide-react";
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  isToday,
-  addMonths,
-  subMonths,
-  startOfWeek,
-  endOfWeek
-} from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-type Student = {
-  firestoreId: string;
-  nombre: string;
-  apellido: string;
-  cursoId: string;
-};
-
-type Course = {
-  firestoreId: string;
-  nombre: string;
-  division: string;
-};
-
-type Subject = {
-  firestoreId: string;
-  nombre: string;
-  teacherId: string;
-  cursoId: string | string[];
-};
-
-type Attendance = {
-  firestoreId: string;
-  studentId: string;
-  courseId: string;
-  subject: string;
-  date: string;
-  present: boolean;
-  createdAt?: Date | string;
-};
 
 export default function AttendanceCalendar() {
   const { user } = useContext(AuthContext);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedCourse, setSelectedCourse] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
 
-  // Obtener datos
-  const { data: courses } = useFirestoreCollection<Course>("courses");
-  const { data: students } = useFirestoreCollection<Student>("students");
-  const { data: subjects } = useFirestoreCollection<Subject>("subjects");
-  const { data: attendances } = useFirestoreCollection<Attendance>("attendances");
+  // Usar hooks estandarizados
+  const { teacherCourses, teacherSubjects, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
+  const { teacherStudents, isLoading: studentsLoading } = useTeacherStudents(user?.teacherId);
 
-  // Filtrar cursos según el rol
-  const availableCourses = useMemo(() => {
-    if (!courses) return [];
-    
-    if (user?.role === "admin") {
-      // Admin ve todos los cursos
-      return courses;
-    } else if (user?.role === "docente") {
-      // Docente ve solo cursos donde enseña
-      if (!subjects || !user.teacherId) return [];
-      
-      // Obtener materias del docente
-      const teacherSubjects = subjects.filter(subject => 
-        subject.teacherId === user.teacherId
-      );
-      
-      // Obtener IDs de cursos donde enseña
-      const teacherCourseIds = new Set<string>();
-      teacherSubjects.forEach(subject => {
-        if (Array.isArray(subject.cursoId)) {
-          subject.cursoId.forEach(courseId => teacherCourseIds.add(courseId));
-        } else {
-          teacherCourseIds.add(subject.cursoId);
-        }
-      });
-      
-      return courses.filter(course => teacherCourseIds.has(course.firestoreId));
-    } else if (user?.role === "alumno") {
-      // Alumno ve solo su curso
-      const student = students?.find(s => s.firestoreId === user.studentId);
-      if (student) {
-        return courses.filter(c => c.firestoreId === student.cursoId);
-      }
-      return [];
+  const { data: attendances } = useFirestoreCollection("attendances");
+
+  // Auto-seleccionar materia si el docente tiene una sola
+  useEffect(() => {
+    if (teacherSubjects.length === 1 && !selectedSubject) {
+      setSelectedSubject(teacherSubjects[0].nombre);
+    } else if (teacherSubjects.length > 1 && !selectedSubject) {
+      setSelectedSubject(teacherSubjects[0].nombre);
     }
-    
-    return [];
-  }, [courses, students, subjects, user]);
+  }, [teacherSubjects, selectedSubject]);
 
+  if (coursesLoading || studentsLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="text-gray-500 mt-4">Cargando calendario...</p>
+        </div>
+      </div>
+    );
+  }
 
-  console.log("AttendanceCalendar - Available Courses:", availableCourses);
-  // Calcular días del mes
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
+  // Filtrar asistencias del docente
+  const teacherAttendances = attendances?.filter(a => {
+    const isTeacherSubject = teacherSubjects.some(s => s.nombre === a.subject);
+    const isTeacherStudent = teacherStudents.some(s => s.firestoreId === a.studentId);
+    const isTeacherCourse = teacherCourses.some(c => c.firestoreId === a.courseId);
+    return isTeacherSubject && isTeacherStudent && isTeacherCourse;
+  }) || [];
 
-  // Calcular días para mostrar en el calendario (incluyendo días de la semana anterior/posterior)
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  // Asistencias del mes seleccionado
+  const monthAttendances = teacherAttendances.filter(a => {
+    if (!selectedDate) return false;
+    const attendanceDate = parseISO(a.date);
+    const start = startOfMonth(selectedDate);
+    const end = endOfMonth(selectedDate);
+    return attendanceDate >= start && attendanceDate <= end;
+  });
 
-  // Filtrar asistencias según el curso seleccionado y rol
-  const filteredAttendances = useMemo(() => {
-    if (!attendances) return [];
-    
-    let filtered = attendances;
-    
-    // Filtrar por curso seleccionado
-    if (selectedCourse !== "all") {
-      filtered = filtered.filter(a => a.courseId === selectedCourse);
-    } else {
-      // Si es "todos", filtrar por cursos disponibles según el rol
-      const availableCourseIds = availableCourses.map(c => c.firestoreId);
-      filtered = filtered.filter(a => availableCourseIds.includes(a.courseId));
+  // Asistencias por día
+  const attendancesByDay = monthAttendances.reduce((acc, attendance) => {
+    const date = format(parseISO(attendance.date), "yyyy-MM-dd");
+    if (!acc[date]) {
+      acc[date] = [];
     }
-    
-    // Para docentes, filtrar también por materias que enseñan
-    if (user?.role === "docente" && subjects) {
-      const teacherSubjects = subjects.filter(subject => 
-        subject.teacherId === user.teacherId
-      );
-      const teacherSubjectNames = teacherSubjects.map(s => s.nombre);
-      filtered = filtered.filter(a => teacherSubjectNames.includes(a.subject));
-    }
-    
-    return filtered;
-  }, [attendances, selectedCourse, availableCourses, user, subjects]);
+    acc[date].push(attendance);
+    return acc;
+  }, {} as Record<string, typeof monthAttendances>);
 
-  // Calcular estadísticas del mes
-  const monthStats = useMemo(() => {
-    const monthAttendances = filteredAttendances.filter(a => {
-      const attendanceDate = new Date(a.date);
-      return isSameMonth(attendanceDate, currentDate);
-    });
+  // Días del mes con asistencias
+  const daysWithAttendances = selectedDate ? eachDayOfInterval({
+    start: startOfMonth(selectedDate),
+    end: endOfMonth(selectedDate)
+  }) : [];
 
-    const totalRecords = monthAttendances.length;
-    const presentRecords = monthAttendances.filter(a => a.present).length;
-    const absentRecords = totalRecords - presentRecords;
-    const attendancePercentage = totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0;
-
-    // Días con registro de asistencia
-    const daysWithAttendance = new Set(monthAttendances.map(a => a.date)).size;
-
-    return {
-      totalRecords,
-      presentRecords,
-      absentRecords,
-      attendancePercentage,
-      daysWithAttendance
-    };
-  }, [filteredAttendances, currentDate]);
-
-  // Función para obtener el color del día según las asistencias
-  const getDayColor = (day: Date) => {
-    const dayStr = format(day, 'yyyy-MM-dd');
-    const dayAttendances = filteredAttendances.filter(a => a.date === dayStr);
-    
-    if (dayAttendances.length === 0) {
-      return 'bg-white border-gray-200';
-    }
-    
-    const presentCount = dayAttendances.filter(a => a.present).length;
-    const totalCount = dayAttendances.length;
-    const percentage = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
-    
-    if (percentage >= 80) {
-      return 'bg-green-50 border-green-200';
-    } else if (percentage >= 60) {
-      return 'bg-yellow-50 border-yellow-200';
-    } else {
-      return 'bg-red-50 border-red-200';
-    }
-  };
-
-  // Función para obtener el porcentaje del día
-  const getDayPercentage = (day: Date) => {
-    const dayStr = format(day, 'yyyy-MM-dd');
-    const dayAttendances = filteredAttendances.filter(a => a.date === dayStr);
+  const getDayContent = (day: Date) => {
+    const dateKey = format(day, "yyyy-MM-dd");
+    const dayAttendances = attendancesByDay[dateKey] || [];
     
     if (dayAttendances.length === 0) return null;
-    
-    const presentCount = dayAttendances.filter(a => a.present).length;
-    const totalCount = dayAttendances.length;
-    return totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
-  };
 
-  // Navegación del calendario
-  const goToPreviousMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const goToToday = () => setCurrentDate(new Date());
+    const present = dayAttendances.filter(a => a.present).length;
+    const total = dayAttendances.length;
+    const attendanceRate = total > 0 ? Math.round((present / total) * 100) : 0;
+    const color = attendanceRate >= 80 ? "bg-green-100 text-green-800" : 
+                  attendanceRate >= 60 ? "bg-yellow-100 text-yellow-800" : 
+                  "bg-red-100 text-red-800";
+
+    return (
+      <div className="text-center">
+        <Badge className={`text-xs ${color}`}>
+          {present}/{total}
+        </Badge>
+        <div className="text-xs font-medium mt-1">
+          {attendanceRate}%
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header del calendario */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Calendario de Asistencias</h2>
+          <p className="text-gray-600">Visualiza las asistencias registradas por fecha</p>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Materia
+          </label>
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar materia" />
+            </SelectTrigger>
+            <SelectContent>
+              {teacherSubjects.map((subject) => (
+                <SelectItem key={subject.firestoreId} value={subject.nombre}>
+                  {subject.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Calendario */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-indigo-600" />
-              Calendario de Asistencias
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday}>
-                Hoy
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Asistencias del Mes</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Controles de navegación */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h2 className="text-xl font-semibold text-gray-900">
-                {format(currentDate, 'MMMM yyyy', { locale: es })}
-              </h2>
-              <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {/* Selector de curso */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Curso:</span>
-              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Todos los cursos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los cursos</SelectItem>
-                  {availableCourses.map(course => (
-                    <SelectItem key={course.firestoreId} value={course.firestoreId}>
-                      {course.nombre} - {course.division}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Estadísticas del mes */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-blue-600">Total Registros</p>
-                  <p className="text-xl font-bold text-blue-900">{monthStats.totalRecords}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-green-600">Presentes</p>
-                  <p className="text-xl font-bold text-green-900">{monthStats.presentRecords}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm text-red-600">Ausentes</p>
-                  <p className="text-xl font-bold text-red-900">{monthStats.absentRecords}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-indigo-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-indigo-600" />
-                <div>
-                  <p className="text-sm text-indigo-600">Asistencia</p>
-                  <p className="text-xl font-bold text-indigo-900">{monthStats.attendancePercentage}%</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm text-purple-600">Días con Registro</p>
-                  <p className="text-xl font-bold text-purple-900">{monthStats.daysWithAttendance}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Calendario */}
-          <div className="bg-white rounded-lg border">
-            {/* Días de la semana */}
-            <div className="grid grid-cols-7 gap-px bg-gray-200">
-              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
-                <div key={day} className="bg-gray-50 p-3 text-center">
-                  <span className="text-sm font-medium text-gray-700">{day}</span>
-                </div>
-              ))}
-            </div>
-            
-            {/* Días del calendario */}
-            <div className="grid grid-cols-7 gap-px bg-gray-200">
-              {calendarDays.map((day, index) => {
-                const isCurrentMonth = isSameMonth(day, currentDate);
-                const isCurrentDay = isToday(day);
-                const dayPercentage = getDayPercentage(day);
-                const dayColor = getDayColor(day);
-                
-                return (
-                  <div
-                    key={index}
-                    className={`min-h-[80px] p-2 ${dayColor} ${
-                      !isCurrentMonth ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-medium ${
-                        isCurrentDay ? 'text-indigo-600' : 'text-gray-700'
-                      }`}>
-                        {format(day, 'd')}
-                      </span>
-                      {isCurrentDay && (
-                        <Badge variant="default" className="text-xs">
-                          Hoy
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {dayPercentage !== null && (
-                      <div className="mt-1">
-                        <div className="text-xs font-medium text-gray-600">
-                          {dayPercentage}%
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                          <div 
-                            className={`h-1 rounded-full ${
-                              dayPercentage >= 80 ? 'bg-green-500' :
-                              dayPercentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${dayPercentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            className="rounded-md border"
+            locale={es}
+          />
         </CardContent>
       </Card>
+
+      {/* Estadísticas del mes */}
+      {selectedDate && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumen del Mes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{monthAttendances.length}</div>
+                <div className="text-sm text-gray-600">Total Registros</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {monthAttendances.length > 0 
+                    ? monthAttendances.filter(a => a.present).length
+                    : 0
+                  }
+                </div>
+                <div className="text-sm text-gray-600">Presentes</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {monthAttendances.length > 0 
+                    ? Math.round((monthAttendances.filter(a => a.present).length / monthAttendances.length) * 100)
+                    : 0
+                  }%
+                </div>
+                <div className="text-sm text-gray-600">Porcentaje Asistencia</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 } 

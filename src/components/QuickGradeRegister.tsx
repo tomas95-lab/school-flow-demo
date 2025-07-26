@@ -1,479 +1,260 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useContext, useState, useMemo, useEffect } from "react";
+import { useFirestoreCollection } from "@/hooks/useFirestoreCollection";
+import { useTeacherCourses, useTeacherStudents } from "@/hooks/useTeacherCourses";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { 
-  Plus, 
-  Save, 
-  CheckCircle, 
-  XCircle,
-  TrendingUp,
-  AlertTriangle,
-  Users
-} from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-
-type Student = {
-  firestoreId: string;
-  nombre: string;
-  apellido: string;
-  cursoId: string;
-};
-
-type Subject = {
-  firestoreId: string;
-  nombre: string;
-  teacherId: string;
-  cursoId: string | string[];
-};
-
-type Grade = {
-  firestoreId: string;
-  studentId: string;
-  subjectId: string;
-  subject: string;
-  valor: number;
-  tipo: string;
-  fecha: string;
-  comentario?: string;
-  createdAt?: Date | string;
-};
+import { toast } from "sonner";
+import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 export default function QuickGradeRegister() {
   const { user } = useContext(AuthContext);
+  const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [gradeType, setGradeType] = useState("parcial");
-  const [grades, setGrades] = useState<{[key: string]: number}>({});
-  const [loading, setLoading] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [gradeValue, setGradeValue] = useState("");
+  const [gradeType, setGradeType] = useState("examen");
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Obtener datos
-  const { data: courses } = useFirestoreCollection("courses");
-  const { data: students } = useFirestoreCollection<Student>("students");
-  const { data: subjects } = useFirestoreCollection<Subject>("subjects");
-  const { data: existingGrades } = useFirestoreCollection<Grade>("calificaciones");
+  // Usar hooks estandarizados
+  const { teacherCourses, teacherSubjects, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
+  const { teacherStudents, isLoading: studentsLoading } = useTeacherStudents(user?.teacherId);
 
-  // Filtrar materias del docente
-  const teacherSubjects = useMemo(() => 
-    subjects?.filter(s => s.teacherId === (user?.teacherId || '')) || [], 
-    [subjects, user?.teacherId]
-  );
-
-  // Auto-seleccionar materia si el docente tiene una sola
+  // Auto-seleccionar curso y materia si el docente tiene una sola
   useEffect(() => {
+    if (teacherCourses.length === 1 && !selectedCourse) {
+      setSelectedCourse(teacherCourses[0].firestoreId);
+    }
     if (teacherSubjects.length === 1 && !selectedSubject) {
       setSelectedSubject(teacherSubjects[0].nombre);
-    } else if (teacherSubjects.length > 1 && !selectedSubject) {
-      // Pre-seleccionar la primera materia si tiene múltiples
-      setSelectedSubject(teacherSubjects[0].nombre);
     }
-  }, [teacherSubjects, selectedSubject]);
+  }, [teacherCourses, teacherSubjects, selectedCourse, selectedSubject]);
 
-  // Obtener cursos del docente
-  const teacherCourses = useMemo(() => {
-    if (!courses || !teacherSubjects.length) return [];
+  // Filtrar estudiantes del curso seleccionado
+  const courseStudents = teacherStudents.filter(s => s.cursoId === selectedCourse);
+
+  if (coursesLoading || studentsLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="text-gray-500 mt-4">Cargando formulario...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    const courseIds = new Set<string>();
-    teacherSubjects.forEach(s => {
-      if (Array.isArray(s.cursoId)) {
-        s.cursoId.forEach(id => courseIds.add(id));
-      } else {
-        courseIds.add(s.cursoId);
-      }
-    });
-    
-    return courses.filter(c => courseIds.has(c?.firestoreId || ''));
-  }, [courses, teacherSubjects]);
-
-  // Obtener estudiantes de los cursos del docente
-  const courseStudents = useMemo(() => {
-    if (!students || !teacherCourses.length) return [];
-    
-    const courseIds = teacherCourses.map(c => c.firestoreId);
-    return students.filter(s => courseIds.includes(s.cursoId));
-  }, [students, teacherCourses]);
-
-  // Filtrar estudiantes por materia seleccionada
-  const subjectStudents = useMemo(() => {
-      if (!selectedSubject || !courseStudents.length) return [];
-      const subject = teacherSubjects.find(s => s.nombre === selectedSubject);
-      if (!subject) return [];
-      
-      return courseStudents.filter(s => {
-        if (Array.isArray(subject.cursoId)) {
-          return subject.cursoId.includes(s.cursoId);
-        }
-        return s.cursoId === subject.cursoId;
-      });
-    }, [selectedSubject, courseStudents, teacherSubjects]);
-    
-  // Calcular estadísticas
-  const stats = useMemo(() => {
-    const totalStudents = subjectStudents.length;
-    const gradesEntered = Object.keys(grades).length;
-    const averageGrade = gradesEntered > 0 
-      ? Object.values(grades).reduce((sum, grade) => sum + grade, 0) / gradesEntered 
-      : 0;
-    const passingGrades = Object.values(grades).filter(grade => grade >= 7).length;
-    const failingGrades = gradesEntered - passingGrades;
-
-    return {
-      totalStudents,
-      gradesEntered,
-      averageGrade: averageGrade.toFixed(2),
-      passingGrades,
-      failingGrades,
-      completionPercentage: totalStudents > 0 ? Math.round((gradesEntered / totalStudents) * 100) : 0
-    };
-  }, [subjectStudents, grades]);
-
-  // Función para manejar cambio de calificación
-  const handleGradeChange = (studentId: string, value: string) => {
-    const grade = parseFloat(value);
-    if (isNaN(grade) || grade < 0 || grade > 10) return;
-    
-    setGrades(prev => ({
-      ...prev,
-      [studentId]: grade
-    }));
-  };
-
-  // Función para marcar todas las calificaciones
-  const markAllGrades = (grade: number) => {
-    const newGrades: {[key: string]: number} = {};
-    subjectStudents.forEach(student => {
-      newGrades[student.firestoreId] = grade;
-    });
-    setGrades(newGrades);
-  };
-
-  // Función para limpiar todas las calificaciones
-  const clearAllGrades = () => {
-    setGrades({});
-  };
-
-  // Función para guardar calificaciones
-
-  const saveGrades = async () => {
-    if (!selectedSubject || Object.keys(grades).length === 0) {
-      toast.error('Datos incompletos', {
-        description: 'Selecciona una materia y ingresa al menos una calificación'
-      });
+    if (!selectedCourse || !selectedSubject || !selectedStudent || !gradeValue) {
+      toast.error("Por favor completa todos los campos obligatorios");
       return;
     }
 
-    setLoading(true);
+    const grade = parseFloat(gradeValue);
+    if (isNaN(grade) || grade < 1 || grade > 10) {
+      toast.error("La calificación debe estar entre 1 y 10");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      const subject = teacherSubjects.find(s => s.nombre === selectedSubject);
-      if (!subject) throw new Error('Materia no encontrada');
+      const gradeData = {
+        studentId: selectedStudent,
+        subjectId: teacherSubjects.find(s => s.nombre === selectedSubject)?.firestoreId,
+        subject: selectedSubject,
+        courseId: selectedCourse,
+        valor: grade,
+        tipo: gradeType,
+        fecha: new Date().toISOString().split('T')[0],
+        comentario: comment || "",
+        createdAt: serverTimestamp(),
+        teacherId: user?.teacherId
+      };
 
-      const gradePromises = Object.entries(grades).map(([studentId, valor]) => {
-        const gradeData = {
-          studentId,
-          subjectId: subject.firestoreId,
-          subject: selectedSubject,
-          valor,
-          tipo: gradeType,
-          fecha: selectedDate,
-          comentario: `Registro rápido - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
-          createdAt: serverTimestamp(),
-          createdBy: user?.uid,
-          createdByRole: user?.role
-        };
-
-        return addDoc(collection(db, "calificaciones"), gradeData);
-      });
-
-      await Promise.all(gradePromises);
+      await addDoc(collection(db, "calificaciones"), gradeData);
       
-      toast.success('Calificaciones guardadas', {
-        description: `${Object.keys(grades).length} calificaciones guardadas exitosamente`
-      });
-      setGrades({});
+      toast.success("Calificación registrada exitosamente");
+      
+      // Limpiar formulario
+      setSelectedStudent("");
+      setGradeValue("");
+      setGradeType("examen");
+      setComment("");
+      
     } catch (error) {
-      console.error('Error saving grades:', error);
-      toast.error('Error al guardar calificaciones', {
-        description: 'Inténtalo de nuevo.'
-      });
+      console.error("Error al registrar calificación:", error);
+      toast.error("Error al registrar la calificación");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Verificar si ya existen calificaciones para esta fecha y materia
-  const existingGradesForDate = useMemo(() => {
-    if (!selectedSubject || !selectedDate || !existingGrades) return [];
-    
-    const subject = teacherSubjects.find(s => s.nombre === selectedSubject);
-    if (!subject) return [];
-    
-    return existingGrades.filter(g => 
-      g.subjectId === subject.firestoreId && 
-      g.fecha === selectedDate &&
-      g.tipo === gradeType
-    );
-  }, [selectedSubject, selectedDate, gradeType, existingGrades, teacherSubjects]);
+  const getGradeColor = (grade: number) => {
+    if (grade >= 8) return "text-green-600";
+    if (grade >= 7) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getGradeIcon = (grade: number) => {
+    if (grade >= 7) return <CheckCircle className="h-4 w-4 text-green-600" />;
+    return <XCircle className="h-4 w-4 text-red-600" />;
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Registro Rápido de Calificaciones</h2>
+        <p className="text-gray-600">Registra calificaciones de forma rápida y eficiente</p>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-indigo-600" />
-            Registro Rápido de Calificaciones
-          </CardTitle>
+          <CardTitle>Nueva Calificación</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {/* Solo mostrar selector de materia si el docente tiene múltiples materias */}
-            {teacherSubjects.length > 1 ? (
-              <div>
-                <Label htmlFor="subject">Materia</Label>
-                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una materia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teacherSubjects.map(subject => (
-                      <SelectItem key={subject.firestoreId} value={subject.nombre}>
-                        {subject.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <div>
-                <Label htmlFor="subject">Materia</Label>
-                <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
-                  {teacherSubjects[0]?.nombre || "Sin materia asignada"}
-                </div>
-              </div>
-            )}
-            
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Curso */}
             <div>
-              <Label className="text-sm font-medium text-gray-700">Fecha</Label>
-              <Input
-                type="date"
-                value={selectedDate}
-                max={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
+              <Label htmlFor="course">Curso *</Label>
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar curso" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teacherCourses.map((course) => (
+                    <SelectItem key={course.firestoreId} value={course.firestoreId}>
+                      {course.nombre} - {course.division}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            
+
+            {/* Materia */}
             <div>
-              <Label htmlFor="type">Tipo de Evaluación</Label>
+              <Label htmlFor="subject">Materia *</Label>
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar materia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teacherSubjects.map((subject) => (
+                    <SelectItem key={subject.firestoreId} value={subject.nombre}>
+                      {subject.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Estudiante */}
+            <div>
+              <Label htmlFor="student">Estudiante *</Label>
+              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estudiante" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courseStudents.map((student) => (
+                    <SelectItem key={student.firestoreId} value={student.firestoreId}>
+                      {student.nombre} {student.apellido}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tipo de evaluación */}
+            <div>
+              <Label htmlFor="type">Tipo de Evaluación *</Label>
               <Select value={gradeType} onValueChange={setGradeType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="parcial">Parcial</SelectItem>
-                  <SelectItem value="final">Final</SelectItem>
-                  <SelectItem value="trabajo">Trabajo Práctico</SelectItem>
                   <SelectItem value="examen">Examen</SelectItem>
+                  <SelectItem value="trabajo_practico">Trabajo Práctico</SelectItem>
+                  <SelectItem value="participacion">Participación</SelectItem>
+                  <SelectItem value="tarea">Tarea</SelectItem>
+                  <SelectItem value="proyecto">Proyecto</SelectItem>
                   <SelectItem value="otro">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Alerta si ya existen calificaciones */}
-          {existingGradesForDate.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-800">
-                    Ya existen calificaciones para esta fecha
-                  </p>
-                  <p className="text-sm text-yellow-700">
-                    Se encontraron {existingGradesForDate.length} calificaciones para {selectedSubject} el {format(new Date(selectedDate), 'dd/MM/yyyy', { locale: es })}.
-                  </p>
+            {/* Calificación */}
+            <div>
+              <Label htmlFor="grade">Calificación * (1-10)</Label>
+              <Input
+                id="grade"
+                type="number"
+                min="1"
+                max="10"
+                step="0.1"
+                value={gradeValue}
+                onChange={(e) => setGradeValue(e.target.value)}
+                placeholder="Ej: 8.5"
+                className={gradeValue ? getGradeColor(parseFloat(gradeValue)) : ""}
+              />
+              {gradeValue && (
+                <div className="flex items-center gap-2 mt-2">
+                  {getGradeIcon(parseFloat(gradeValue))}
+                  <span className="text-sm">
+                    {parseFloat(gradeValue) >= 7 ? "Aprobado" : "Desaprobado"}
+                  </span>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estadísticas */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-blue-600">Estudiantes</p>
-                  <p className="text-xl font-bold text-blue-900">{stats.totalStudents}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-green-600">Registradas</p>
-                  <p className="text-xl font-bold text-green-900">{stats.gradesEntered}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-indigo-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-indigo-600" />
-                <div>
-                  <p className="text-sm text-indigo-600">Promedio</p>
-                  <p className="text-xl font-bold text-indigo-900">{stats.averageGrade}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm text-purple-600">Aprobados</p>
-                  <p className="text-xl font-bold text-purple-900">{stats.passingGrades}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm text-red-600">Desaprobados</p>
-                  <p className="text-xl font-bold text-red-900">{stats.failingGrades}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Controles masivos */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => markAllGrades(10)}
-              disabled={subjectStudents.length === 0}
-            >
-              Marcar todos 10
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => markAllGrades(7)}
-              disabled={subjectStudents.length === 0}
-            >
-              Marcar todos 7
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => markAllGrades(5)}
-              disabled={subjectStudents.length === 0}
-            >
-              Marcar todos 5
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearAllGrades}
-              disabled={Object.keys(grades).length === 0}
-            >
-              Limpiar todo
-            </Button>
-          </div>
-
-          {/* Lista de estudiantes */}
-          {selectedSubject && subjectStudents.length > 0 ? (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Estudiantes - {selectedSubject} ({stats.completionPercentage}% completado)
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {subjectStudents.map(student => {
-                  const existingGrade = existingGradesForDate.find(g => g.studentId === student.firestoreId);
-                  const currentGrade = grades[student.firestoreId];
-                  
-                  return (
-                    <div
-                      key={student.firestoreId}
-                      className={`p-4 rounded-lg border transition-colors ${
-                        existingGrade 
-                          ? 'bg-yellow-50 border-yellow-200' 
-                          : currentGrade 
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-white border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {student.nombre} {student.apellido}
-                          </p>
-                          {existingGrade && (
-                            <Badge variant="outline" className="text-xs">
-                              Ya registrada: {existingGrade.valor}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.1"
-                          placeholder="0-10"
-                          value={currentGrade || ''}
-                          onChange={(e) => handleGradeChange(student.firestoreId, e.target.value)}
-                          className="w-20"
-                          disabled={!!existingGrade}
-                        />
-                        <span className="text-sm text-gray-500">/ 10</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : selectedSubject ? (
-            <div className="text-center py-8 text-gray-500">
-              No hay estudiantes en esta materia.
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              Selecciona una materia para comenzar a registrar calificaciones.
-            </div>
-          )}
-
-          {/* Botón de guardar */}
-          <div className="flex justify-end mt-6">
-            <Button
-              onClick={saveGrades}
-              disabled={loading || Object.keys(grades).length === 0}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
               )}
-              Guardar Calificaciones ({Object.keys(grades).length})
+            </div>
+
+            {/* Comentario */}
+            <div>
+              <Label htmlFor="comment">Comentario (opcional)</Label>
+              <Textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Observaciones sobre la calificación..."
+                rows={3}
+              />
+            </div>
+
+            {/* Botón de envío */}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !selectedCourse || !selectedSubject || !selectedStudent || !gradeValue}
+              className="w-full"
+            >
+              {isSubmitting ? "Registrando..." : "Registrar Calificación"}
             </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Información adicional */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-blue-600" />
+            Información
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>• Las calificaciones se registran automáticamente con la fecha actual</p>
+            <p>• El sistema valida que la calificación esté entre 1 y 10</p>
+            <p>• Puedes agregar comentarios para mayor contexto</p>
+            <p>• Solo se muestran los estudiantes de los cursos donde enseñas</p>
           </div>
         </CardContent>
       </Card>

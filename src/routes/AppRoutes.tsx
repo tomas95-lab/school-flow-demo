@@ -12,6 +12,8 @@ import Alertas from "@/pages/Alertas";
 import Usuarios from "@/pages/Usuarios";
 import GestionCursosMaterias from "@/pages/GestionCursos&Materias";
 import TestObservaciones from "@/pages/TestObservaciones";
+import Mensajes from "@/pages/Mensajes";
+import DetallesMuro from "@/components/DetallesMuro";
 
 export function AppRoutes() {
   return (
@@ -30,6 +32,8 @@ export function AppRoutes() {
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="/gestion-cursos-materias" element={<GestionCursosMaterias />} />
           <Route path="/test-observaciones" element={<TestObservaciones />} />
+          <Route path="/mensajes" element={<Mensajes />} />
+          <Route path="/mensajes/detalles" element={<DetallesMuro />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

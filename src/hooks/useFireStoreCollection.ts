@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { collection, onSnapshot, getFirestore, query, orderBy, limit, Query, CollectionReference, QuerySnapshot, DocumentSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, getFirestore, query, orderBy, limit } from "firebase/firestore";
 import type { DocumentData } from "firebase/firestore";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 
@@ -40,7 +40,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       }
 
       // Crear query con opciones
-      let q: CollectionReference<DocumentData> | Query<DocumentData> = collection(db, path);
+      let q: any = collection(db, path);
       if (options?.orderBy) {
         q = query(q, orderBy(options.orderBy));
       }
@@ -50,8 +50,8 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
 
       const unsubscribe = onSnapshot(
         q, 
-        (snapshot: QuerySnapshot<DocumentData>) => {
-          const docs = snapshot.docs.map((doc: DocumentSnapshot<DocumentData>) => ({
+        (snapshot: any) => {
+          const docs = snapshot.docs.map((doc: any) => ({
             ...(doc.data() as T),
             firestoreId: doc.id,
           }));
@@ -68,7 +68,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
             });
           }
         },
-        (error: Error) => {
+        (error: any) => {
           console.error(`Error loading collection ${path}:`, error);
           handleError(error, `Loading collection: ${path}`);
           setError(error instanceof Error ? error.message : 'Unknown error');
@@ -125,7 +125,7 @@ export function useFirestoreCollectionOnce<T extends DocumentData & { firestoreI
 
       try {
         const { getDocs } = await import('firebase/firestore');
-        let q: CollectionReference<DocumentData> | Query<DocumentData> = collection(db, path);
+        let q: any = collection(db, path);
         
         if (options?.orderBy) {
           q = query(q, orderBy(options.orderBy));

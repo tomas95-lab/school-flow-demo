@@ -229,3 +229,69 @@ export interface FilterOptions {
     end: Date;
   };
 } 
+
+export interface Message {
+  firestoreId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorRole: 'admin' | 'docente' | 'alumno';
+  courseId: string;
+  subjectId?: string; // Opcional - si es mensaje de materia específica
+  messageType: 'general' | 'academic' | 'announcement' | 'reminder';
+  priority: 'low' | 'medium' | 'high';
+  attachments?: string[]; // URLs de archivos adjuntos
+  createdAt: string;
+  updatedAt?: string;
+  isPinned: boolean;
+  isEdited: boolean;
+  likes: string[]; // IDs de usuarios que dieron like
+  replies?: MessageReply[];
+  tags?: string[];
+  expiresAt?: string; // Para mensajes temporales
+  status: 'active' | 'archived' | 'deleted';
+}
+
+export interface MessageReply {
+  firestoreId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorRole: 'admin' | 'docente' | 'alumno';
+  createdAt: string;
+  updatedAt?: string;
+  isEdited: boolean;
+  likes: string[];
+}
+
+export interface CourseWall {
+  firestoreId: string;
+  courseId: string;
+  courseName: string;
+  lastActivity: string;
+  messageCount: number;
+  activeUsers: string[]; // IDs de usuarios activos en el muro
+  settings: {
+    allowStudentPosts: boolean;
+    requireApproval: boolean;
+    maxAttachments: number;
+    allowedFileTypes: string[];
+  };
+}
+
+export interface SubjectWall {
+  firestoreId: string;
+  subjectId: string;
+  subjectName: string;
+  courseId: string;
+  courseName: string;
+  teacherId: string;
+  lastActivity: string;
+  messageCount: number;
+  settings: {
+    allowStudentPosts: boolean;
+    requireApproval: boolean;
+    maxAttachments: number;
+    allowedFileTypes: string[];
+  };
+} 
