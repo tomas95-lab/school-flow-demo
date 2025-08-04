@@ -1,10 +1,10 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useContext } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
-type Role = "admin" | "docente" | "alumno";
+type Role = "admin" | "docente" | "alumno" | "familiar";
 
 type AppUser = {
   uid: string;
@@ -70,4 +70,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Hook to use auth context
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }

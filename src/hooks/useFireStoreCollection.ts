@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { collection, onSnapshot, getFirestore, query, orderBy, limit } from "firebase/firestore";
 import type { DocumentData } from "firebase/firestore";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
+import { useAuth } from "@/context/AuthContext";
 
 // Cache global para evitar múltiples listeners
 const cache = new Map<string, { data: DocumentData[], timestamp: number, listeners: number }>();
@@ -23,10 +24,23 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const cacheKey = `${path}_${options?.limit || 'all'}_${options?.orderBy || 'none'}`;
   const { handleError } = useGlobalError();
+  const { user, loading: authLoading } = useAuth();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
+
+    // Wait for authentication to complete
+    if (authLoading) {
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!user) {
+      setError('Usuario no autenticado. Por favor, inicia sesión.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Verificar cache si está habilitado
@@ -70,8 +84,16 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
         },
         (error: any) => {
           console.error(`Error loading collection ${path}:`, error);
-          handleError(error, `Loading collection: ${path}`);
-          setError(error instanceof Error ? error.message : 'Unknown error');
+          
+          // Handle specific permission errors
+          if (error.code === 'permission-denied') {
+            const errorMessage = `No tienes permisos para acceder a ${path}. Verifica que estés autenticado y tengas los permisos necesarios.`;
+            handleError(error, `Loading collection: ${path}`);
+            setError(errorMessage);
+          } else {
+            handleError(error, `Loading collection: ${path}`);
+            setError(error instanceof Error ? error.message : 'Unknown error');
+          }
           setLoading(false);
         }
       );
@@ -83,9 +105,14 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
     }
-  }, [path, options?.limit, options?.orderBy, options?.enableCache, cacheKey, db, handleError, ...(options?.dependencies || [])]);
+  }, [path, options?.limit, options?.orderBy, options?.enableCache, cacheKey, db, handleError, user, authLoading, ...(options?.dependencies || [])]);
 
   useEffect(() => {
+    // Don't fetch data while authentication is loading
+    if (authLoading) {
+      return;
+    }
+
     fetchData();
 
     return () => {
@@ -103,7 +130,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
         }
       }
     };
-  }, [fetchData, cacheKey]);
+  }, [fetchData, cacheKey, authLoading]);
 
   return { data, loading, error, refetch: fetchData };
 }

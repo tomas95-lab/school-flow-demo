@@ -6,11 +6,33 @@ import { Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from "luc
 import { generarObservacionAutomaticaBoletin, getPeriodoActual } from "@/utils/boletines";
 import ObservacionAutomatica from "./ObservacionAutomatica";
 
+// Tipos TypeScript
+interface ObservacionData {
+  studentId: string;
+  studentName: string;
+  observacion: any;
+}
+
 interface ObservacionesAutomaticasPanelProps {
   role: 'admin' | 'docente' | 'alumno';
   className?: string;
   context?: 'asistencias' | 'calificaciones' | 'boletines' | 'general';
 }
+
+// Constantes
+const CONTEXT_TITLES = {
+  asistencias: 'Observaciones de Asistencia',
+  calificaciones: 'Observaciones de Rendimiento',
+  boletines: 'Observaciones Generales',
+  general: 'Observaciones Automáticas'
+} as const;
+
+const CONTEXT_FILTERS = {
+  asistencias: ['asistencia'],
+  calificaciones: ['rendimiento', 'tendencia', 'excelencia'],
+  boletines: ['rendimiento', 'tendencia', 'excelencia', 'asistencia'],
+  general: ['rendimiento', 'tendencia', 'excelencia', 'asistencia']
+} as const;
 
 export default function ObservacionesAutomaticasPanel({ 
   role, 
@@ -18,6 +40,8 @@ export default function ObservacionesAutomaticasPanel({
   context = "general" 
 }: ObservacionesAutomaticasPanelProps) {
   const { user } = useContext(AuthContext);
+  
+  // Hooks de datos
   const { data: calificaciones } = useFirestoreCollection("calificaciones");
   const { data: asistencias } = useFirestoreCollection("attendances");
   const { data: students } = useFirestoreCollection("students");
@@ -37,33 +61,18 @@ export default function ObservacionesAutomaticasPanel({
   };
 
   // Función para filtrar observaciones según el contexto
-  const filtrarObservacionesPorContexto = (observaciones: Array<{ studentId: string | undefined; studentName: string; observacion: any } | null>) => {
-    return observaciones.filter((item): item is { studentId: string | undefined; studentName: string; observacion: any } => {
-      return item !== null;
-    }).filter((item) => {
+  const filtrarObservacionesPorContexto = (observaciones: ObservacionData[]) => {
+    const tiposPermitidos = CONTEXT_FILTERS[context];
+    
+    return observaciones.filter((item) => {
       const tipo = item.observacion.tipo;
-      
-      switch (context) {
-        case 'asistencias':
-          // En módulo de asistencias, mostrar solo observaciones relacionadas con asistencia
-          return tipo === 'asistencia';
-        case 'calificaciones':
-          // En módulo de calificaciones, mostrar solo observaciones relacionadas con rendimiento y tendencias
-          return tipo === 'rendimiento' || tipo === 'tendencia' || tipo === 'excelencia';
-        case 'boletines':
-          // En módulo de boletines, mostrar todas las observaciones relevantes
-          return tipo !== 'neutral';
-        case 'general':
-        default:
-          // En contexto general, mostrar todas las observaciones relevantes
-          return tipo !== 'neutral';
-      }
+      return (tiposPermitidos as readonly string[]).includes(tipo);
     });
   };
 
   // Generar observaciones según el rol
-  const observacionesGeneradas = useMemo(() => {
-    if (!calificaciones || !asistencias) return [];
+  const observacionesGeneradas = useMemo((): ObservacionData[] => {
+    if (!calificaciones || !asistencias || !students) return [];
 
     const periodoActual = getPeriodoActual();
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
@@ -71,54 +80,60 @@ export default function ObservacionesAutomaticasPanel({
     switch (role) {
       case 'admin':
         // Para admin: observaciones de todos los estudiantes
-            return students.map((student) => {
-      const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
-      const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
-          
-          if (calificacionesAlumno.length === 0) return null;
+        return students
+          .map((student) => {
+            const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+            const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+            
+            if (calificacionesAlumno.length === 0) return null;
 
-          const observacion = generarObservacionAutomaticaBoletin(
-            calificacionesAlumno as any,
-            asistenciasAlumno as any,
-            student.firestoreId || '',
-            periodoActual,
-            periodoAnterior
-          );
+            const observacion = generarObservacionAutomaticaBoletin(
+              calificacionesAlumno as any,
+              asistenciasAlumno as any,
+              student.firestoreId || '',
+              periodoActual,
+              periodoAnterior
+            );
 
-          return {
-            studentId: student.firestoreId,
-            studentName: `${student.nombre} ${student.apellido}`,
-            observacion
-          };
-        }).filter(Boolean);
+            return {
+              studentId: student.firestoreId || '',
+              studentName: `${student.nombre} ${student.apellido}`,
+              observacion
+            };
+          })
+          .filter((item): item is ObservacionData => item !== null);
 
       case 'docente': {
         // Para docente: observaciones de sus estudiantes
-        const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
+        if (!teachers || !user?.teacherId) return [];
+        
+        const teacher = teachers.find((t) => t.firestoreId === user.teacherId);
         if (!teacher) return [];
 
         const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
         
-        return teacherStudents.map((student) => {
-          const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
-          const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
-          
-          if (calificacionesAlumno.length === 0) return null;
+        return teacherStudents
+          .map((student) => {
+            const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+            const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+            
+            if (calificacionesAlumno.length === 0) return null;
 
-          const observacion = generarObservacionAutomaticaBoletin(
-            calificacionesAlumno as any,
-            asistenciasAlumno as any,
-            student.firestoreId || '',
-            periodoActual,
-            periodoAnterior
-          );
+            const observacion = generarObservacionAutomaticaBoletin(
+              calificacionesAlumno as any,
+              asistenciasAlumno as any,
+              student.firestoreId || '',
+              periodoActual,
+              periodoAnterior
+            );
 
-                      return {
-              studentId: student.firestoreId!,
+            return {
+              studentId: student.firestoreId || '',
               studentName: `${student.nombre} ${student.apellido}`,
               observacion
             };
-        }).filter(Boolean);
+          })
+          .filter((item): item is ObservacionData => item !== null);
       }
 
       case 'alumno': {
@@ -151,32 +166,45 @@ export default function ObservacionesAutomaticasPanel({
   }, [role, user, calificaciones, asistencias, students, teachers]);
 
   // Filtrar observaciones por contexto y relevancia
-  const observacionesFiltradas = filtrarObservacionesPorContexto(
-    observacionesGeneradas.filter((item) => item && item.observacion.tipo !== 'neutral')
-  );
+  const observacionesFiltradas = useMemo(() => {
+    const observacionesRelevantes = observacionesGeneradas.filter(
+      (item) => item.observacion.tipo !== 'neutral'
+    );
+    return filtrarObservacionesPorContexto(observacionesRelevantes);
+  }, [observacionesGeneradas, context]);
 
   // Obtener título según el contexto
-  const getTituloContexto = () => {
-    switch (context) {
-      case 'asistencias':
-        return 'Observaciones de Asistencia';
-      case 'calificaciones':
-        return 'Observaciones de Rendimiento';
-      case 'boletines':
-        return 'Observaciones Generales';
-      case 'general':
-      default:
-        return 'Observaciones Automáticas';
+  const tituloContexto = CONTEXT_TITLES[context];
+
+  // Renderizar icono según el tipo de observación
+  const renderObservacionIcon = (observacion: any) => {
+    const tipo = observacion.tipo;
+    
+    if (tipo === 'rendimiento') {
+      return <AlertTriangle className="h-4 w-4 text-red-500" />;
     }
+    
+    if (tipo === 'tendencia') {
+      const tendencia = observacion.datosSoporte?.tendencia;
+      if (tendencia === 'mejora') {
+        return <TrendingUp className="h-4 w-4 text-green-500" />;
+      }
+      if (tendencia === 'descenso') {
+        return <TrendingDown className="h-4 w-4 text-red-500" />;
+      }
+    }
+    
+    return null;
   };
 
+  // Estado vacío
   if (observacionesFiltradas.length === 0) {
     return (
       <Card className={`border-0 shadow-sm ${className}`}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Brain className="h-5 w-5 text-purple-600" />
-            {getTituloContexto()}
+            {tituloContexto}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -198,7 +226,7 @@ export default function ObservacionesAutomaticasPanel({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Brain className="h-5 w-5 text-purple-600" />
-          {getTituloContexto()} ({observacionesFiltradas.length})
+          {tituloContexto} ({observacionesFiltradas.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -209,15 +237,7 @@ export default function ObservacionesAutomaticasPanel({
                 <span className="font-semibold text-sm text-gray-700">
                   {item.studentName}
                 </span>
-                {item.observacion.tipo === 'rendimiento' && (
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                )}
-                {item.observacion.tipo === 'tendencia' && item.observacion.datosSoporte.tendencia === 'mejora' && (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                )}
-                {item.observacion.tipo === 'tendencia' && item.observacion.datosSoporte.tendencia === 'descenso' && (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
-                )}
+                {renderObservacionIcon(item.observacion)}
               </div>
               <ObservacionAutomatica 
                 observacion={item.observacion}

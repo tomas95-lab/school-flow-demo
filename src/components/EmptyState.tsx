@@ -1,41 +1,42 @@
-import { FolderOpen, Plus } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
 
 interface EmptyStateProps {
-  title?: string;
-  message?: string;
-  actionLabel?: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  actionText?: string;
   onAction?: () => void;
-  showAction?: boolean;
-  icon?: React.ReactNode;
+  className?: string;
 }
 
 export function EmptyState({ 
-  title = "No hay datos disponibles", 
-  message = "No se encontraron registros para mostrar.",
-  actionLabel = "Crear nuevo",
+  icon: Icon, 
+  title, 
+  description, 
+  actionText, 
   onAction,
-  showAction = false,
-  icon
+  className = ""
 }: EmptyStateProps) {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto px-4">
-        <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-          {icon || <FolderOpen className="h-8 w-8 text-gray-400" />}
+    <Card className={`border-0 shadow-sm ${className}`}>
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="p-4 bg-gray-100 rounded-full mb-4">
+          <Icon className="h-8 w-8 text-gray-400" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">{title}</h2>
-        <p className="text-gray-600 mb-6">{message}</p>
-        {showAction && onAction && (
-          <Button 
-            onClick={onAction}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {actionLabel}
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          {title}
+        </h3>
+        <p className="text-gray-600 mb-6 max-w-md">
+          {description}
+        </p>
+        {actionText && onAction && (
+          <Button onClick={onAction} variant="outline">
+            {actionText}
           </Button>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 } 
