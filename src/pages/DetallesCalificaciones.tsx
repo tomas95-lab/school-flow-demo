@@ -289,14 +289,14 @@ export default function DetallesCalificaciones() {
                 title="Acceso Denegado"
                 description="No tienes permisos para ver las calificaciones de este curso. Solo puedes acceder a los cursos donde enseñas."
                 actionText="Volver a Calificaciones"
-                onAction={() => window.location.href = '/calificaciones'}
+                onAction={() => window.location.href = '/app/calificaciones'}
             />
         );
     }
 
     // Redirigir alumno
     if (user?.role === "alumno") {
-        return <Navigate to="/calificaciones" replace />;
+        return <Navigate to="/app/calificaciones" replace />;
     }
 
     if (loading) {

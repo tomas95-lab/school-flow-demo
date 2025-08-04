@@ -230,7 +230,7 @@ export default function AttendanceAlert() {
               className="bg-indigo-600 hover:bg-indigo-700"
               onClick={() => {
                 // Aquí podrías navegar a la página de registro
-                window.location.href = "/asistencias";
+                window.location.href = "/app/asistencias";
               }}
             >
               <CheckCircle className="h-4 w-4 mr-2" />

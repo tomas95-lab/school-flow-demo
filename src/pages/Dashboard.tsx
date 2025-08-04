@@ -34,56 +34,56 @@ const quickAccessByRole = {
     {
       icon: <PlusCircle className="text-green-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Gestión de Asistencias",
-      to: "/asistencias"
+      to: "/app/asistencias"
     },
     {
       icon: <Settings className="text-blue-600 bg-blue-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Gestión de Calificaciones",
-      to: "/calificaciones"
+      to: "/app/calificaciones"
     },
     {
       icon: <Book className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Panel de Boletines",
-      to: "/boletines"
+      to: "/app/boletines"
     },
     {
       icon: <AlertCircle className="text-red-500 bg-red-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Detalles de Calificaciones",
-      to: "/calificaciones/detalles"
+      to: "/app/calificaciones/detalles"
     }
   ],
   docente: [
     {
       icon: <BookOpen className="text-blue-500 bg-blue-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Asistencias",
-      to: "/asistencias"
+      to: "/app/asistencias"
     },
     {
       icon: <Users className="text-yellow-500 bg-yellow-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Calificaciones",
-      to: "/calificaciones"
+      to: "/app/calificaciones"
     },
     {
       icon: <FileText className="text-green-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Boletines",
-      to: "/boletines"
+      to: "/app/boletines"
     }
   ],
   alumno: [
     {
-      icon: <BookOpen className="text-blue-500 bg-blue-100 rounded-full w-8 h-8 p-1 shadow" />,
+      icon: <BookOpen className="text-blue-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Calificaciones",
-      to: "/calificaciones"
+      to: "/app/calificaciones"
     },
     {
       icon: <Calendar className="text-green-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Asistencias",
-      to: "/asistencias"
+      to: "/app/asistencias"
     },
     {
       icon: <FileText className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mi Boletín",
-      to: "/boletines"
+      to: "/app/boletines"
     }
   ]
 }
@@ -97,41 +97,46 @@ const statsByRole = {
 
 
 // Metadatos de KPIs mejorados - SOLO LOS ESENCIALES
-const kpiMeta = {
+const kpiMeta: Record<string, {
+  icon: any;
+  color: "blue" | "green" | "orange" | "red" | "purple" | "indigo" | "emerald" | "yellow" | "pink" | "gray";
+  title: string;
+  description: string;
+}> = {
   // Admin KPIs
   totalStudents: {
     icon: Users,
-    className: "blue",
+    color: "blue",
     title: "Estudiantes",
     description: "Total de estudiantes activos"
   },
   totalTeachers: {
     icon: GraduationCap,
-    className: "purple",
+    color: "purple",
     title: "Docentes",
     description: "Docentes registrados"
   },
   totalCourses: {
     icon: BookOpen,
-    className: "green",
+    color: "green",
     title: "Cursos",
     description: "Cursos activos"
   },
   avgAttendance: {
     icon: TrendingUp,
-    className: "emerald",
+    color: "emerald",
     title: "Asistencia Promedio",
     description: "Promedio general de asistencia (%)"
   },
   avgGrades: {
     icon: Award,
-    className: "yellow",
+    color: "yellow",
     title: "Promedio General",
     description: "Promedio de calificaciones (0-10)"
   },
   criticalAlerts: {
     icon: AlertCircle,
-    className: "red",
+    color: "red",
     title: "Alertas Críticas",
     description: "Requieren atención inmediata"
   },
@@ -139,25 +144,25 @@ const kpiMeta = {
   // Docente KPIs
   myCourses: {
     icon: BookOpen,
-    className: "blue",
+    color: "blue",
     title: "Mis Cursos",
     description: "Cursos asignados"
   },
   myStudents: {
     icon: Users,
-    className: "green",
+    color: "green",
     title: "Mis Estudiantes",
     description: "Estudiantes a cargo"
   },
   myAttendanceDocente: {
     icon: TrendingUp,
-    className: "emerald",
+    color: "emerald",
     title: "Asistencia Promedio",
     description: "Promedio de mis cursos (%)"
   },
   myGrades: {
     icon: Award,
-    className: "yellow",
+    color: "yellow",
     title: "Promedio General",
     description: "Promedio de mis materias (0-10)"
   },
@@ -165,25 +170,25 @@ const kpiMeta = {
   // Alumno KPIs
   myAverage: {
     icon: Award,
-    className: "blue",
+    color: "blue",
     title: "Mi Promedio",
     description: "Promedio general actual (0-10)"
   },
   myAttendance: {
     icon: TrendingUp,
-    className: "green",
+    color: "green",
     title: "Mi Asistencia",
     description: "Porcentaje de asistencia (%)"
   },
   approvedSubjects: {
     icon: CheckCircle,
-    className: "emerald",
+    color: "emerald",
     title: "Materias Aprobadas",
     description: "Materias con promedio ≥ 7"
   },
   totalSubjects: {
     icon: BookOpen,
-    className: "purple",
+    color: "purple",
     title: "Total Materias",
     description: "Materias en las que estoy inscrito"
   }
@@ -566,10 +571,10 @@ export default function Dashboard() {
           return (
             <StatsCard
               key={kpiKey}
-              value={stats[kpiKey] || 0}
+              value={stats[kpiKey as keyof typeof stats] || 0}
               icon={kpiMeta[kpiKey].icon}
               label={kpiMeta[kpiKey].title}
-              color={kpiMeta[kpiKey].className}
+              color={kpiMeta[kpiKey].color}
               subtitle={kpiMeta[kpiKey].description}
             />
           )
@@ -600,9 +605,9 @@ export default function Dashboard() {
                   <p>Inasistencias, calificaciones</p>
                   <p>bajas y eventos del sistema</p>
                 </div>
-                <Link to="/alertas" className="w-full">
-                  <Button variant={"destructive"} className="mt-4 w-full">Ver Alertas</Button>
-                </Link>
+                        <Link to="/app/alertas" className="w-full">
+          <Button variant={"destructive"} className="mt-4 w-full">Ver Alertas</Button>
+        </Link>
               </div>
             </ReutilizableCard>
         </div>

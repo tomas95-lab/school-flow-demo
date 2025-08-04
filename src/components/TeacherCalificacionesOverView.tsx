@@ -118,7 +118,7 @@ export default function TeacherCalificacionesOverview() {
         title="No tienes cursos asignados"
         description="Contacta al administrador para que te asigne cursos."
         actionText="Contactar administrador"
-        onAction={() => window.location.href = '/usuarios'}
+                        onAction={() => window.location.href = '/app/usuarios'}
       />
     );
   }

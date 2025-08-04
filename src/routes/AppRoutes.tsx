@@ -20,21 +20,22 @@ export function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/asistencias" element={<Asistencias />} />
-          <Route path="/asistencias/detalles" element={<DetalleAsistencia />} />
-          <Route path="/calificaciones" element={<Calificaciones />} />
-          <Route path="/calificaciones/detalles" element={<DetallesCalificaciones />} />
-          <Route path="/boletines" element={<Boletines />} />
-          <Route path="/boletines/cursos" element={<BoletinesCurso />} />
-          <Route path="/alertas" element={<Alertas />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/gestion-cursos-materias" element={<GestionCursosMaterias />} />
-          <Route path="/test-observaciones" element={<TestObservaciones />} />
-          <Route path="/mensajes" element={<Mensajes />} />
-          <Route path="/mensajes/detalles" element={<DetallesMuro />} />
+        <Route path="/app" element={<Layout />}>
+          <Route path="/app/dashboard" element={<Dashboard />} />
+          <Route path="/app/asistencias" element={<Asistencias />} />
+          <Route path="/app/asistencias/detalles" element={<DetalleAsistencia />} />
+          <Route path="/app/calificaciones" element={<Calificaciones />} />
+          <Route path="/app/calificaciones/detalles" element={<DetallesCalificaciones />} />
+          <Route path="/app/boletines" element={<Boletines />} />
+          <Route path="/app/boletines/cursos" element={<BoletinesCurso />} />
+          <Route path="/app/alertas" element={<Alertas />} />
+          <Route path="/app/usuarios" element={<Usuarios />} />
+          <Route path="/app/gestion-cursos-materias" element={<GestionCursosMaterias />} />
+          <Route path="/app/test-observaciones" element={<TestObservaciones />} />
+          <Route path="/app/mensajes" element={<Mensajes />} />
+          <Route path="/app/mensajes/detalles" element={<DetallesMuro />} />
         </Route>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

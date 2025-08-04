@@ -32,7 +32,7 @@ export default function Login() {
       toast.success('Inicio de sesión exitoso', {
         description: 'Bienvenido de vuelta'
       });
-      navigate("/dashboard");
+      navigate("/app/dashboard");
     } catch (err) {
       console.error("Error de Firebase:", err);
       
@@ -79,7 +79,7 @@ export default function Login() {
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate("/app/dashboard");
     }
   }, [user, navigate]);
 

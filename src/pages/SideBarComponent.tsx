@@ -21,24 +21,24 @@ import { AuthContext } from "@/context/AuthContext"
 
 // Lista de rutas válidas reales extraídas del sidebar
 const validRoutes = [
-  "/dashboard",
-  "/academic",
-  "/asistencias",
-  "/calificaciones",
-  "/boletines",
-  "/comunicacion",
-  "/mensajes",
-  "/alertas",
-  "/gestion",
-  "/usuarios",
-  "/gestion-cursos-materias",
-  "/inscripciones",
-  "/ia",
-  "/reportes",
-  "/boletines/explicacion",
-  "/configuracion",
-  "/configuracion/general",
-  "/configuracion/bot"
+  "/app/dashboard",
+  "/app/academic",
+  "/app/asistencias",
+  "/app/calificaciones",
+  "/app/boletines",
+  "/app/comunicacion",
+  "/app/mensajes",
+  "/app/alertas",
+  "/app/gestion",
+  "/app/usuarios",
+  "/app/gestion-cursos-materias",
+  "/app/inscripciones",
+  "/app/ia",
+  "/app/reportes",
+  "/app/boletines/explicacion",
+  "/app/configuracion",
+  "/app/configuracion/general",
+  "/app/configuracion/bot"
 ];
 
 
@@ -81,11 +81,11 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
           <div className="flex items-center justify-between w-full">
             <Breadcrumb>
               <BreadcrumbList>
-                {urlParts[0] !== 'dashboard' && (
+                {urlParts[0] !== 'app' && (
                   <>
                     <BreadcrumbItem>
                       <BreadcrumbLink 
-                        onClick={() => safeNavigate('/dashboard')}
+                        onClick={() => safeNavigate('/app/dashboard')}
                         className="cursor-pointer"
                       >
                         Home

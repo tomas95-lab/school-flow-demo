@@ -19,7 +19,7 @@ interface CourseCardProps {
 export function CourseCard({ course, link, descripcion, className = "" }: CourseCardProps) {
   return (
     <Link
-      to={link}
+      to={`/app${link}`}
       className={`group block transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer ${className}`}
       style={{
         animationDelay: `${100}ms`,

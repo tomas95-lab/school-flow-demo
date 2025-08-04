@@ -249,7 +249,7 @@ export default function DetalleAsistencia() {
               : "El curso que buscas no existe o no tienes permisos para verlo."
             }
           </p>
-          <Link to="/asistencias">
+          <Link to="/app/asistencias">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a Asistencias
@@ -267,7 +267,7 @@ export default function DetalleAsistencia() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Link to="/asistencias">
+              <Link to="/app/asistencias">
                 <Button variant="outline" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Volver
