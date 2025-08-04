@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 
+type Role = "admin" | "docente" | "alumno" | "familiar";
+
 type AppUser = {
   uid: string;
   email: string | null;
   name: string | null;
-  role: "admin" | "docente" | "alumno";
+  role: Role;
   teacherId: string;
   studentId: string;
 };

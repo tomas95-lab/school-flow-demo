@@ -172,7 +172,7 @@ export default function TeacherAttendanceOverview() {
                     firestoreId: course.firestoreId || '',
                   }}
                   descripcion={`${courseStudents.length} estudiantes • ${courseRate}% asistencia`}
-                  link={`/asistencias/${course.firestoreId}`}
+                  link={`/asistencias/detalles?id=${course.firestoreId}`}
                 />
               );
             })}

@@ -1,12 +1,12 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { Calendar, BookOpen, Brain} from "lucide-react";
+import { LoadingState } from "@/components/LoadingState";
+import { Calendar, BookOpen, Plus, Lock, AlertTriangle, Brain, Award, TrendingUp, Users, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
-import { es } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 // Componentes de vista por rol
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
@@ -20,10 +20,50 @@ import AttendanceAlert from "@/components/AttendanceAlert";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 
+// Tipos para las pestañas
+interface TabItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  description: string;
+  requiresPermission?: boolean;
+  permissionCheck?: (role?: string) => boolean;
+}
+
 export default function Asistencias() {
   const { user, loading: userLoading } = useContext(AuthContext);
   const { loading: coursesLoading } = useFirestoreCollection("courses");
   const [activeView, setActiveView] = useState("overview");
+
+  // Configuración de pestañas
+  const tabs: TabItem[] = [
+    {
+      id: "overview",
+      label: "Resumen",
+      icon: BookOpen,
+      description: "Vista general de asistencias"
+    },
+    {
+      id: "register",
+      label: "Registrar",
+      icon: Plus,
+      description: "Registrar nuevas asistencias",
+      requiresPermission: true,
+      permissionCheck: (role) => role === "docente"
+    },
+    {
+      id: "calendar",
+      label: "Calendario",
+      icon: Calendar,
+      description: "Calendario de asistencias"
+    },
+    {
+      id: "observaciones",
+      label: "Observaciones IA",
+      icon: Brain,
+      description: "Análisis inteligente automático"
+    }
+  ];
 
   // Función para obtener el mensaje según el rol
   const getRoleMessage = (role: string | undefined) => {
@@ -39,48 +79,128 @@ export default function Asistencias() {
     }
   };
 
+  // Función para obtener el icono del rol
+  const getRoleIcon = (role: string | undefined) => {
+    switch (role) {
+      case "admin":
+        return Users;
+      case "docente":
+        return Award;
+      case "alumno":
+        return TrendingUp;
+      default:
+        return BookOpen;
+    }
+  };
+
+  // Verificar permisos de acceso
+  const canAccessAttendance = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
+  const canRegisterAttendance = user?.role === "docente";
+  const canViewCalendar = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
+
+  // Filtrar pestañas según permisos
+  const availableTabs = tabs.filter(tab => {
+    if (tab.requiresPermission && tab.permissionCheck) {
+      return tab.permissionCheck(user?.role);
+    }
+    return true;
+  });
+
   // Mostrar spinner si el usuario está cargando o si los cursos están cargando
   if (userLoading || coursesLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <SchoolSpinner text="Cargando panel de asistencias..." fullScreen={true} />
-          <p className="text-gray-500 mt-4">Preparando información del sistema</p>
+      <LoadingState 
+        text="Cargando panel de asistencias..."
+        timeout={8000}
+        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+      />
+    );
+  }
+
+  // Si no tiene permisos de acceso
+  if (!canAccessAttendance) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="p-8">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <Lock className="h-8 w-8 text-red-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Acceso Restringido
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  No tienes permisos para acceder al módulo de asistencias.
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Contacta al administrador del sistema si crees que esto es un error.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-  // Calcular semana actual para el calendario
-  const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const RoleIcon = getRoleIcon(user?.role);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="p-8">
-        {/* Header mejorado */}
+        {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Panel de Asistencias
-              </h1>
-              <p className="text-gray-600 text-lg">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                    Panel de Asistencias
+                  </h1>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                      <RoleIcon className="h-3 w-3 mr-1" />
+                      {user?.role === "admin" && "Administrador"}
+                      {user?.role === "docente" && "Docente"}
+                      {user?.role === "alumno" && "Estudiante"}
+                    </Badge>
+                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm text-gray-500">Sistema Educativo</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-gray-600 text-lg max-w-2xl">
                 {getRoleMessage(user?.role)}
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="bg-white px-6 py-3 rounded-lg shadow-sm border">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-indigo-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Período Actual</p>
-                    <p className="font-semibold text-gray-900">2025 - Semestre I</p>
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg">
+                      <Calendar className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Período Actual</p>
+                      <p className="font-bold text-gray-900">2025 - Semestre I</p>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
+              {canRegisterAttendance && (
+                <Button 
+                  onClick={() => setActiveView("register")}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registrar Asistencias
+                </Button>
+              )}
             </div>
           </div>
 
@@ -88,80 +208,38 @@ export default function Asistencias() {
           <div className="mb-6">
             <AttendanceAlert />
           </div>
-
-          {/* Calendario semanal mejorado */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-indigo-600" />
-                Semana del {format(weekStart, 'dd MMM', { locale: es })} al {format(weekEnd, 'dd MMM yyyy', { locale: es })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-2">
-                {weekDays.map((day, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 text-center rounded-lg border transition-colors ${
-                      isToday(day)
-                        ? 'bg-indigo-100 border-indigo-300 text-indigo-900'
-                        : 'bg-white border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="text-xs text-gray-500 mb-1">
-                      {format(day, 'EEE', { locale: es })}
-                    </div>
-                    <div className="text-lg font-semibold">
-                      {format(day, 'dd')}
-                    </div>
-                    {isToday(day) && (
-                      <div className="text-xs text-indigo-600 font-medium mt-1">
-                        Hoy
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Navegación simplificada */}
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={activeView === "overview" ? "default" : "outline"}
-              onClick={() => setActiveView("overview")}
-              className="flex items-center gap-2"
-            >
-              <BookOpen className="h-4 w-4" />
-              Resumen
-            </Button>
-
-            <Button
-              variant={activeView === "calendar" ? "default" : "outline"}
-              onClick={() => setActiveView("calendar")}
-              className="flex items-center gap-2"
-            >
-              <Calendar className="h-4 w-4" />
-              Calendario
-            </Button>
-
-            <Button
-              variant={activeView === "observaciones" ? "default" : "outline"}
-              onClick={() => setActiveView("observaciones")}
-              className="flex items-center gap-2"
-            >
-              <Brain className="h-4 w-4" />
-              Observaciones Inteligentes
-            </Button>
+        {/* Navegación por tabs mejorada */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-3">
+            {availableTabs.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = activeView === tab.id;
+              
+              return (
+                <Button
+                  key={tab.id}
+                  variant={isActive ? "default" : "outline"}
+                  onClick={() => setActiveView(tab.id)}
+                  className={`flex items-center gap-2 transition-all duration-300 ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg' 
+                      : 'hover:bg-gray-50 hover:shadow-md'
+                  }`}
+                >
+                  <TabIcon className="h-4 w-4" />
+                  {tab.label}
+                </Button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Contenido según vista activa */}
-        <div className="space-y-6">
+        {/* Contenido según vista activa con animaciones */}
+        <div className="space-y-6 animate-in fade-in-50 duration-500">
           {activeView === "overview" && (
-            <>
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
               {/* Vista según rol */}
               {user?.role === "admin" ? (
                 <AdminAttendanceOverview />
@@ -170,45 +248,182 @@ export default function Asistencias() {
               ) : (
                 <AlumnoAttendanceOverview />
               )}
-            </>
+            </div>
           )}
 
-
-
-          {activeView === "calendar" && (
-            <AttendanceCalendar />
+          {activeView === "register" && canRegisterAttendance && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              {/* Aquí iría el componente de registro rápido de asistencias */}
+              <Card className="bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <div className="text-center">
+                    <div className="p-4 bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <Plus className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Registro de Asistencias
+                    </h3>
+                    <p className="text-gray-600">
+                      Funcionalidad de registro rápido en desarrollo.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
+
+          {activeView === "calendar" && canViewCalendar && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <AttendanceCalendar />
+            </div>
+          )}
+
           {activeView === "observaciones" && (
-            <ObservacionesAutomaticasPanel role={user?.role as "admin" | "docente" | "alumno"} context="asistencias" className="mb-8" />
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <ObservacionesAutomaticasPanel 
+                role={user?.role as "admin" | "docente" | "alumno"} 
+                context="asistencias" 
+                className="mb-8" 
+              />
+            </div>
+          )}
+          
+          {/* Estado vacío cuando no hay vista activa */}
+          {!activeView && (
+            <div className="text-center py-12 animate-in fade-in-50 duration-500">
+              <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <div className="p-4 bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No hay vista seleccionada
+                  </h3>
+                  <p className="text-gray-600">
+                    Selecciona una opción del menú para comenzar.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* Estado vacío para registro sin permisos */}
+          {activeView === "register" && !canRegisterAttendance && (
+            <div className="text-center py-12 animate-in fade-in-50 duration-500">
+              <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle className="h-8 w-8 text-orange-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Acceso Restringido
+                  </h3>
+                  <p className="text-gray-600">
+                    Solo los docentes pueden registrar asistencias.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* Estado vacío para calendario sin permisos */}
+          {activeView === "calendar" && !canViewCalendar && (
+            <div className="text-center py-12 animate-in fade-in-50 duration-500">
+              <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle className="h-8 w-8 text-orange-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Acceso Restringido
+                  </h3>
+                  <p className="text-gray-600">
+                    No tienes permisos para ver el calendario de asistencias.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
 
         {/* Footer con información adicional */}
-        <div className="mt-12 bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Centro de Ayuda</h3>
-              <p className="text-gray-600 mb-4">
-                ¿Necesitas ayuda con la administración del sistema? Consulta nuestros recursos.
-              </p>
-              <div className="flex gap-3">
-                <button className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
-                  Guía de usuario
-                </button>
-                <button className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
-                  Soporte técnico
-                </button>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Última Actualización</h3>
-              <p className="text-gray-600">
-                Los datos fueron actualizados por última vez hace pocos minutos. 
-                El sistema se sincroniza automáticamente cada 5 minutos.
-              </p>
+        <Separator className="my-12" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Centro de Ayuda
+            </h3>
+            <p className="text-gray-600 mb-4">
+              ¿Necesitas ayuda con la gestión de asistencias? Consulta nuestros recursos.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" size="sm">
+                Guía de asistencias
+              </Button>
+              <Button variant="outline" size="sm">
+                Soporte técnico
+              </Button>
             </div>
           </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Última Actualización
+            </h3>
+            <p className="text-gray-600">
+              Los datos fueron actualizados por última vez hace pocos minutos. 
+              El sistema se sincroniza automáticamente cada 5 minutos.
+            </p>
+          </div>
         </div>
+
+        {/* Alertas informativas según el rol */}
+        {user?.role === "docente" && (
+          <Card className="mt-6 border-green-200 bg-green-50/50 backdrop-blur-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-green-900 mb-1">
+                    Consejos para docentes
+                  </h4>
+                  <p className="text-sm text-green-800">
+                    • Registra las asistencias dentro de las primeras horas de clase<br/>
+                    • Utiliza el registro rápido para clases masivas<br/>
+                    • Revisa el calendario para planificar futuras clases<br/>
+                    • Mantén comunicación constante con los estudiantes sobre su asistencia
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {user?.role === "alumno" && (
+          <Card className="mt-6 border-green-200 bg-green-50/50 backdrop-blur-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-green-900 mb-1">
+                    Información para estudiantes
+                  </h4>
+                  <p className="text-sm text-green-800">
+                    • Revisa regularmente tu asistencia para mantener un seguimiento de tu participación<br/>
+                    • Las asistencias se actualizan automáticamente cuando los docentes las registran<br/>
+                    • Utiliza los filtros para analizar tu asistencia por materia o período<br/>
+                    • Contacta a tus docentes si tienes dudas sobre alguna asistencia
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

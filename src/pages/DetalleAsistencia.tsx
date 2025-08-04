@@ -235,13 +235,20 @@ export default function DetalleAsistencia() {
     );
   }
 
-  // Mostrar error si el curso no existe
-  if (!course) {
+  // Mostrar error si no se proporciona courseId o si el curso no existe
+  if (!courseId || !course) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Curso no encontrado</h2>
-          <p className="text-gray-600 mb-6">El curso que buscas no existe o no tienes permisos para verlo.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {!courseId ? "ID de curso no proporcionado" : "Curso no encontrado"}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {!courseId 
+              ? "No se proporcionó un ID de curso válido en la URL." 
+              : "El curso que buscas no existe o no tienes permisos para verlo."
+            }
+          </p>
           <Link to="/asistencias">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />

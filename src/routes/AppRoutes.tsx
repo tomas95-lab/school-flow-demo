@@ -23,7 +23,7 @@ export function AppRoutes() {
         <Route path="/" element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/asistencias" element={<Asistencias />} />
-          <Route path="/asistencias/:id" element={<DetalleAsistencia />} />
+          <Route path="/asistencias/detalles" element={<DetalleAsistencia />} />
           <Route path="/calificaciones" element={<Calificaciones />} />
           <Route path="/calificaciones/detalles" element={<DetallesCalificaciones />} />
           <Route path="/boletines" element={<Boletines />} />

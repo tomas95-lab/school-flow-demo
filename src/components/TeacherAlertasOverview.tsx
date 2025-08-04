@@ -112,8 +112,6 @@ export default function TeacherAlertasOverview() {
 
   return (
     <div>
-      {/* Observaciones Automáticas */}
-      <ObservacionesAutomaticasPanel role="docente" context="general" className="mb-8" />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
