@@ -1,3 +1,4 @@
+import React from "react"
 import {
   Users,
   GraduationCap,
@@ -14,10 +15,9 @@ import {
   FileText,
   Award,
   CheckCircle,
+  ArrowRight,
+  Activity,
   BarChart3,
-  Cog,
-  Bot,
-  UserPlus,
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
@@ -39,51 +39,60 @@ const quickAccessByRole = {
     {
       icon: <PlusCircle className="text-green-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Gestión de Asistencias",
-      to: "/app/asistencias"
+      to: "/app/asistencias",
+      description: "Administrar asistencia de estudiantes"
     },
     {
       icon: <Settings className="text-blue-600 bg-blue-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Gestión de Calificaciones",
-      to: "/app/calificaciones"
+      to: "/app/calificaciones",
+      description: "Gestionar calificaciones y evaluaciones"
     },
     {
       icon: <Book className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Panel de Boletines",
-      to: "/app/boletines"
+      to: "/app/boletines",
+      description: "Generar y revisar boletines"
     }
   ],
   docente: [
     {
       icon: <BookOpen className="text-blue-500 bg-blue-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Asistencias",
-      to: "/app/asistencias"
+      to: "/app/asistencias",
+      description: "Registrar y revisar asistencia"
     },
     {
       icon: <Users className="text-yellow-500 bg-yellow-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Calificaciones",
-      to: "/app/calificaciones"
+      to: "/app/calificaciones",
+      description: "Evaluar y calificar estudiantes"
     },
     {
       icon: <FileText className="text-green-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Boletines",
-      to: "/app/boletines"
+      to: "/app/boletines",
+      description: "Generar boletines de mis cursos"
     }
   ],
   alumno: [
     {
       icon: <BookOpen className="text-blue-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Calificaciones",
-      to: "/app/calificaciones"
+      to: "/app/calificaciones",
+      description: "Ver mis calificaciones y promedios"
     },
     {
       icon: <Calendar className="text-green-500 bg-green-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mis Asistencias",
-      to: "/app/asistencias"
+      to: "/app/asistencias",
+      description: "Revisar mi historial de asistencia"
     },
     {
       icon: <FileText className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Mi Boletín",
-      to: "/app/boletines"
+      to: "/app/boletines",
+      description: "Acceder a mi boletín académico"
     }
   ]
 };
@@ -95,50 +104,56 @@ const statsByRole = {
   alumno: ["myAverage", "myAttendance", "approvedSubjects", "totalSubjects"]
 }
 
-
 // Metadatos de KPIs mejorados - SOLO LOS ESENCIALES
 const kpiMeta: Record<string, {
   icon: unknown;
   color: "blue" | "green" | "orange" | "red" | "purple" | "indigo" | "emerald" | "yellow" | "pink" | "gray";
   title: string;
   description: string;
+  gradient: string;
 }> = {
   // Admin KPIs
   totalStudents: {
     icon: Users,
     color: "blue",
     title: "Estudiantes",
-    description: "Total de estudiantes activos"
+    description: "Total de estudiantes activos",
+    gradient: "from-blue-500 to-blue-600"
   },
   totalTeachers: {
     icon: GraduationCap,
     color: "purple",
     title: "Docentes",
-    description: "Docentes registrados"
+    description: "Docentes registrados",
+    gradient: "from-purple-500 to-purple-600"
   },
   totalCourses: {
     icon: BookOpen,
     color: "green",
     title: "Cursos",
-    description: "Cursos activos"
+    description: "Cursos activos",
+    gradient: "from-green-500 to-green-600"
   },
   avgAttendance: {
     icon: TrendingUp,
     color: "emerald",
     title: "Asistencia Promedio",
-    description: "Promedio general de asistencia (%)"
+    description: "Promedio general de asistencia",
+    gradient: "from-emerald-500 to-emerald-600"
   },
   avgGrades: {
     icon: Award,
     color: "yellow",
     title: "Promedio General",
-    description: "Promedio de calificaciones (0-10)"
+    description: "Promedio de calificaciones (0-10)",
+    gradient: "from-yellow-500 to-yellow-600"
   },
   criticalAlerts: {
     icon: AlertCircle,
     color: "red",
     title: "Alertas Críticas",
-    description: "Requieren atención inmediata"
+    description: "Requieren atención inmediata",
+    gradient: "from-red-500 to-red-600"
   },
   
   // Docente KPIs
@@ -146,25 +161,29 @@ const kpiMeta: Record<string, {
     icon: BookOpen,
     color: "blue",
     title: "Mis Cursos",
-    description: "Cursos asignados"
+    description: "Cursos asignados",
+    gradient: "from-blue-500 to-blue-600"
   },
   myStudents: {
     icon: Users,
     color: "green",
     title: "Mis Estudiantes",
-    description: "Estudiantes a cargo"
+    description: "Estudiantes a cargo",
+    gradient: "from-green-500 to-green-600"
   },
   myAttendanceDocente: {
     icon: TrendingUp,
     color: "emerald",
     title: "Asistencia Promedio",
-    description: "Promedio de mis cursos (%)"
+    description: "Promedio de mis cursos (%)",
+    gradient: "from-emerald-500 to-emerald-600"
   },
   myGrades: {
     icon: Award,
     color: "yellow",
     title: "Promedio General",
-    description: "Promedio de mis materias (0-10)"
+    description: "Promedio de mis materias (0-10)",
+    gradient: "from-yellow-500 to-yellow-600"
   },
   
   // Alumno KPIs
@@ -172,46 +191,64 @@ const kpiMeta: Record<string, {
     icon: Award,
     color: "blue",
     title: "Mi Promedio",
-    description: "Promedio general actual (0-10)"
+    description: "Promedio general actual (0-10)",
+    gradient: "from-blue-500 to-blue-600"
   },
   myAttendance: {
     icon: TrendingUp,
     color: "green",
     title: "Mi Asistencia",
-    description: "Porcentaje de asistencia (%)"
+    description: "Porcentaje de asistencia (%)",
+    gradient: "from-green-500 to-green-600"
   },
   approvedSubjects: {
     icon: CheckCircle,
     color: "emerald",
     title: "Materias Aprobadas",
-    description: "Materias con promedio ≥ 7"
+    description: "Materias con promedio ≥ 7",
+    gradient: "from-emerald-500 to-emerald-600"
   },
   totalSubjects: {
     icon: BookOpen,
     color: "purple",
     title: "Total Materias",
-    description: "Materias en las que estoy inscrito"
+    description: "Materias en las que estoy inscrito",
+    gradient: "from-purple-500 to-purple-600"
   }
 }
 
 function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
   const items = quickAccessByRole[role] || []
   return (
-    <div className="flex flex-col w-full gap-3">
+    <div className="grid gap-4">
       {items.map((item, idx) => (
         <Link
           to={item.to}
           key={idx}
-          className="flex w-full items-center gap-4 hover:bg-blue-50 rounded-lg p-3 transition-all duration-200 hover:shadow-sm border border-transparent hover:border-blue-200"
+          className="group relative overflow-hidden rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
         >
-          {item.icon}
-          <span className="text-base font-semibold text-gray-700">{item.label}</span>
+          <div className="flex items-center gap-4 p-4">
+            <div className="flex-shrink-0">
+              {item.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                {item.label}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {item.description}
+              </p>
+            </div>
+            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowRight className="w-5 h-5 text-blue-500" />
+            </div>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         </Link>
       ))}
     </div>
   )
 }
-
 
 export default function Dashboard() {
   const { user, loading } = useContext(AuthContext)
@@ -242,7 +279,6 @@ export default function Dashboard() {
     critical: 0,
     pending: 0,
   });
-
 
   // Usar hooks optimizados con cache
   const { data: students } = useFirestoreCollection("students", { enableCache: true });
@@ -553,75 +589,111 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
-
-      {/* Alertas Automáticas Críticas */}
-      
-      <WelcomeMessage user={user} />
-      
-      {/* KPIs Principales */}
-      <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6">
-        {statsByRole[role as keyof typeof statsByRole]?.map(key => {
-          const kpiKey = key as keyof typeof kpiMeta
-          return (
-            <StatsCard
-              key={kpiKey}
-              value={stats[kpiKey as keyof typeof stats] || 0}
-              icon={kpiMeta[kpiKey].icon as any}
-              label={kpiMeta[kpiKey].title}
-              color={kpiMeta[kpiKey].color}
-              subtitle={kpiMeta[kpiKey].description}
-            />
-          )
-        })}
-      </div>
-
-      {/* Acceso Rápido */}
-      <div className="grid lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-2">
-          <ReutilizableCard full title="Acceso Rápido" description="Enlaces rápidos a secciones importantes">
-            <div className="space-y-3">
-              <QuickAccessList role={role as keyof typeof quickAccessByRole} />
-            </div>
-          </ReutilizableCard>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <WelcomeMessage user={user} />
         
-        <div className="lg:col-span-1">
+        {/* KPIs - Layout más compacto */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {statsByRole[role as keyof typeof statsByRole]?.map(key => {
+            const kpiKey = key as keyof typeof kpiMeta
+            const meta = kpiMeta[kpiKey]
+            return (
+              <div key={kpiKey} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`p-2 rounded-md bg-gradient-to-br ${meta.gradient}`}>
+                    {React.createElement(meta.icon as React.ComponentType<any>, { className: "w-4 h-4 text-white" })}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-gray-900">
+                      {stats[kpiKey as keyof typeof stats] || 0}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-gray-900">{meta.title}</div>
+                <p className="text-xs text-gray-600 mt-1">{meta.description}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Layout principal - Más simple */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Acceso Rápido */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-4 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-500 rounded-md">
+                    <Activity className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Acceso Rápido</h2>
+                    <p className="text-sm text-gray-600">Enlaces rápidos a secciones importantes</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <QuickAccessList role={role as keyof typeof quickAccessByRole} />
+              </div>
+            </div>
+          </div>
           
-            <ReutilizableCard full title="Alertas" description="Gestión de alertas">
-              <div className="flex flex-col items-center justify-center py-8 text-center h-full">
-                <div className="p-3 bg-red-100 rounded-full mb-4">
-                  <AlertCircle className="h-8 w-8 text-red-600" />
+          {/* Alertas - Más compactas */}
+          <div className="space-y-4">
+            {/* Alertas Manuales */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-red-500 rounded-md">
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Alertas</h3>
+                    <p className="text-xs text-gray-600">Gestión de alertas</p>
+                  </div>
                 </div>
-                <span className="text-gray-700 font-medium">Alertas</span>
-                <span className="text-2xl font-bold text-red-600 mt-2">{alertStats.total || 0}</span>
-                <span className="text-gray-500 text-sm mt-1">Alertas</span>
-                <div className="mt-4 text-sm text-gray-600">
-                  <p>Inasistencias, calificaciones</p>
-                  <p>bajas y eventos del sistema</p>
+                
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600 mb-1">
+                    {alertStats.total || 0}
+                  </div>
+                  <div className="text-xs text-gray-600 mb-3">
+                    Alertas activas
+                  </div>
+                  <Link to="/app/alertas">
+                    <Button variant="destructive" size="sm" className="w-full">
+                      Ver Alertas
+                    </Button>
+                  </Link>
                 </div>
-          <Link to="/app/alertas" className="w-full">
-          <Button variant={"destructive"} className="mt-4 w-full">Ver Alertas</Button>
-        </Link>
-              </div>
-            </ReutilizableCard>
-        </div>
-        
-        <div className="lg:col-span-1">
-          <ReutilizableCard full title="Alertas generadas" description="Alertas generadas por IA">
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 bg-green-100 rounded-full mb-4">
-                <AlertCircle className="h-8 w-8 text-green-600" />
-              </div>
-              <span className="text-gray-700 font-medium">Alertas generadas</span>
-              <span className="text-2xl font-bold text-green-600 mt-2">{automaticAlertStats.total || 0}</span>
-              <span className="text-gray-500 text-sm mt-1">Alertas generadas por IA</span>
-              <div className="mt-4 text-sm text-gray-600">
-                <p>Rendimiento, asistencia</p>
-                <p>y tendencias detectadas</p>
               </div>
             </div>
-          </ReutilizableCard>
+
+            {/* Alertas Automáticas */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-green-500 rounded-md">
+                    <BarChart3 className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Alertas IA</h3>
+                    <p className="text-xs text-gray-600">Generadas automáticamente</p>
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600 mb-1">
+                    {automaticAlertStats.total || 0}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Alertas generadas por IA
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -632,19 +704,24 @@ function WelcomeMessage({ user }: { user: { name: string | null; role: string } 
   const currentHour = new Date().getHours();
   let greeting = "";
   let IconComponent = Sun;
+  let gradientClass = "from-yellow-400 to-orange-500";
 
   if (currentHour < 6) {
     greeting = "Buenas noches";
     IconComponent = Moon;
+    gradientClass = "from-indigo-500 to-purple-600";
   } else if (currentHour < 12) {
     greeting = "Buenos días";
     IconComponent = Sunrise;
+    gradientClass = "from-yellow-400 to-orange-500";
   } else if (currentHour < 18) {
     greeting = "Buenas tardes";
     IconComponent = Sun;
+    gradientClass = "from-orange-400 to-red-500";
   } else {
     greeting = "Buenas noches";
     IconComponent = Moon;
+    gradientClass = "from-indigo-500 to-purple-600";
   }
 
   const getRoleDisplayName = (role?: string) => {
@@ -657,17 +734,22 @@ function WelcomeMessage({ user }: { user: { name: string | null; role: string } 
   }
 
   return (
-    <div className="mb-8 flex items-center gap-4">
-      <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl">
-        <IconComponent className="w-8 h-8 text-blue-600" />
-      </div>
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">
-          {greeting}, {user?.name || "Usuario"}!
-        </h1>
-        <p className="text-gray-600">
-          Bienvenido al panel de {getRoleDisplayName(user?.role)}. Aquí tienes un resumen de la actividad de tu institución educativa.
-        </p>
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 bg-gradient-to-br ${gradientClass} rounded-lg`}>
+            <IconComponent className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              {greeting}, {user?.name || "Usuario"}!
+            </h1>
+            <p className="text-sm text-gray-600">
+              Bienvenido al panel de <span className="font-semibold text-blue-600">{getRoleDisplayName(user?.role)}</span>. 
+              Aquí tienes un resumen de la actividad de tu institución educativa.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
