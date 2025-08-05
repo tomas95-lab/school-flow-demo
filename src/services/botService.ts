@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from '@/hooks/useFireStoreCollection';
+import { } from '@/hooks/useFireStoreCollection';
 
 export interface BotQuery {
   text: string;
@@ -11,7 +11,7 @@ export interface BotResponse {
   text: string;
   type: 'analysis' | 'information' | 'action' | 'suggestion';
   confidence: number;
-  data?: any;
+  data?: unknown;
   suggestions?: string[];
   actions?: string[];
 }
@@ -38,11 +38,10 @@ export class BotService {
     return BotService.instance;
   }
 
-  // Process user query and generate intelligent response
+  // Process user and generate intelligent response
   async processQuery(query: BotQuery): Promise<BotResponse> {
     const input = query.text.toLowerCase();
-    
-    // Determine query type and generate appropriate response
+    // Determine type and generate appropriate response
     if (this.isAcademicQuery(input)) {
       return await this.generateAcademicResponse(query);
     } else if (this.isAttendanceQuery(input)) {
@@ -92,7 +91,7 @@ export class BotService {
     return greetingKeywords.some(keyword => input.includes(keyword));
   }
 
-  private async generateAcademicResponse(query: BotQuery): Promise<BotResponse> {
+  private async generateAcademicResponse(_query: BotQuery): Promise<BotResponse> {
     // Simulate data analysis
     const analysis = await this.performAcademicAnalysis();
     
@@ -109,10 +108,10 @@ He analizado los datos académicos del sistema y aquí están los resultados:
 • Tasa de aprobación: ${analysis.passingRate.toFixed(1)}%
 
 **Insights:**
-${analysis.insights.map(insight => `• ${insight}`).join('\n')}
+${analysis.insights.map((insight: string) => `• ${insight}`).join('\n')}
 
 **Recomendaciones:**
-${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}`,
+${analysis.recommendations.map((rec: string) => `• ${rec}`).join('\n')}`,
       type: 'analysis',
       confidence: 0.85,
       data: analysis,
@@ -124,7 +123,7 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}`,
     };
   }
 
-  private async generateAttendanceResponse(query: BotQuery): Promise<BotResponse> {
+  private async generateAttendanceResponse(_query: BotQuery): Promise<BotResponse> {
     const analysis = await this.performAttendanceAnalysis();
     
     return {
@@ -139,10 +138,10 @@ He analizado los patrones de asistencia del sistema:
 • Registros de ausencia: ${analysis.absentRecords}
 
 **Patrones Identificados:**
-${analysis.patterns.map(pattern => `• ${pattern}`).join('\n')}
+${analysis.patterns.map((pattern: string) => `• ${pattern}`).join('\n')}
 
 **Recomendaciones:**
-${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}`,
+${analysis.recommendations.map((rec: string) => `• ${rec}`).join('\n')}`,
       type: 'analysis',
       confidence: 0.78,
       data: analysis,
@@ -154,7 +153,7 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}`,
     };
   }
 
-  private async generateSystemResponse(query: BotQuery): Promise<BotResponse> {
+  private async generateSystemResponse(_query: BotQuery): Promise<BotResponse> {
     const stats = await this.getSystemStats();
     
     return {
@@ -183,7 +182,7 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}`,
     };
   }
 
-  private generateHelpResponse(query: BotQuery): BotResponse {
+  private generateHelpResponse(_query: BotQuery): BotResponse {
     return {
       text: `🤖 **Comandos y Funcionalidades Disponibles**
 
@@ -215,7 +214,7 @@ Puedes hacer preguntas en lenguaje natural y te responderé de manera inteligent
     };
   }
 
-  private generateGreetingResponse(query: BotQuery): BotResponse {
+  private generateGreetingResponse(_query: BotQuery): BotResponse {
     const hour = new Date().getHours();
     let greeting = '';
     
@@ -244,7 +243,7 @@ Solo dime qué necesitas y te ayudo.`,
     };
   }
 
-  private generateGeneralResponse(query: BotQuery): BotResponse {
+  private generateGeneralResponse(_query: BotQuery): BotResponse {
     const responses = [
       'Entiendo tu consulta. Déjame analizar los datos disponibles para darte una respuesta precisa.',
       'Interesante pregunta. Voy a revisar la información del sistema para ayudarte.',

@@ -7,7 +7,7 @@ export interface BotContext {
   userRole: string;
   availableData: string[];
   recentActions: string[];
-  moduleSpecificData?: any;
+  moduleSpecificData?: unknown;
 }
 
 export interface BotSuggestion {

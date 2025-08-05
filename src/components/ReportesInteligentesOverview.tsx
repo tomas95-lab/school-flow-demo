@@ -9,30 +9,23 @@ import {
   GraduationCap, 
   Calendar, 
   AlertTriangle,
-  Search,
-  Filter,
   Download,
   Eye,
   Brain,
   Lightbulb,
   Target,
-  TrendingDown,
-  CheckCircle,
-  Clock,
   BookOpen,
-  MessageSquare,
   Bell,
   FileText,
-  RefreshCw
-} from "lucide-react";
+  } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { } from "date-fns";
+import { } from "date-fns/locale";
 import { LoadingState } from "./LoadingState";
 import { EmptyState } from "./EmptyState";
 import ReutilizableDialog from "./DialogReutlizable";
@@ -96,7 +89,7 @@ interface Boletin {
     texto: string;
     prioridad: string;
     reglaAplicada: string;
-    datosSoporte: any;
+    datosSoporte: unknown;
   };
 }
 
@@ -116,7 +109,7 @@ interface Inscripcion {
   studentId: string;
   courseId: string;
   status: string;
-  fechaInscripcion: any;
+  fechaInscripcion: unknown;
 }
 
 export default function ReportesInteligentesOverview() {
@@ -126,7 +119,6 @@ export default function ReportesInteligentesOverview() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   // Obtener todos los datos necesarios
   const { data: students, loading: loadingStudents } = useFirestoreCollection<Student>("students");
@@ -369,16 +361,11 @@ export default function ReportesInteligentesOverview() {
     );
   }
 
-  const handleViewAnalysis = (analysisData: any) => {
+  const handleViewAnalysis = (analysisData: unknown) => {
     setSelectedAnalysis(analysisData);
     setShowDetailsModal(true);
   };
 
-  const handleRefresh = () => {
-    setLastUpdate(new Date());
-    toast.success('Datos actualizados');
-    // Los datos se actualizan automáticamente con useFirestoreCollection
-  };
 
   const handleExportReport = (reportType: string) => {
     try {
@@ -635,7 +622,7 @@ export default function ReportesInteligentesOverview() {
               
               <div className="space-y-2">
                 <h4 className="font-semibold text-gray-900">Top Cursos por Rendimiento:</h4>
-                {analysis.patterns.topPerformingCourses.map((course, index) => (
+                {analysis.patterns.topPerformingCourses.map((course) => (
                   <div key={course.courseId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                     <span className="text-sm font-medium">{course.courseName}</span>
                     <Badge variant="secondary">{course.averageGrade.toFixed(1)}</Badge>
@@ -826,7 +813,12 @@ export default function ReportesInteligentesOverview() {
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-3">Promedios por Curso:</h4>
                     <div className="space-y-2">
-                      {selectedAnalysis.data.courseAverages.map((course: any) => (
+                      {selectedAnalysis.data.courseAverages.map((course: {
+                        courseId: string;
+                        courseName: string;
+                        studentCount: number;
+                        averageGrade: number;
+                      }) => (
                         <div key={course.courseId} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                           <span className="font-medium">{course.courseName}</span>
                           <div className="flex items-center gap-2">
@@ -847,17 +839,39 @@ export default function ReportesInteligentesOverview() {
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-3">Recomendaciones Académicas:</h4>
                     <div className="space-y-3">
-                      {selectedAnalysis.data.academic.map((rec: any, index: number) => (
+                      {selectedAnalysis.data.academic.map((rec: unknown, index: number) => (
                         <div key={index} className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Target className="h-5 w-5 text-yellow-600" />
-                            <span className="font-semibold">{rec.title}</span>
-                            <Badge variant={rec.priority === 'high' ? 'destructive' : 'secondary'}>
-                              {rec.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-700 mb-2">{rec.description}</p>
-                          <p className="text-xs text-gray-600 font-medium">Acción: {rec.action}</p>
+                          {(() => {
+                            const typedRec = rec as {
+                              title: string;
+                              priority: string;
+                            };
+                            return (
+                              <div className="flex items-center gap-2 mb-2">
+                                <Target className="h-5 w-5 text-yellow-600" />
+                                <span className="font-semibold">{typedRec.title}</span>
+                                <Badge variant={typedRec.priority === 'high' ? 'destructive' : 'secondary'}>
+                                  {typedRec.priority}
+                                </Badge>
+                              </div>
+                            );
+                          })()}
+                          {(() => {
+                            const typedRec = rec as {
+                              description?: string;
+                              action?: string;
+                            };
+                            return (
+                              <>
+                                {typedRec.description && (
+                                  <p className="text-sm text-gray-700 mb-2">{typedRec.description}</p>
+                                )}
+                                {typedRec.action && (
+                                  <p className="text-xs text-gray-600 font-medium">Acción: {typedRec.action}</p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       ))}
                     </div>
@@ -866,17 +880,39 @@ export default function ReportesInteligentesOverview() {
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-3">Recomendaciones Administrativas:</h4>
                     <div className="space-y-3">
-                      {selectedAnalysis.data.administrative.map((rec: any, index: number) => (
+                      {selectedAnalysis.data.administrative.map((rec: unknown, index: number) => (
                         <div key={index} className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-5 w-5 text-blue-600" />
-                            <span className="font-semibold">{rec.title}</span>
-                            <Badge variant={rec.priority === 'high' ? 'destructive' : 'secondary'}>
-                              {rec.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-700 mb-2">{rec.description}</p>
-                          <p className="text-xs text-gray-600 font-medium">Acción: {rec.action}</p>
+                          {(() => {
+                            const typedRec = rec as {
+                              title: string;
+                              priority: string;
+                            };
+                            return (
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-5 w-5 text-blue-600" />
+                                <span className="font-semibold">{typedRec.title}</span>
+                                <Badge variant={typedRec.priority === 'high' ? 'destructive' : 'secondary'}>
+                                  {typedRec.priority}
+                                </Badge>
+                              </div>
+                            );
+                          })()}
+                          {(() => {
+                            const typedRec = rec as {
+                              description?: string;
+                              action?: string;
+                            };
+                            return (
+                              <>
+                                {typedRec.description && (
+                                  <p className="text-sm text-gray-700 mb-2">{typedRec.description}</p>
+                                )}
+                                {typedRec.action && (
+                                  <p className="text-xs text-gray-600 font-medium">Acción: {typedRec.action}</p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       ))}
                     </div>

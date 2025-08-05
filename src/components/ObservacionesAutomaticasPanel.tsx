@@ -4,13 +4,14 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
 import { generarObservacionAutomaticaBoletin, getPeriodoActual } from "@/utils/boletines";
+import type { ObservacionLimpia } from "@/utils/observacionesAutomaticas";
 import ObservacionAutomatica from "./ObservacionAutomatica";
 
 // Tipos TypeScript
 interface ObservacionData {
   studentId: string;
   studentName: string;
-  observacion: any;
+  observacion: ObservacionLimpia;
 }
 
 interface ObservacionesAutomaticasPanelProps {
@@ -81,9 +82,9 @@ export default function ObservacionesAutomaticasPanel({
       case 'admin':
         // Para admin: observaciones de todos los estudiantes
         return students
-          .map((student) => {
-            const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
-            const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+          .map((student: any) => {
+            const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
+            const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
             
             if (calificacionesAlumno.length === 0) return null;
 
@@ -98,7 +99,7 @@ export default function ObservacionesAutomaticasPanel({
             return {
               studentId: student.firestoreId || '',
               studentName: `${student.nombre} ${student.apellido}`,
-              observacion
+              observacion: observacion as ObservacionLimpia
             };
           })
           .filter((item): item is ObservacionData => item !== null);
@@ -110,12 +111,15 @@ export default function ObservacionesAutomaticasPanel({
         const teacher = teachers.find((t) => t.firestoreId === user.teacherId);
         if (!teacher) return [];
 
-        const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
-        
+        // Filtrar estudiantes del docente (asumiendo que hay una relación teacher-student)
+        const teacherStudents = students.filter((student) => 
+          student.teacherId === user.teacherId || student.cursoId === teacher.cursoId
+        );
+
         return teacherStudents
-          .map((student) => {
-            const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
-            const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+          .map((student: any) => {
+            const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
+            const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
             
             if (calificacionesAlumno.length === 0) return null;
 
@@ -130,7 +134,7 @@ export default function ObservacionesAutomaticasPanel({
             return {
               studentId: student.firestoreId || '',
               studentName: `${student.nombre} ${student.apellido}`,
-              observacion
+              observacion: observacion as ObservacionLimpia
             };
           })
           .filter((item): item is ObservacionData => item !== null);
@@ -140,8 +144,8 @@ export default function ObservacionesAutomaticasPanel({
         // Para alumno: su propia observación
         if (!user?.studentId) return [];
 
-        const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === user.studentId);
-        const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === user.studentId);
+        const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === user.studentId);
+        const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === user.studentId);
         
         if (calificacionesAlumno.length === 0) return [];
 
@@ -156,7 +160,7 @@ export default function ObservacionesAutomaticasPanel({
         return [{
           studentId: user.studentId,
           studentName: user.name || "Estudiante",
-          observacion
+          observacion: observacion as ObservacionLimpia
         }];
       }
 
@@ -177,7 +181,7 @@ export default function ObservacionesAutomaticasPanel({
   const tituloContexto = CONTEXT_TITLES[context];
 
   // Renderizar icono según el tipo de observación
-  const renderObservacionIcon = (observacion: any) => {
+  const renderObservacionIcon = (observacion: ObservacionLimpia) => {
     const tipo = observacion.tipo;
     
     if (tipo === 'rendimiento') {

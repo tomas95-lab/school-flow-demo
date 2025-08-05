@@ -285,7 +285,7 @@ export function generarObservacionAutomaticaBoletin(
 }
 
 // Función para generar y descargar el PDF del boletín
-export async function generarPDFBoletin(row: any) {
+export async function generarPDFBoletin(row: unknown) {
   try {
     // Verificar que row tenga datos válidos
     if (!row) {
@@ -402,7 +402,7 @@ export async function generarPDFBoletin(row: any) {
   doc.text('CALIFICACIONES POR MATERIA', 20, 195);
 
   // Preparar datos para la tabla
-      const tableData = materias.map((materia: any) => {
+      const tableData = materias.map((materia: unknown) => {
         // Manejar tanto T1/T2/T3 como t1/t2/t3
         const t1 = materia.t1 || materia.T1 || 0;
         const t2 = materia.t2 || materia.T2 || 0;
@@ -445,7 +445,7 @@ export async function generarPDFBoletin(row: any) {
 
   // Comentario general si existe
   if (row.comentario) {
-        const finalY = (doc as any).lastAutoTable?.finalY || 250;
+        const finalY = (doc as unknown).lastAutoTable?.finalY || 250;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
         doc.text('COMENTARIO GENERAL', 20, finalY + 10);

@@ -6,7 +6,6 @@ import { StatsCard } from "./StatCards";
 import { DataTable } from "./data-table";
 import { useColumnsDetalle } from "@/app/calificaciones/columns";
 import { Percent, TrendingUp, BookOpen, Calendar, Award } from "lucide-react";
-import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";

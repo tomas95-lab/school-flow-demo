@@ -1,7 +1,7 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useContext, useState, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { StatsCard } from "./StatCards";
 import { 
@@ -13,7 +13,6 @@ import {
   Clock, 
   AlertTriangle,
   Search,
-  Filter,
   Plus,
   Download,
   Eye,
@@ -23,9 +22,8 @@ import {
   Phone,
   MapPin,
   FileText,
-  ArrowRight
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+  } from "lucide-react";
+import { Card, CardContent, } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -37,14 +35,22 @@ import { LoadingState } from "./LoadingState";
 import { EmptyState } from "./EmptyState";
 import ReutilizableDialog from "./DialogReutlizable";
 
+// Helper function to safely convert Firebase Timestamp to Date
+const convertTimestampToDate = (timestamp: unknown): Date => {
+  if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp) {
+    return (timestamp as Timestamp).toDate();
+  }
+  return new Date(timestamp as string);
+};
+
 // Tipos TypeScript
 interface Inscripcion {
   firestoreId: string;
   studentId: string;
   courseId: string;
   status: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada';
-  fechaInscripcion: any;
-  fechaAprobacion?: any;
+  fechaInscripcion: unknown;
+  fechaAprobacion?: unknown;
   comentarios?: string;
   documentos: string[];
   estudiante?: {
@@ -89,9 +95,9 @@ export default function InscripcionesOverview() {
   });
 
   // Obtener datos - TODOS los hooks deben ir antes de cualquier return
-  const { data: inscripciones, loading: loadingInscripciones, error: errorInscripciones } = useFirestoreCollection<Inscripcion>("inscripciones");
-  const { data: students, loading: loadingStudents, error: errorStudents } = useFirestoreCollection("students");
-  const { data: courses, loading: loadingCourses, error: errorCourses } = useFirestoreCollection("courses");
+  const { data: inscripciones, loading: loadingInscripciones } = useFirestoreCollection<Inscripcion>("inscripciones");
+  const { data: students, loading: loadingStudents } = useFirestoreCollection("students");
+  const { data: courses, loading: loadingCourses } = useFirestoreCollection("courses");
 
   // Combinar datos de inscripciones con detalles de estudiantes y cursos
   const inscripcionesConDetalles = useMemo((): InscripcionWithDetails[] => {
@@ -166,14 +172,17 @@ export default function InscripcionesOverview() {
     // Ordenamiento
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case "fecha":
-          const fechaA = a.fechaInscripcion?.toDate ? a.fechaInscripcion.toDate() : new Date(a.fechaInscripcion);
-          const fechaB = b.fechaInscripcion?.toDate ? b.fechaInscripcion.toDate() : new Date(b.fechaInscripcion);
+        case "fecha": {
+          const fechaA = convertTimestampToDate(a.fechaInscripcion);
+          const fechaB = convertTimestampToDate(b.fechaInscripcion);
           return fechaB.getTime() - fechaA.getTime();
-        case "estudiante":
+        }
+        case "estudiante": {
           return `${a.estudiante.nombre} ${a.estudiante.apellido}`.localeCompare(`${b.estudiante.nombre} ${b.estudiante.apellido}`);
-        case "curso":
+        }
+        case "curso": {
           return a.curso.nombre.localeCompare(b.curso.nombre);
+        }
         default:
           return 0;
       }
@@ -340,7 +349,7 @@ export default function InscripcionesOverview() {
       `${inscripcion.curso.nombre} - ${inscripcion.curso.division}`,
       getStatusLabel(inscripcion.status),
       format(
-        inscripcion.fechaInscripcion?.toDate ? inscripcion.fechaInscripcion.toDate() : new Date(inscripcion.fechaInscripcion),
+        convertTimestampToDate(inscripcion.fechaInscripcion),
         'dd/MM/yyyy HH:mm',
         { locale: es }
       ),
@@ -593,7 +602,7 @@ export default function InscripcionesOverview() {
                                <Calendar className="h-4 w-4 text-orange-600" />
                                <span className="text-gray-600">
                                  {format(
-                                   inscripcion.fechaInscripcion?.toDate ? inscripcion.fechaInscripcion.toDate() : new Date(inscripcion.fechaInscripcion),
+                                   convertTimestampToDate(inscripcion.fechaInscripcion),
                                    'dd/MM/yyyy HH:mm',
                                    { locale: es }
                                  )}
@@ -604,24 +613,24 @@ export default function InscripcionesOverview() {
                            <div className="space-y-2">
                              <div className="flex items-center gap-2 text-sm">
                                <span className="text-gray-500">División:</span>
-                               <span className="font-medium text-gray-900">{inscripcion.curso.division}</span>
+                               <span className="font-medium text-gray-900">
+                                 {inscripcion.curso.division ?? ''}
+                               </span>
                              </div>
-                             {inscripcion.fechaAprobacion && (
+                             {inscripcion.fechaAprobacion ? (
                                <div className="flex items-center gap-2 text-sm">
                                  <CheckCircle className="h-4 w-4 text-green-600" />
                                  <span className="text-gray-600">
                                    {format(
-                                     inscripcion.fechaAprobacion?.toDate ? inscripcion.fechaAprobacion.toDate() : new Date(inscripcion.fechaAprobacion),
+                                     convertTimestampToDate(inscripcion.fechaAprobacion),
                                      'dd/MM/yyyy HH:mm',
                                      { locale: es }
                                    )}
                                  </span>
                                </div>
-                             )}
+                             ) : null}
                            </div>
                          </div>
-                        
-                                                 {/* Información adicional */}
                          <div className="flex items-center gap-4 text-xs text-gray-500">
                            {inscripcion.comentarios && (
                              <div className="flex items-center gap-1">
@@ -815,30 +824,30 @@ export default function InscripcionesOverview() {
                         <p className="text-sm font-medium text-gray-700">Fecha de Inscripción</p>
                         <p className="text-sm text-gray-900">
                           {format(
-                            selectedInscripcion.fechaInscripcion?.toDate ? selectedInscripcion.fechaInscripcion.toDate() : new Date(selectedInscripcion.fechaInscripcion),
+                            convertTimestampToDate(selectedInscripcion.fechaInscripcion),
                             'dd/MM/yyyy HH:mm',
                             { locale: es }
                           )}
                         </p>
                       </div>
                     </div>
-                    {selectedInscripcion.fechaAprobacion && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">Fecha de Aprobación</p>
-                          <p className="text-sm text-gray-900">
-                            {format(
-                              selectedInscripcion.fechaAprobacion?.toDate ? selectedInscripcion.fechaAprobacion.toDate() : new Date(selectedInscripcion.fechaAprobacion),
-                              'dd/MM/yyyy HH:mm',
-                              { locale: es }
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    {selectedInscripcion.fechaAprobacion ? (
+                       <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                           <CheckCircle className="h-4 w-4 text-green-600" />
+                         </div>
+                         <div>
+                           <p className="text-sm font-medium text-gray-700">Fecha de Aprobación</p>
+                           <p className="text-sm text-gray-900">
+                             {format(
+                               convertTimestampToDate(selectedInscripcion.fechaAprobacion),
+                               'dd/MM/yyyy HH:mm',
+                               { locale: es }
+                             )}
+                           </p>
+                         </div>
+                       </div>
+                     ) : null}
                   </div>
                 </div>
 

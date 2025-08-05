@@ -18,6 +18,27 @@ import {
   generarObservacionAutomaticaBoletin,
 } from "@/utils/boletines";
 
+// Tipos para evitar errores de any
+interface Calificacion {
+  studentId: string;
+  subjectId: string;
+  valor: number;
+  periodo: string;
+  fecha: string;
+}
+
+interface Asistencia {
+  studentId: string;
+  fecha: string;
+  presente: boolean;
+}
+
+interface Subject {
+  firestoreId: string;
+  nombre: string;
+  cursoId: string;
+}
+
 // Función para obtener el período anterior
 function obtenerPeriodoAnterior(periodoActual: string): string | undefined {
   const match = periodoActual.match(/(\d{4})-T(\d)/);
@@ -59,14 +80,14 @@ export default function AdminBoletinesOverview() {
     const currentDate = new Date();
 
     const periodoActual = getPeriodoActual();
-    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones as any);
+    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones as Calificacion[]);
 
     return alumnos.map((alumno) => {
       // Filtrar solo las materias del alumno actual si subjects tiene más campos
       const materias = getPromedioPorMateriaPorTrimestre(
-        calificacionesTrimestre as any,
+        calificacionesTrimestre as Calificacion[],
         Array.isArray(subjects)
-          ? subjects.filter((s) => !!s && typeof s === "object" && "firestoreId" in s) as any
+          ? subjects.filter((s) => !!s && typeof s === "object" && "firestoreId" in s) as Subject[]
           : [],
         alumno.firestoreId || ''
       );
@@ -81,8 +102,8 @@ export default function AdminBoletinesOverview() {
       const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
 
       const observacionAutomatica = generarObservacionAutomaticaBoletin(
-        calificacionesAlumno as any,
-        asistenciasAlumno as any,
+        calificacionesAlumno as Calificacion[],
+        asistenciasAlumno as Asistencia[],
         alumno.firestoreId || '',
         periodoActual,
         periodoAnterior
@@ -109,8 +130,8 @@ export default function AdminBoletinesOverview() {
   const promedioGlobal = useMemo(() => {
     if (!calificaciones) return "0.00";
 
-    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones as any);
-    return calcPromedio(calificacionesTrimestre.map((c) => (c as any).valor)).toFixed(2);
+    const calificacionesTrimestre = filtrarCalificacionesTrimestre(calificaciones as Calificacion[]);
+    return calcPromedio(calificacionesTrimestre.map((c) => (c as Calificacion).valor)).toFixed(2);
   }, [calificaciones]);
 
   // Memoizar función de subida de boletines

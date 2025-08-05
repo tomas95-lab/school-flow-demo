@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import ReutilizableDialog from '@/components/DialogReutlizable';
 import { toast } from 'sonner';
 import { 
@@ -13,20 +13,13 @@ import {
   Brain, 
   MessageSquare, 
   TrendingUp, 
-  TrendingDown, 
-  Target, 
   Lightbulb, 
-  Search, 
-  Filter, 
   Download, 
   RefreshCw, 
   BookOpen, 
   Users, 
-  GraduationCap, 
   Calendar,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   BarChart3,
   Zap
 } from 'lucide-react';
@@ -39,7 +32,7 @@ interface BotAnalysis {
   description: string;
   confidence: number;
   recommendations: string[];
-  dataPoints: any[];
+  dataPoints: unknown[];
   priority: 'low' | 'medium' | 'high';
   timestamp: Date;
 }
@@ -62,7 +55,7 @@ const BotOverview: React.FC = () => {
   const [selectedAnalysis, setSelectedAnalysis] = useState<BotAnalysis | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [botResponses, setBotResponses] = useState<BotResponse[]>([]);
-  const [currentQuery, setCurrentQuery] = useState<string>('');
+
 
   // Fetch all necessary data
   const { data: students, loading: loadingStudents, error: errorStudents } = useFirestoreCollection('students');
@@ -394,7 +387,6 @@ const BotOverview: React.FC = () => {
     };
     
     setBotResponses(prev => [response, ...prev]);
-    setCurrentQuery(queryTitle);
   };
 
   // Función para generar respuestas del bot
@@ -471,7 +463,6 @@ const BotOverview: React.FC = () => {
     };
     
     setBotResponses(prev => [response, ...prev]);
-    setCurrentQuery(customQuery);
   };
 
   const handleRefresh = () => {
@@ -685,7 +676,7 @@ const BotOverview: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {botResponses.map((response, index) => (
+            {botResponses.map((response) => (
               <Card key={response.id} className="bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center justify-between">

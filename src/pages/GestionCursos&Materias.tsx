@@ -1,6 +1,6 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses, useTeacherStudents } from "@/hooks/useTeacherCourses";
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { addDoc, collection, serverTimestamp, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, BookOpen, Users, Settings } from "lucide-react";
@@ -28,7 +28,7 @@ export default function GestionCursosMaterias() {
 
   // Usar hooks estandarizados
   const { teacherCourses, teacherSubjects, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
-  const { teacherStudents, isLoading: studentsLoading } = useTeacherStudents(user?.teacherId);
+  const { isLoading: studentsLoading } = useTeacherStudents(user?.teacherId);
 
   const { data: allCourses } = useFirestoreCollection("courses");
   const { data: allSubjects } = useFirestoreCollection("subjects");
@@ -86,38 +86,6 @@ export default function GestionCursosMaterias() {
     } catch (error) {
       console.error("Error al agregar materia:", error);
       toast.error("Error al agregar la materia");
-    }
-  };
-
-  const handleUpdateCourse = async (courseId: string, updates: any) => {
-    try {
-      await updateDoc(doc(db, "courses", courseId), {
-        ...updates,
-        updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
-      });
-      
-      toast.success("Curso actualizado exitosamente");
-      setEditingCourse(null);
-    } catch (error) {
-      console.error("Error al actualizar curso:", error);
-      toast.error("Error al actualizar el curso");
-    }
-  };
-
-  const handleUpdateSubject = async (subjectId: string, updates: any) => {
-    try {
-      await updateDoc(doc(db, "subjects", subjectId), {
-        ...updates,
-        updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
-      });
-      
-      toast.success("Materia actualizada exitosamente");
-      setEditingSubject(null);
-    } catch (error) {
-      console.error("Error al actualizar materia:", error);
-      toast.error("Error al actualizar la materia");
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
@@ -11,7 +11,7 @@ import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Alert, AlertDescription } from "../ui/alert";
+import { } from "../ui/alert";
 import { Skeleton } from "../ui/skeleton";
 import { 
   Send, 
@@ -22,32 +22,18 @@ import {
   Trash2, 
   Reply, 
   MoreHorizontal,
-  FileText,
   Calendar,
   User,
   Search,
-  Filter,
-  Eye,
-  EyeOff,
   Share2,
   Bookmark,
   BookmarkCheck,
   AlertTriangle,
-  Clock,
-  Star,
-  Download,
-  Image,
-  Paperclip,
-  Smile,
-  AtSign,
-  Hash,
   ArrowLeft,
   RefreshCw,
-  Info,
   CheckCircle,
   XCircle,
   BookOpen,
-  Users,
   GraduationCap
 } from "lucide-react";
 import { toast } from "sonner";
@@ -70,7 +56,7 @@ interface Message {
   messageType: 'general' | 'academic' | 'announcement' | 'reminder';
   priority: 'low' | 'medium' | 'high';
   attachments: string[];
-  createdAt: any;
+  createdAt: unknown;
   updatedAt?: string;
   isEdited: boolean;
   isPinned?: boolean;
@@ -84,7 +70,7 @@ interface MessageReply {
   authorId: string;
   authorName: string;
   authorRole: string;
-  createdAt: any;
+  createdAt: unknown;
   isEdited: boolean;
   likes: string[];
 }
@@ -96,14 +82,14 @@ interface Course {
 }
 
 // Utilidad para obtener una fecha válida
-function getValidDate(date: any): Date | null {
+function getValidDate(date: unknown): Date | null {
   if (!date) return null;
   if (typeof date === "string" || typeof date === "number") {
     const d = new Date(date);
     return isNaN(d.getTime()) ? null : d;
   }
-  if (typeof date.toDate === "function") {
-    return date.toDate();
+  if (typeof date === "object" && date !== null && typeof (date as { toDate?: unknown }).toDate === "function") {
+    return (date as { toDate: () => Date }).toDate();
   }
   return null;
 }
@@ -123,22 +109,14 @@ export default function WallView() {
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "mostLiked">("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [showOnlyPinned, setShowOnlyPinned] = useState(false);
   const [showOnlyMyMessages, setShowOnlyMyMessages] = useState(false);
   const [bookmarkedMessages, setBookmarkedMessages] = useState<string[]>([]);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [showReadStatus, setShowReadStatus] = useState(false);
   const [readMessages, setReadMessages] = useState<string[]>([]);
-  const [attachments, setAttachments] = useState<File[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imageUrls, setImageUrls] = useState<Map<string, string>>(new Map());
   
   // Estados de UI
-  const [isLoading, setIsLoading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Datos
@@ -178,9 +156,9 @@ export default function WallView() {
       
       if (aPinned && !bPinned) return 1;
       if (!aPinned && bPinned) return -1;
-      
-      const aTime = new Date(a.createdAt).getTime();
-      const bTime = new Date(b.createdAt).getTime();
+
+      const aTime = new Date(typeof a.createdAt === "string" || typeof a.createdAt === "number" || a.createdAt instanceof Date ? a.createdAt : 0).getTime();
+      const bTime = new Date(typeof b.createdAt === "string" || typeof b.createdAt === "number" || b.createdAt instanceof Date ? b.createdAt : 0).getTime();
       return bTime - aTime;
     });
 
@@ -215,7 +193,6 @@ export default function WallView() {
     }
     
     setIsPublishing(true);
-    setError(null);
     
     try {
       const messageData = {
@@ -244,7 +221,6 @@ export default function WallView() {
       await refetchMessages();
     } catch (error) {
       console.error("Error al publicar mensaje:", error);
-      setError("Error al publicar el mensaje. Inténtalo de nuevo.");
       toast.error("Error al publicar el mensaje");
     } finally {
       setIsPublishing(false);
@@ -466,13 +442,6 @@ export default function WallView() {
     const unreadMessages = courseMessages.filter(m => !readMessages.includes(m.firestoreId)).length;
     
     return { totalMessages, pinnedMessages, myMessages, totalLikes, totalReplies, unreadMessages };
-  };
-
-  // Marcar todos los mensajes como leídos
-  const handleMarkAllAsRead = () => {
-    const allMessageIds = courseMessages.map(m => m.firestoreId);
-    setReadMessages(prev => [...new Set([...prev, ...allMessageIds])]);
-    toast.success("Todos los mensajes marcados como leídos");
   };
 
   // Estados de carga
@@ -808,7 +777,12 @@ export default function WallView() {
             />
             
             <div className="flex flex-wrap gap-4">
-              <Select value={messageType} onValueChange={(value: any) => setMessageType(value)}>
+              <Select
+                value={messageType}
+                onValueChange={(value) =>
+                  setMessageType(value as "general" | "academic" | "announcement" | "reminder")
+                }
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -820,7 +794,12 @@ export default function WallView() {
                 </SelectContent>
               </Select>
 
-              <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
+              <Select
+                value={priority}
+                onValueChange={(value) =>
+                  setPriority(value as "low" | "medium" | "high")
+                }
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="Prioridad" />
                 </SelectTrigger>

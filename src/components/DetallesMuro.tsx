@@ -2,9 +2,9 @@ import { useState, useEffect, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { addDoc, collection, serverTimestamp, updateDoc, doc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, updateDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import type { Message, MessageReply, Course, Subject } from "@/types";
+import type { Message, Course, Subject } from "@/types";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -33,12 +33,9 @@ import {
   BookmarkCheck,
   AlertTriangle,
   Clock,
-  Star,
   Download,
   Image,
   Paperclip,
-  Smile,
-  AtSign,
   Hash
 } from "lucide-react";
 import { toast } from "sonner";
@@ -52,15 +49,16 @@ import {
 } from "./ui/dropdown-menu";
 
 // Utilidad para obtener una fecha válida
-function getValidDate(date: any): Date | null {
+function getValidDate(date: unknown): Date | null {
   if (!date) return null;
   if (typeof date === "string" || typeof date === "number") {
     const d = new Date(date);
-    return isNaN(d.getTime()) ? null : d;
+    if (isNaN(d.getTime())) return null;
+    return d;
   }
-  if (typeof date.toDate === "function") {
+  if (date && typeof (date as any).toDate === "function") {
     // Firestore Timestamp
-    return date.toDate();
+    return (date as any).toDate();
   }
   return null;
 }
@@ -79,7 +77,6 @@ export default function DetallesMuro() {
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "mostLiked">("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [showOnlyPinned, setShowOnlyPinned] = useState(false);
   const [showOnlyMyMessages, setShowOnlyMyMessages] = useState(false);
@@ -951,7 +948,7 @@ export default function DetallesMuro() {
             </div>
             
             <div className="flex flex-wrap gap-4">
-              <Select value={messageType} onValueChange={(value: any) => setMessageType(value)}>
+              <Select value={messageType} onValueChange={(value: "general" | "academic" | "announcement" | "reminder") => setMessageType(value)}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -963,7 +960,7 @@ export default function DetallesMuro() {
                 </SelectContent>
               </Select>
 
-              <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
+              <Select value={priority} onValueChange={(value: "low" | "medium" | "high") => setPriority(value)}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="Prioridad" />
                 </SelectTrigger>

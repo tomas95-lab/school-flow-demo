@@ -27,6 +27,7 @@ import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
+import { useTeacherStudents } from "@/hooks/useTeacherCourses"
 import { 
   generarAlertasAutomaticas, 
   type DatosAlumno
@@ -122,7 +123,7 @@ const statsByRole = {
 
 // Metadatos de KPIs mejorados - SOLO LOS ESENCIALES
 const kpiMeta: Record<string, {
-  icon: any;
+  icon: unknown;
   color: "blue" | "green" | "orange" | "red" | "purple" | "indigo" | "emerald" | "yellow" | "pink" | "gray";
   title: string;
   description: string;
@@ -277,6 +278,9 @@ export default function Dashboard() {
   const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
   const { data: alerts } = useFirestoreCollection("alerts", { enableCache: true });
 
+  // Hook para obtener estudiantes del docente
+  const { teacherStudents } = useTeacherStudents(user?.teacherId);
+
   // Memoizar cálculos pesados
   const calculatedStats = useMemo(() => {
     if (!students || !courses || !teachers || !calificaciones || !asistencias || !subjects) {
@@ -298,14 +302,13 @@ export default function Dashboard() {
       ? `${Math.round((presentCount / asistencias.length) * 100)}%`
       : "0%";
 
-    // Calcular estadísticas específicas por rol
-    const roleStats = {
+    const roleStats: typeof stats = {
       totalStudents,
       totalTeachers,
       totalCourses,
       avgAttendance,
       avgGrades,
-      criticalAlerts: 0,
+      criticalAlerts: 0
     };
 
     // Estadísticas específicas por rol del usuario
@@ -316,13 +319,8 @@ export default function Dashboard() {
       const teacherInfo = teacherMap.get(user.teacherId);
       if (teacherInfo) {
         const teacherCourses = courses.filter(c => c.firestoreId === teacherInfo.cursoId);
-        const teacherSubjects = subjects.filter(s => s.cursoId === teacherInfo.cursoId);
-        const teacherStudents = students.filter(s => 
-          teacherCourses.some(c => c.firestoreId === s.cursoId)
-        );
-        
         // Calcular asistencia del docente de forma optimizada
-        const teacherSubjectIds = new Set(teacherSubjects.map(s => s.firestoreId));
+        const teacherSubjectIds = new Set(subjects.filter(s => s.teacherId === user.teacherId).map(s => s.firestoreId));
         const teacherAsistencias = asistencias.filter(a => 
           teacherSubjectIds.has(a.courseId)
         );
@@ -351,10 +349,10 @@ export default function Dashboard() {
           studentGradesMap.get(c.studentId)!.push(c.valor || 0);
         });
 
-        const studentsAtRisk = teacherStudents.filter(student => {
+        const studentsAtRisk = teacherStudents.filter((student: any) => {
           const grades = studentGradesMap.get(student.firestoreId || '') || [];
           if (grades.length === 0) return false;
-          const avg = grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
+          const avg = grades.reduce((sum: number, grade: number) => sum + grade, 0) / grades.length;
           return avg < 6;
         }).length;
 
@@ -424,7 +422,7 @@ export default function Dashboard() {
     }
 
     return roleStats;
-  }, [students, courses, teachers, calificaciones, asistencias, subjects, user]);
+  }, [students, courses, teachers, calificaciones, asistencias, subjects, user, teacherStudents]);
 
   // Actualizar stats cuando calculatedStats cambie
   useEffect(() => {
@@ -446,14 +444,14 @@ export default function Dashboard() {
     };
 
     const obtenerPeriodoAnterior = (periodoActual: string): string | undefined => {
-      const match = periodoActual.match(/(\d{4})-T(\d)/);
-      if (!match) return undefined;
-      const year = parseInt(match[1]);
-      const trimestre = parseInt(match[2]);
-      if (trimestre === 1) {
-        return `${year - 1}-T3`;
+      const [year, trimester] = periodoActual.split('-T');
+      const currentYear = parseInt(year);
+      const currentTrimester = parseInt(trimester);
+      
+      if (currentTrimester === 1) {
+        return `${currentYear - 1}-T4`;
       } else {
-        return `${year}-T${trimestre - 1}`;
+        return `${currentYear}-T${currentTrimester - 1}`;
       }
     };
 
@@ -485,8 +483,6 @@ export default function Dashboard() {
         const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
         if (!teacher) return [];
 
-        const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
-        
         return teacherStudents.flatMap((student: any) => {
           const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
           const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
@@ -514,13 +510,13 @@ export default function Dashboard() {
         
         if (calificacionesAlumno.length === 0) return [];
 
-                  const datosAlumno: DatosAlumno = {
-            studentId: user.studentId || '',
-            calificaciones: calificacionesAlumno as any,
-            asistencias: asistenciasAlumno as any,
-            periodoActual,
-            periodoAnterior
-          };
+        const datosAlumno: DatosAlumno = {
+          studentId: user.studentId || '',
+          calificaciones: calificacionesAlumno as any,
+          asistencias: asistenciasAlumno as any,
+          periodoActual,
+          periodoAnterior
+        };
 
         return generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
       }
@@ -528,7 +524,7 @@ export default function Dashboard() {
       default:
         return [];
     }
-  }, [user, calificaciones, asistencias, students, teachers]);
+  }, [user, calificaciones, asistencias, students, teachers, teacherStudents]);
 
   // Calcular estadísticas de alertas normales (de la base de datos)
   useEffect(() => {
@@ -596,7 +592,7 @@ export default function Dashboard() {
             <StatsCard
               key={kpiKey}
               value={stats[kpiKey as keyof typeof stats] || 0}
-              icon={kpiMeta[kpiKey].icon}
+              icon={kpiMeta[kpiKey].icon as any}
               label={kpiMeta[kpiKey].title}
               color={kpiMeta[kpiKey].color}
               subtitle={kpiMeta[kpiKey].description}

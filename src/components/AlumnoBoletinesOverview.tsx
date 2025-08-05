@@ -89,8 +89,8 @@ export default function AlumnoBoletinesOverview() {
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
     
     const observacionAutomatica = studentId ? generarObservacionAutomaticaBoletin(
-      calificacionesAlumno as any,
-      asistenciasAlumno as any,
+      calificacionesAlumno as unknown,
+      asistenciasAlumno as unknown,
       studentId,
       periodoActual || getPeriodoActual(),
       periodoAnterior

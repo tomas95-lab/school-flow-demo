@@ -41,7 +41,7 @@ export interface AlertaAutomatica {
 
 // Tipo para las reglas de alertas
 type ReglaAlerta = {
-  condicion: (...args: any[]) => boolean;
+  condicion: (...args: unknown[]) => boolean;
   titulo: string;
   descripcion: string;
   tipo: AlertaAutomatica['tipo'];

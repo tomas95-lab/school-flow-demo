@@ -6,39 +6,26 @@ import {
   BookOpen, 
   Brain, 
   TrendingUp, 
-  TrendingDown,
   Users, 
   GraduationCap, 
   Calendar, 
   AlertTriangle,
-  Search,
-  Filter,
   Download,
   Eye,
   Lightbulb,
-  Target,
-  CheckCircle,
-  Clock,
-  MessageSquare,
-  Bell,
-  FileText,
-  RefreshCw,
   BarChart3,
-  Zap,
   BookMarked,
   Award,
   AlertCircle,
-  Info,
-  HelpCircle
-} from "lucide-react";
+  } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { } from "date-fns";
+import { } from "date-fns/locale";
 import { LoadingState } from "./LoadingState";
 import { EmptyState } from "./EmptyState";
 import ReutilizableDialog from "./DialogReutlizable";
@@ -101,7 +88,7 @@ interface Boletin {
     texto: string;
     prioridad: string;
     reglaAplicada: string;
-    datosSoporte: any;
+    datosSoporte: unknown;
   };
   asistenciasTotales: number;
   alertas: string[];
@@ -128,7 +115,6 @@ export default function ExplicacionBoletinOverview() {
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [selectedBoletin, setSelectedBoletin] = useState<Boletin | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   // Obtener todos los datos necesarios
   const { data: students, loading: loadingStudents } = useFirestoreCollection<Student>("students");
@@ -374,10 +360,6 @@ export default function ExplicacionBoletinOverview() {
     setShowExplanationModal(true);
   };
 
-  const handleRefresh = () => {
-    setLastUpdate(new Date());
-    toast.success('Datos actualizados');
-  };
 
   const handleExportExplanation = (type: string) => {
     try {
@@ -709,7 +691,7 @@ export default function ExplicacionBoletinOverview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                {analysis.patterns.subjectTrends.map((subject, index) => (
+                {analysis.patterns.subjectTrends.map((subject) => (
                   <div key={subject.subjectId} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-gray-900">{subject.subjectName}</span>

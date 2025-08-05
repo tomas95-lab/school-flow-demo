@@ -239,7 +239,7 @@ export default function Usuarios() {
     label: string;
     value: string;
     subtitle: string;
-    icon: any;
+    icon: unknown;
     color: "blue" | "purple" | "green" | "orange" | "red" | "indigo" | "emerald" | "yellow" | "pink" | "gray";
   }> = [
     {

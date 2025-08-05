@@ -71,7 +71,7 @@ export const markNotificationAsRead = async (notificationId: string) => {
 
 export const markAllNotificationsAsRead = async (userId: string) => {
   try {
-    const { updateDoc, doc, getDocs, query, where } = await import("firebase/firestore");
+    const { updateDoc, getDocs, query, where } = await import("firebase/firestore");
     const q = query(
       collection(db, "notifications"),
       where("userId", "==", userId),
@@ -79,7 +79,7 @@ export const markAllNotificationsAsRead = async (userId: string) => {
     );
     
     const snapshot = await getDocs(q);
-    const updatePromises = snapshot.docs.map(doc => 
+    const updatePromises = snapshot.docs.map((doc) => 
       updateDoc(doc.ref, { isRead: true })
     );
     

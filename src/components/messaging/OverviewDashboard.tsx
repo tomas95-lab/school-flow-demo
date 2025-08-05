@@ -10,12 +10,9 @@ import {
   Users, 
   Activity, 
   TrendingUp,
-  Calendar,
   Clock,
-  Eye,
   ThumbsUp,
   Reply,
-  Bookmark,
   AlertTriangle,
   RefreshCw,
   Info,
@@ -39,7 +36,7 @@ export default function OverviewDashboard() {
     averageEngagement: 0
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!messages || !courses || !subjects || !user) return;
@@ -206,7 +203,6 @@ export default function OverviewDashboard() {
   };
 
   const recentMessages = messages?.slice(0, 5) || [];
-  const isLoading = messagesLoading || coursesLoading || subjectsLoading;
   const hasError = messagesError || coursesError || subjectsError;
 
   // Verificar si el usuario tiene acceso
@@ -266,7 +262,7 @@ export default function OverviewDashboard() {
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {isLoading ? (
+        {messagesLoading || coursesLoading || subjectsLoading ? (
           // Skeleton loading para las estadísticas
           Array.from({ length: 4 }).map((_, index) => (
             <Card key={index} className="hover:shadow-md transition-shadow">
@@ -312,7 +308,7 @@ export default function OverviewDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {messagesLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, index) => (
                   <div key={index} className="flex items-start gap-3 p-3 rounded-lg">
@@ -379,7 +375,7 @@ export default function OverviewDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {messagesLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <div key={index} className="flex items-center justify-between">

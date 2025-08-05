@@ -3,7 +3,6 @@ import { useContext, useMemo, useState, useCallback } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { 
-  BookOpen, 
   TrendingUp, 
   ClipboardList, 
   CheckCircle2, 
@@ -11,9 +10,7 @@ import {
   Download, 
   Clock, 
   Users, 
-  Award, 
   BarChart3, 
-  Filter,
   Eye,
   Plus,
   Sparkles,
@@ -40,6 +37,7 @@ import { AuthContext } from "@/context/AuthContext";
 import CrearCalificacion from "@/components/CalificacioneslForm";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
+import type { DocumentData } from "firebase/firestore";
 
 // Tipos TypeScript
 interface GradeDistribution {
@@ -58,87 +56,126 @@ interface StudentPerformance {
   trend: 'up' | 'down' | 'stable';
 }
 
+interface Course extends DocumentData {
+  firestoreId?: string;
+  nombre: string;
+  division: string;
+  año: string;
+}
+
+interface Student extends DocumentData {
+  firestoreId?: string;
+  nombre: string;
+  apellido: string;
+  cursoId: string;
+}
+
+interface Subject extends DocumentData {
+  firestoreId?: string;
+  nombre: string;
+  cursoId: string;
+}
+
+interface TeacherSubject extends DocumentData {
+  firestoreId?: string;
+  cursoId: string | string[];
+}
+
+interface Calificacion extends DocumentData {
+  firestoreId?: string;
+  studentId: string;
+  subjectId: string;
+  Actividad: string;
+  Comentario: string;
+  valor: number;
+  fecha: any;
+}
+
 export default function DetallesCalificaciones() {
     const { user } = useContext(AuthContext);
     const [searchParams] = useSearchParams();
     const [id] = useState(searchParams.get("id") || "");
-    const { data: courses } = useFirestoreCollection("courses");
-    const { data: students } = useFirestoreCollection("students");
-    const { data: subjects } = useFirestoreCollection("subjects");
-    const { data: teachers } = useFirestoreCollection("teachers")
-    const { data: calificaciones, loading = false } = useFirestoreCollection("calificaciones");
+    const { data: courses } = useFirestoreCollection<Course>("courses");
+    const { data: students } = useFirestoreCollection<Student>("students");
+    const { data: subjects } = useFirestoreCollection<Subject>("subjects");
+    const { data: teachers } = useFirestoreCollection<DocumentData>("teachers");
+    const { data: calificaciones, loading = false } = useFirestoreCollection<Calificacion>("calificaciones");
     const [endDate, setEndDate] = useState<Date>();
     const [startDate, setStartDate] = useState<Date>();
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const [activeView, setActiveView] = useState<"table" | "analytics" | "add">("table");
 
-    const course = useMemo(() => {
+    // Get teacher subjects for docente role
+    const teacherSubjects = useMemo((): TeacherSubject[] => {
+        if (user?.role === "docente" && teachers) {
+            return teachers.filter((teacher: DocumentData) => teacher.firestoreId === user.uid) as TeacherSubject[];
+        }
+        return [];
+    }, [user, teachers]);
+
+    const course = useMemo((): Course | null => {
         if (user?.role === "admin" && id) {
-            return courses.find(c => c.firestoreId === id);
+            return courses.find((c: Course) => c.firestoreId === id) || null;
         } else if (user?.role === "docente") {
-            const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
-            
             if (id) {
-                const foundCourse = courses.find(c => c.firestoreId === id);
-                const hasAccess = teacherSubjects.some(s => {
-                    if (Array.isArray(s.cursoId)) {
-                        return s.cursoId.includes(id);
-                    }
-                    return s.cursoId === id;
-                });
+                const foundCourse = courses.find((c: Course) => c.firestoreId === id) || null;
+                const hasAccess = teacherSubjectId
+                    ? (Array.isArray(teacherSubjectId)
+                        ? teacherSubjectId.includes(id)
+                        : teacherSubjectId === id)
+                    : false;
                 return hasAccess ? foundCourse : null;
             } else {
                 const teacherCourseIds = new Set<string>();
-                teacherSubjects.forEach(s => {
+                teacherSubjects.forEach((s: TeacherSubject) => {
                     if (Array.isArray(s.cursoId)) {
-                        s.cursoId.forEach(courseId => teacherCourseIds.add(courseId));
+                        s.cursoId.forEach((courseId: string) => teacherCourseIds.add(courseId));
                     } else if (s.cursoId) {
                         teacherCourseIds.add(s.cursoId);
                     }
                 });
-                return courses.find(c => c.firestoreId && teacherCourseIds.has(c.firestoreId));
+                return courses.find((c: Course) => c.firestoreId && teacherCourseIds.has(c.firestoreId)) || null;
             }
         }
         return null;
-    }, [user, id, courses, students, subjects, teachers]);
+    }, [user, id, courses, students, subjects, teachers, teacherSubjects]);
 
-    const studentsInCourse = useMemo(() => {
-        return course && course.firestoreId ? students.filter(s => s.cursoId === course.firestoreId) : [];
+    const studentsInCourse = useMemo((): Student[] => {
+        return course && course.firestoreId ? students.filter((s: Student) => s.cursoId === course.firestoreId) : [];
     }, [course, students]);
 
-    const teacherSubjectId = useMemo(() => {
+    const teacherSubjectId = useMemo((): string | undefined => {
         if (user?.role === "docente" && course && course.firestoreId) {
-            const teacherSubjects = subjects.filter(s => s.teacherId === user.teacherId);
-            const subject = teacherSubjects.find(s => {
+            const subject = teacherSubjects.find((s: TeacherSubject) => {
                 if (Array.isArray(s.cursoId)) {
-                    return s.cursoId.includes(course.firestoreId);
+                    return s.cursoId.includes(course.firestoreId!);
                 }
                 return s.cursoId === course.firestoreId;
             });
             return subject?.firestoreId;
         }
         return undefined;
-    }, [user, course, subjects]);
+    }, [user, course, teacherSubjects]);
 
-    const calificacionesFiltradas = useMemo(() => {
-        return calificaciones.filter(c => {
-        const student = students.find(student => student.firestoreId === c.studentId && student.cursoId === course?.firestoreId);
+    const calificacionesFiltradas = useMemo((): Calificacion[] => {
+        return calificaciones.filter((c: Calificacion) => {
+        const student = students.find((student: Student) => student.firestoreId === c.studentId && student.cursoId === course?.firestoreId);
         if (!student) return false;
         if (user?.role === "docente" && teacherSubjectId) {
             return c.subjectId === teacherSubjectId;
         }
         return true;
-        }).sort((a, b) => {
-        const studentA = students.find(s => s.firestoreId === a.studentId);
-        const studentB = students.find(s => s.firestoreId === b.studentId);
-        return studentA?.nombre.localeCompare(studentB?.nombre);
+        }).sort((a: Calificacion, b: Calificacion) => {
+        const studentA = students.find((s: Student) => s.firestoreId === a.studentId);
+        const studentB = students.find((s: Student) => s.firestoreId === b.studentId);
+        return (studentA?.nombre || "").localeCompare(studentB?.nombre || "");
     });
     }, [calificaciones, students, course, user, teacherSubjectId]);
 
     const resultado = useMemo(() => {
-        return calificacionesFiltradas.map(c => {
-        const materia = subjects.find(s => s.firestoreId === c.subjectId);
-        const estudiante = studentsInCourse.find(s => s.firestoreId === c.studentId);
+        return calificacionesFiltradas.map((c: Calificacion) => {
+        const materia = subjects.find((s: Subject) => s.firestoreId === c.subjectId);
+        const estudiante = studentsInCourse.find((s: Student) => s.firestoreId === c.studentId);
 
         return {
                 id: c.firestoreId ?? "",
@@ -162,9 +199,9 @@ export default function DetallesCalificaciones() {
         const total = calificacionesFiltradas.length;
         if (total === 0) return { excellent: 0, good: 0, needsImprovement: 0, total: 0 };
 
-        const excellent = calificacionesFiltradas.filter(c => c.valor >= 8).length;
-        const good = calificacionesFiltradas.filter(c => c.valor >= 6 && c.valor < 8).length;
-        const needsImprovement = calificacionesFiltradas.filter(c => c.valor < 6).length;
+        const excellent = calificacionesFiltradas.filter((c: Calificacion) => c.valor >= 8).length;
+        const good = calificacionesFiltradas.filter((c: Calificacion) => c.valor >= 6 && c.valor < 8).length;
+        const needsImprovement = calificacionesFiltradas.filter((c: Calificacion) => c.valor < 6).length;
 
         return {
             excellent,
@@ -178,8 +215,8 @@ export default function DetallesCalificaciones() {
     const studentPerformance = useMemo((): StudentPerformance[] => {
         const performanceMap = new Map<string, { grades: number[], name: string }>();
 
-        calificacionesFiltradas.forEach(cal => {
-            const student = studentsInCourse.find(s => s.firestoreId === cal.studentId);
+        calificacionesFiltradas.forEach((cal: Calificacion) => {
+            const student = studentsInCourse.find((s: Student) => s.firestoreId === cal.studentId);
             if (student) {
                 const key = student.firestoreId || "";
                 if (!performanceMap.has(key)) {
@@ -219,7 +256,7 @@ export default function DetallesCalificaciones() {
             ["Alumno", "Materia", "Actividad", "Valor", "Comentario", "Fecha"]
         ];
 
-        resultado.forEach(item => {
+        resultado.forEach((item: any) => {
             const raw = item.fecha;
             const dateObj = typeof raw === 'object' && raw?.toDate ? raw.toDate() : new Date(raw);
             const dateStr = dateObj.toLocaleString("es-AR", {
@@ -255,30 +292,30 @@ export default function DetallesCalificaciones() {
 
     const averageGrade = useMemo(() => {
         if (!calificacionesFiltradas.length) return "0.00";
-        const total = calificacionesFiltradas.reduce((sum: number, { valor }) => sum + (valor || 0), 0);
+        const total = calificacionesFiltradas.reduce((sum: number, { valor }: Calificacion) => sum + (valor || 0), 0);
         return (total / calificacionesFiltradas.length).toFixed(2);
     }, [calificacionesFiltradas]);
 
     const [pctAprob] = useMemo(() => {
         const total = calificacionesFiltradas.length;
         if (!total) return ["0.00", "0.00"];
-        const aprobCount = calificacionesFiltradas.filter(c => c.valor >= 7).length;
+        const aprobCount = calificacionesFiltradas.filter((c: Calificacion) => c.valor >= 7).length;
         const pctA = ((aprobCount / total) * 100).toFixed(2);
         const pctR = (100 - parseFloat(pctA)).toFixed(2);
         return [pctA, pctR];
     }, [calificacionesFiltradas]);
 
     const desapCount = useMemo(() => {
-        return calificacionesFiltradas.filter((c) => c.valor <= 7).length;
+        return calificacionesFiltradas.filter((c: Calificacion) => c.valor <= 7).length;
     }, [calificacionesFiltradas]);
 
     // Opciones de filtro
     const alumnoFilterOptions = useMemo(() => {
-        return studentsInCourse.map(s => ({ label: `${s.nombre} ${s.apellido}`, value: `${s.nombre} ${s.apellido}` }));
+        return studentsInCourse.map((s: Student) => ({ label: `${s.nombre} ${s.apellido}`, value: `${s.nombre} ${s.apellido}` }));
     }, [studentsInCourse]);
 
     const materiaOptions = useMemo(() => {
-        return subjects.filter(s => s.cursoId === course?.firestoreId || "").map(s => ({ label: s.nombre, value: s.nombre }));
+        return subjects.filter((s: Subject) => s.cursoId === course?.firestoreId || "").map((s: Subject) => ({ label: s.nombre, value: s.nombre }));
     }, [subjects, course]);
 
     // Verificar acceso denegado para docente

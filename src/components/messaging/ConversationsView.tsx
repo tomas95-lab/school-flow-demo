@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
+import { } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { MessageSquare, Clock, Users, Settings, Code, GitBranch, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";

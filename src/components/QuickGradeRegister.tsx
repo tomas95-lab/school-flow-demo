@@ -1,4 +1,4 @@
-import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses, useTeacherStudents } from "@/hooks/useTeacherCourses";
 import { useContext, useState, useEffect, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";

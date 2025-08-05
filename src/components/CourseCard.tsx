@@ -1,5 +1,5 @@
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Users, ChevronRight, BookOpen } from "lucide-react";
+import { ChevronRight, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Tipos TypeScript

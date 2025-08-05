@@ -10,7 +10,6 @@ import { Input } from "./ui/input";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { CreateAlertModal } from "./CreateAlertModal";
-import ObservacionesAutomaticasPanel from "./ObservacionesAutomaticasPanel";
 
 export default function TeacherAlertasOverview() {
   const { user } = useContext(AuthContext);

@@ -139,21 +139,21 @@ export function generarObservacionAutomatica(datos: DatosAlumno): ObservacionGen
     switch (nombreRegla) {
       case 'RENDIMIENTO_INSUFICIENTE':
       case 'EXCELENTE_DESEMPEÑO':
-        seCumple = (regla.condicion as any)(datos, promedioActual, promedioAnterior);
+        seCumple = (regla.condicion as unknown)(datos, promedioActual, promedioAnterior);
         break;
       case 'MEJORA_SIGNIFICATIVA':
-        seCumple = (regla.condicion as any)(datos, promedioActual, promedioAnterior);
+        seCumple = (regla.condicion as unknown)(datos, promedioActual, promedioAnterior);
         break;
       case 'DESCENSO_RENDIMIENTO':
-        seCumple = (regla.condicion as any)(promedioActual, promedioAnterior);
+        seCumple = (regla.condicion as unknown)(promedioActual, promedioAnterior);
         break;
       case 'AUSENCIAS_REITERADAS':
       case 'AUSENCIAS_CRITICAS':
-        seCumple = (regla.condicion as any)(ausencias);
+        seCumple = (regla.condicion as unknown)(ausencias);
         break;
       case 'ASISTENCIA_PERFECTA':
       case 'MEJORA_ASISTENCIA':
-        seCumple = (regla.condicion as any)(datos, ausencias);
+        seCumple = (regla.condicion as unknown)(datos, ausencias);
         break;
     }
     
@@ -404,13 +404,13 @@ export function validarDatosAlumno(datos: unknown): datos is DatosAlumno {
     typeof datos === 'object' &&
     datos !== null &&
     'studentId' in datos &&
-    typeof (datos as any).studentId === 'string' &&
+    typeof (datos as unknown).studentId === 'string' &&
     'calificaciones' in datos &&
-    Array.isArray((datos as any).calificaciones) &&
+    Array.isArray((datos as unknown).calificaciones) &&
     'asistencias' in datos &&
-    Array.isArray((datos as any).asistencias) &&
+    Array.isArray((datos as unknown).asistencias) &&
     'periodoActual' in datos &&
-    typeof (datos as any).periodoActual === 'string'
+    typeof (datos as unknown).periodoActual === 'string'
   );
 }
 

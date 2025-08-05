@@ -54,7 +54,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       }
 
       // Crear query con opciones
-      let q: any = collection(db, path);
+      let q: unknown = collection(db, path);
       if (options?.orderBy) {
         q = query(q, orderBy(options.orderBy));
       }
@@ -64,8 +64,8 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
 
       const unsubscribe = onSnapshot(
         q, 
-        (snapshot: any) => {
-          const docs = snapshot.docs.map((doc: any) => ({
+        (snapshot: unknown) => {
+          const docs = snapshot.docs.map((doc: unknown) => ({
             ...(doc.data() as T),
             firestoreId: doc.id,
           }));
@@ -82,7 +82,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
             });
           }
         },
-        (error: any) => {
+        (error: unknown) => {
           console.error(`Error loading collection ${path}:`, error);
           
           // Handle specific permission errors
@@ -152,7 +152,7 @@ export function useFirestoreCollectionOnce<T extends DocumentData & { firestoreI
 
       try {
         const { getDocs } = await import('firebase/firestore');
-        let q: any = collection(db, path);
+        let q: unknown = collection(db, path);
         
         if (options?.orderBy) {
           q = query(q, orderBy(options.orderBy));

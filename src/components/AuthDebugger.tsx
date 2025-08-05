@@ -12,8 +12,8 @@ interface AuthDebugInfo {
   isAuthenticated: boolean;
   userEmail: string | null;
   userRole: string | null;
-  firebaseUser: any;
-  appUser: any;
+  firebaseUser: unknown;
+  appUser: unknown;
   permissions: {
     canReadAttendances: boolean;
     canWriteAttendances: boolean;

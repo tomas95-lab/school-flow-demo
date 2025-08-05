@@ -19,7 +19,7 @@ import {
 import { StatsCard } from "./StatCards";
 import { useMemo, useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import type { Message, Course, Subject } from "@/types";
+import type { Message, Course, } from "@/types";
 import { useNavigate } from "react-router-dom";
 
 export default function TeacherMensajesOverview() {
@@ -28,7 +28,7 @@ export default function TeacherMensajesOverview() {
     const navigate = useNavigate();
     
     // Usar hooks estandarizados
-    const { teacherCourses, teacherSubjects, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
+    const { teacherCourses, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
     const { teacherStudents, isLoading: studentsLoading } = useTeacherStudents(user?.teacherId);
 
     // Calcular estadísticas del docente

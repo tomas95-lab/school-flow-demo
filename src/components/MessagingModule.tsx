@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { Calendar, MessageSquare, Users, Megaphone, Layout, AlertTriangle, Info, Settings, HelpCircle } from "lucide-react";
+import { Calendar, MessageSquare, Megaphone, Layout, AlertTriangle, Info, Settings, HelpCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -21,7 +21,7 @@ type TabType = "overview" | "conversations" | "announcements" | "wall";
 interface TabConfig {
   id: TabType;
   label: string;
-  icon: any;
+  icon: unknown;
   description: string;
   enabled: boolean;
   development?: boolean;

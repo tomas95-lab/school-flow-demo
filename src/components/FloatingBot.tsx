@@ -17,40 +17,16 @@ interface BotMessage {
   timestamp: Date;
   context?: string;
   suggestions?: string[];
-  data?: any;
+  data?: unknown;
 }
 
-interface BotContext {
-  currentModule: string;
-  userRole: string;
-  availableData: string[];
-  recentActions: string[];
-}
-
-interface BotAnalysis {
-  type: 'academic' | 'attendance' | 'behavioral' | 'predictive' | 'general';
-  title: string;
-  description: string;
-  confidence: number;
-  recommendations: string[];
-  dataPoints: any[];
-  priority: 'low' | 'medium' | 'high';
-  timestamp: Date;
-}
 
 const FloatingBot: React.FC = () => {
   const { user } = useContext(AuthContext);
-  const userRole = user?.role || 'alumno';
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<BotMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [currentContext, setCurrentContext] = useState<BotContext>({
-    currentModule: 'general',
-    userRole,
-    availableData: [],
-    recentActions: []
-  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch data for intelligent responses
@@ -130,7 +106,7 @@ const FloatingBot: React.FC = () => {
     } else if (input.includes('hola') || input.includes('buenos días') || input.includes('buenas')) {
       return generateGreeting();
     } else {
-      return generateGeneralResponse(input);
+      return generateGeneralResponse();
     }
   };
 
@@ -277,7 +253,7 @@ Puedes hacer preguntas en lenguaje natural y te responderé de manera inteligent
 Solo dime qué necesitas y te ayudo.`;
   };
 
-  const generateGeneralResponse = (input: string): string => {
+  const generateGeneralResponse = (): string => {
     const responses = [
       'Entiendo tu consulta. Déjame analizar los datos disponibles para darte una respuesta precisa.',
       'Interesante pregunta. Voy a revisar la información del sistema para ayudarte.',
@@ -308,7 +284,7 @@ Solo dime qué necesitas y te ayudo.`;
     setIsTyping(false);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();

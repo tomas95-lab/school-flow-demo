@@ -125,7 +125,11 @@ export default function AlumnoAttendanceOverview(){
 
     const toggleSubjectCollapse = (sid: string) => {
         const c = new Set(collapsedSubjects);
-        c.has(sid) ? c.delete(sid) : c.add(sid);
+        if (c.has(sid)) {
+            c.delete(sid);
+        } else {
+            c.add(sid);
+        }
         setCollapsedSubjects(c);
     };
 
