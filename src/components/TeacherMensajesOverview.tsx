@@ -3,6 +3,7 @@ import { useTeacherCourses, useTeacherStudents } from "@/hooks/useTeacherCourses
 import { CourseCard } from "./CourseCard";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import { 
   MessageSquare, 
   Users, 
@@ -11,16 +12,20 @@ import {
   MessageCircle,
   Clock,
   Star,
-  BookOpen
+  BookOpen,
+  MessageCircle as MessageCircleIcon,
+  ArrowRight
 } from "lucide-react";
 import { StatsCard } from "./StatCards";
 import { useMemo, useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import type { Message, Course, Subject } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 export default function TeacherMensajesOverview() {
     const { user } = useContext(AuthContext);
     const { data: messages } = useFirestoreCollection<Message>("messages");
+    const navigate = useNavigate();
     
     // Usar hooks estandarizados
     const { teacherCourses, teacherSubjects, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
@@ -292,17 +297,30 @@ export default function TeacherMensajesOverview() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {coursesWithActivity.map((course) => (
-                            <CourseCard
-                                key={course.firestoreId}
-                                course={{
-                                    ...course,
-                                    nombre: course.nombre,
-                                    division: course.division,
-                                    firestoreId: course.firestoreId || '',
-                                }}
-                                descripcion={`${course.messageCount} mensajes • ${course.recentMessages} recientes`}
-                                link={`/mensajes/detalles?id=${course.firestoreId}`}
-                            />
+                            <div key={course.firestoreId} className="relative">
+                                <CourseCard
+                                    course={{
+                                        ...course,
+                                        nombre: course.nombre,
+                                        division: course.division,
+                                        firestoreId: course.firestoreId || '',
+                                    }}
+                                    descripcion={`${course.messageCount} mensajes • ${course.recentMessages} recientes`}
+                                    link={`/mensajes?tab=wall&id=${course.firestoreId}`}
+                                />
+                                <div className="absolute top-3 right-3">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => navigate(`/mensajes?tab=wall&id=${course.firestoreId}`)}
+                                        className="flex items-center gap-1 bg-white/90 backdrop-blur-sm hover:bg-white"
+                                    >
+                                        <MessageCircleIcon className="h-3 w-3" />
+                                        Muro
+                                        <ArrowRight className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}

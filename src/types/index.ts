@@ -294,4 +294,63 @@ export interface SubjectWall {
     maxAttachments: number;
     allowedFileTypes: string[];
   };
-} 
+}
+
+export interface Conversation {
+  firestoreId: string;
+  participants: string[];
+  lastMessage?: {
+    content: string;
+    authorId: string;
+    authorName: string;
+    createdAt: string;
+  };
+  unreadCount: number;
+  isGroup: boolean;
+  groupName?: string;
+  courseId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  firestoreId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  createdAt: string;
+  isRead: boolean;
+  attachments?: string[];
+}
+
+export interface Announcement {
+  firestoreId: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  courseId?: string;
+  courseName?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  tags: string[];
+  attachments: string[];
+  createdAt: string;
+  updatedAt?: string;
+  isEdited: boolean;
+  likes: string[];
+  comments: AnnouncementComment[];
+  status: 'active' | 'archived' | 'deleted';
+}
+
+export interface AnnouncementComment {
+  firestoreId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  createdAt: string;
+  isEdited: boolean;
+  likes: string[];
+}
