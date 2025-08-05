@@ -35,10 +35,10 @@ const validRoutes = [
   "/app/inscripciones",
   "/app/ia",
   "/app/reportes",
-  "/app/boletines/explicacion",
-  "/app/configuracion",
-  "/app/configuracion/general",
-  "/app/configuracion/bot"
+  "/app/explicacion-boletin",
+  "/app/general",
+  "/app/bot",
+  "/app/configuracion"
 ];
 
 

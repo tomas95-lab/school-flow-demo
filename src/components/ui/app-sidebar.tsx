@@ -61,7 +61,8 @@ const data = {
       isActive: false,
       items: [
         { title: "Reportes Inteligentes", url: "/app/reportes", isActive: false },
-        { title: "Explicación Boletín", url: "/app/boletines/explicacion", isActive: false },
+        { title: "Explicación Boletín", url: "/app/explicacion-boletin", isActive: false },
+        { title: "Bot IA", url: "/app/bot", isActive: false },
       ],
     },
     {
@@ -69,8 +70,8 @@ const data = {
       url: "/app/configuracion",
       isActive: false,
       items: [
-        { title: "General", url: "/app/configuracion/general", isActive: false },
-        { title: "Bot IA", url: "/app/configuracion/bot", isActive: false },
+        { title: "General", url: "/app/general", isActive: false },
+        { title: "Inscripciones", url: "/app/inscripciones", isActive: false },
       ],
     },
   ],

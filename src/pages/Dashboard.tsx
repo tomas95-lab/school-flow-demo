@@ -14,6 +14,10 @@ import {
   FileText,
   Award,
   CheckCircle,
+  BarChart3,
+  Cog,
+  Bot,
+  UserPlus,
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
@@ -47,9 +51,29 @@ const quickAccessByRole = {
       to: "/app/boletines"
     },
     {
-      icon: <AlertCircle className="text-red-500 bg-red-100 rounded-full w-8 h-8 p-1 shadow" />,
-      label: "Detalles de Calificaciones",
-      to: "/app/calificaciones/detalles"
+      icon: <BarChart3 className="text-indigo-600 bg-indigo-100 rounded-full w-8 h-8 p-1 shadow" />,
+      label: "Reportes Inteligentes",
+      to: "/app/reportes"
+    },
+    {
+      icon: <BookOpen className="text-emerald-600 bg-emerald-100 rounded-full w-8 h-8 p-1 shadow" />,
+      label: "Explicación Boletín",
+      to: "/app/explicacion-boletin"
+    },
+    {
+      icon: <Cog className="text-gray-600 bg-gray-100 rounded-full w-8 h-8 p-1 shadow" />,
+      label: "Configuración General",
+      to: "/app/general"
+    },
+    {
+      icon: <Bot className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
+      label: "Bots Inteligentes",
+      to: "/app/bot"
+    },
+    {
+      icon: <UserPlus className="text-orange-600 bg-orange-100 rounded-full w-8 h-8 p-1 shadow" />,
+      label: "Inscripciones",
+      to: "/app/inscripciones"
     }
   ],
   docente: [
