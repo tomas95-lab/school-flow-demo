@@ -3,24 +3,54 @@ import { db } from "../firebaseConfig.js";
 import fs from 'fs';
 
 async function exportData() {
-  const collections = ['attendances', 'students', 'courses', 'subjects', 'teachers', 'alerts'];
+  // Obtener todas las colecciones disponibles
+  const collections = [
+    'attendances', 
+    'students', 
+    'courses', 
+    'subjects', 
+    'teachers', 
+    'alerts',
+    'inscripciones',
+    'calificaciones',
+    'boletines',
+    'messages',
+    'reportes',
+    'configuraciones'
+  ];
   let allData = {};
 
   try {
     for (let col of collections) {
       console.log(`📊 Exportando colección: ${col}`);
-      const snapshot = await getDocs(collection(db, col));
-      allData[col] = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      }));
-      console.log(`✅ ${col}: ${snapshot.docs.length} documentos exportados`);
-      
-      // Mostrar algunos ejemplos de la estructura
-      if (snapshot.docs.length > 0) {
-        console.log(`📋 Ejemplo de estructura para ${col}:`);
-        console.log(JSON.stringify(snapshot.docs[0].data(), null, 2));
+      try {
+        const snapshot = await getDocs(collection(db, col));
+        allData[col] = snapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        }));
+        console.log(`✅ ${col}: ${snapshot.docs.length} documentos exportados`);
+        
+        // Mostrar algunos ejemplos de la estructura
+        if (snapshot.docs.length > 0) {
+          console.log(`📋 Ejemplo de estructura para ${col}:`);
+          console.log(JSON.stringify(snapshot.docs[0].data(), null, 2));
+          
+          // Mostrar todos los documentos si hay pocos
+          if (snapshot.docs.length <= 5) {
+            console.log(`📋 Todos los documentos de ${col}:`);
+            snapshot.docs.forEach((doc, index) => {
+              console.log(`Documento ${index + 1}:`);
+              console.log(JSON.stringify(doc.data(), null, 2));
+            });
+          }
+        } else {
+          console.log(`⚠️  ${col}: No hay documentos en esta colección`);
+        }
         console.log('---');
+      } catch (error) {
+        console.log(`❌ Error al acceder a ${col}: ${error.message}`);
+        allData[col] = [];
       }
     }
 
@@ -65,6 +95,36 @@ async function exportData() {
         console.log(`    📝 Registros de asistencia: ${attendances.length}`);
         console.log(`    📚 Materias en asistencias: ${subjects.length} (${subjects.join(', ')})`);
         console.log(`    🏫 Cursos en asistencias: ${courses.length} (${courses.join(', ')})`);
+      }
+      
+      // Análisis específico para inscripciones
+      if (col === 'inscripciones') {
+        const inscripciones = allData[col];
+        const statuses = [...new Set(inscripciones.map(i => i.status).filter(Boolean))];
+        const courses = [...new Set(inscripciones.map(i => i.courseId).filter(Boolean))];
+        console.log(`    📝 Registros de inscripción: ${inscripciones.length}`);
+        console.log(`    📊 Estados: ${statuses.length} (${statuses.join(', ')})`);
+        console.log(`    🏫 Cursos: ${courses.length} (${courses.join(', ')})`);
+      }
+      
+      // Análisis específico para calificaciones
+      if (col === 'calificaciones') {
+        const calificaciones = allData[col];
+        const subjects = [...new Set(calificaciones.map(c => c.subjectId).filter(Boolean))];
+        const students = [...new Set(calificaciones.map(c => c.studentId).filter(Boolean))];
+        console.log(`    📝 Registros de calificación: ${calificaciones.length}`);
+        console.log(`    📚 Materias: ${subjects.length} (${subjects.join(', ')})`);
+        console.log(`    👥 Estudiantes: ${students.length} (${students.join(', ')})`);
+      }
+      
+      // Análisis específico para messages
+      if (col === 'messages') {
+        const messages = allData[col];
+        const types = [...new Set(messages.map(m => m.messageType).filter(Boolean))];
+        const courses = [...new Set(messages.map(m => m.courseId).filter(Boolean))];
+        console.log(`    📝 Mensajes: ${messages.length}`);
+        console.log(`    📊 Tipos: ${types.length} (${types.join(', ')})`);
+        console.log(`    🏫 Cursos: ${courses.length} (${courses.join(', ')})`);
       }
     });
 
