@@ -50,31 +50,6 @@ const quickAccessByRole = {
       icon: <Book className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
       label: "Panel de Boletines",
       to: "/app/boletines"
-    },
-    {
-      icon: <BarChart3 className="text-indigo-600 bg-indigo-100 rounded-full w-8 h-8 p-1 shadow" />,
-      label: "Reportes Inteligentes",
-      to: "/app/reportes"
-    },
-    {
-      icon: <BookOpen className="text-emerald-600 bg-emerald-100 rounded-full w-8 h-8 p-1 shadow" />,
-      label: "Explicación Boletín",
-      to: "/app/explicacion-boletin"
-    },
-    {
-      icon: <Cog className="text-gray-600 bg-gray-100 rounded-full w-8 h-8 p-1 shadow" />,
-      label: "Configuración General",
-      to: "/app/general"
-    },
-    {
-      icon: <Bot className="text-purple-600 bg-purple-100 rounded-full w-8 h-8 p-1 shadow" />,
-      label: "Bots Inteligentes",
-      to: "/app/bot"
-    },
-    {
-      icon: <UserPlus className="text-orange-600 bg-orange-100 rounded-full w-8 h-8 p-1 shadow" />,
-      label: "Inscripciones",
-      to: "/app/inscripciones"
     }
   ],
   docente: [
@@ -111,7 +86,7 @@ const quickAccessByRole = {
       to: "/app/boletines"
     }
   ]
-}
+};
 
 // KPIs mejorados y específicos por rol - SOLO LOS MÁS IMPORTANTES
 const statsByRole = {
@@ -625,7 +600,7 @@ export default function Dashboard() {
                   <p>Inasistencias, calificaciones</p>
                   <p>bajas y eventos del sistema</p>
                 </div>
-                        <Link to="/app/alertas" className="w-full">
+          <Link to="/app/alertas" className="w-full">
           <Button variant={"destructive"} className="mt-4 w-full">Ver Alertas</Button>
         </Link>
               </div>
