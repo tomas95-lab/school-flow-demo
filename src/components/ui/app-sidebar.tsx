@@ -71,7 +71,6 @@ const data = {
       isActive: false,
       items: [
         { title: "General", url: "/app/general", isActive: false },
-        { title: "Inscripciones", url: "/app/inscripciones", isActive: false },
       ],
     },
   ],

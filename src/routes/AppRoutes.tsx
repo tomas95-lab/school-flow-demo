@@ -14,12 +14,15 @@ import GestionCursosMaterias from "@/pages/GestionCursos&Materias";
 import TestObservaciones from "@/pages/TestObservaciones";
 import Mensajes from "@/pages/Mensajes";
 import DetallesMuro from "@/components/DetallesMuro";
+import InscripcionesOverview from "@/components/InscripcionesOverview";
+import ReportesInteligentesOverview from "@/components/ReportesInteligentesOverview";
+import ExplicacionBoletinOverview from "@/components/ExplicacionBoletinOverview";
+import BotOverview from "@/components/BotOverview";
 
 // import ReportesInteligentesOverview from "@/components/ReportesInteligentesOverview";
 // import ExplicacionBoletinOverview from "@/components/ExplicacionBoletinOverview";
 // import GeneralOverview from "@/components/GeneralOverview";
 // import BotOverview from "@/components/BotOverview";
-// import InscripcionesOverview from "@/components/InscripcionesOverview";
 
 export function AppRoutes() {
   return (
@@ -40,11 +43,14 @@ export function AppRoutes() {
           <Route path="/app/test-observaciones" element={<TestObservaciones />} />
           <Route path="/app/mensajes" element={<Mensajes />} />
           <Route path="/app/mensajes/detalles" element={<DetallesMuro />} />
+          <Route path="/app/inscripciones" element={<InscripcionesOverview />} />
+          <Route path="/app/reportes" element={<ReportesInteligentesOverview />} />
+          <Route path="/app/explicacion-boletin" element={<ExplicacionBoletinOverview />} />
+          <Route path="/app/bot" element={<BotOverview />} />
           {/* <Route path="/app/reportes" element={<ReportesInteligentesOverview />} />
           <Route path="/app/explicacion-boletin" element={<ExplicacionBoletinOverview />} />
           <Route path="/app/general" element={<GeneralOverview />} />
-          <Route path="/app/bot" element={<BotOverview />} />
-          <Route path="/app/inscripciones" element={<InscripcionesOverview />} /> */}
+          <Route path="/app/bot" element={<BotOverview />} /> */}
         </Route>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" />} />

@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GlobalErrorProvider } from './components/GlobalErrorProvider'
 import { Toaster } from './components/ui/sonner'
-import { AuthDebugger } from './components/AuthDebugger'
+// import { AuthDebugger } from './components/AuthDebugger'
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
         <AuthProvider>
           <AppRoutes />
           <Toaster />
-          <AuthDebugger />
+          {/* <AuthDebugger /> */}
         </AuthProvider>
       </GlobalErrorProvider>
     </ErrorBoundary>

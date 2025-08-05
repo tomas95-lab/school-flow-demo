@@ -2,27 +2,20 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { CourseCard } from "./CourseCard";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
 import { 
   MessageSquare, 
-  Users, 
   TrendingUp, 
   Activity,
   MessageCircle,
   Clock,
   Star,
   BookOpen,
-  MessageCircle as MessageCircleIcon,
-  ArrowRight,
-  Shield,
-  Settings,
   BarChart3
 } from "lucide-react";
 import { StatsCard } from "./StatCards";
 import { useMemo, useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import type { Message, Course } from "@/types";
-import { useNavigate } from "react-router-dom";
 
 export default function AdminMensajesOverview() {
     const { user } = useContext(AuthContext);
@@ -30,7 +23,6 @@ export default function AdminMensajesOverview() {
     const { data: courses } = useFirestoreCollection<Course>("courses");
     const { data: students } = useFirestoreCollection("students");
     const { data: teachers } = useFirestoreCollection("teachers");
-    const navigate = useNavigate();
 
     // Calcular estadísticas del sistema
     const stats = useMemo(() => {
