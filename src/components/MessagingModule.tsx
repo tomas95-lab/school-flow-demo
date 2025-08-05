@@ -250,15 +250,6 @@ export default function MessagingModule() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Card className="px-6 py-3">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-indigo-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Período Actual</p>
-                    <p className="font-semibold text-gray-900">2025 - Semestre I</p>
-                  </div>
-                </div>
-              </Card>
             </div>
           </div>
         </div>

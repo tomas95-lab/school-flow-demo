@@ -177,19 +177,6 @@ export default function Calificaciones() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg">
-                      <BookOpen className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Período Actual</p>
-                      <p className="font-bold text-gray-900">2025 - Semestre I</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
               {canRegisterGrades && (
                 <Button 
                   onClick={() => setActiveView("register")}

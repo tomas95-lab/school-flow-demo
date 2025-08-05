@@ -414,19 +414,7 @@ export default function InscripcionesOverview() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg">
-                      <UserPlus className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Período Actual</p>
-                      <p className="font-bold text-gray-900">2025 - Semestre I</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
               <Button 
                 onClick={handleExportarCSV}
                 className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
