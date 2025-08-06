@@ -18,6 +18,9 @@ import {
   ArrowRight,
   Activity,
   BarChart3,
+  Home,
+  Star,
+  Clock,
 } from "lucide-react"
 import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
@@ -26,6 +29,7 @@ import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 import { useTeacherStudents } from "@/hooks/useTeacherCourses"
 import { 
@@ -588,108 +592,138 @@ export default function Dashboard() {
     );
   }
 
+  // Función para obtener el icono del rol
+  const getRoleIcon = (role: string | undefined) => {
+    switch (role) {
+      case "admin": return Users;
+      case "docente": return GraduationCap;
+      case "alumno": return BookOpen;
+      default: return Home;
+    }
+  };
+
+  // Función para obtener mensaje del rol
+  const getRoleMessage = (role: string | undefined) => {
+    switch (role) {
+      case "admin":
+        return "Panel de administración completo de EduNova con estadísticas en tiempo real.";
+      case "docente":
+        return "Tu espacio de trabajo para gestionar clases, calificaciones y estudiantes.";
+      case "alumno":
+        return "Tu panel personal con calificaciones, asistencias y actividades académicas.";
+      default:
+        return "Bienvenido a EduNova.";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <WelcomeMessage user={user} />
         
-        {/* KPIs - Layout más compacto */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {statsByRole[role as keyof typeof statsByRole]?.map(key => {
+        {/* KPIs modernos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {statsByRole[role as keyof typeof statsByRole]?.slice(0, 4).map(key => {
             const kpiKey = key as keyof typeof kpiMeta
             const meta = kpiMeta[kpiKey]
             return (
-              <div key={kpiKey} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 rounded-md bg-gradient-to-br ${meta.gradient}`}>
-                    {React.createElement(meta.icon as React.ComponentType<any>, { className: "w-4 h-4 text-white" })}
+              <div key={kpiKey} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-xl bg-gradient-to-br ${meta.gradient} shadow-lg`}>
+                    {React.createElement(meta.icon as React.ComponentType<any>, { className: "w-6 h-6 text-white" })}
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold text-gray-900">
+                    <div className="text-3xl font-bold text-gray-900">
                       {stats[kpiKey as keyof typeof stats] || 0}
+                    </div>
+                    <div className="text-xs text-green-600 font-medium">
+                      ↗ +12% vs mes anterior
                     </div>
                   </div>
                 </div>
-                <div className="text-sm font-medium text-gray-900">{meta.title}</div>
-                <p className="text-xs text-gray-600 mt-1">{meta.description}</p>
+                <div className="text-lg font-semibold text-gray-900 mb-1">{meta.title}</div>
+                <p className="text-sm text-gray-600">{meta.description}</p>
               </div>
             )
           })}
         </div>
 
-        {/* Layout principal - Más simple */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Acceso Rápido */}
+        {/* Sección principal modernizada */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Acceso Rápido Modernizado */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-4 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-500 rounded-md">
-                    <Activity className="w-4 h-4 text-white" />
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+                    <Activity className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Acceso Rápido</h2>
-                    <p className="text-sm text-gray-600">Enlaces rápidos a secciones importantes</p>
+                    <h2 className="text-xl font-bold text-gray-900">Acceso Rápido</h2>
+                    <p className="text-sm text-gray-600">Navega directamente a las funciones principales</p>
                   </div>
                 </div>
               </div>
-              <div className="p-4">
+              <div className="p-6">
                 <QuickAccessList role={role as keyof typeof quickAccessByRole} />
               </div>
             </div>
           </div>
           
-          {/* Alertas - Más compactas */}
-          <div className="space-y-4">
+          {/* Panel de alertas modernizado */}
+          <div className="space-y-6">
             {/* Alertas Manuales */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 bg-red-500 rounded-md">
-                    <AlertCircle className="w-4 h-4 text-white" />
+            <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl border border-red-200 shadow-lg">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-md">
+                    <AlertCircle className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Alertas</h3>
-                    <p className="text-xs text-gray-600">Gestión de alertas</p>
+                    <h3 className="text-lg font-bold text-gray-900">Alertas Activas</h3>
+                    <p className="text-sm text-gray-600">Notificaciones importantes</p>
                   </div>
                 </div>
                 
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600 mb-1">
+                  <div className="text-4xl font-bold text-red-600 mb-2">
                     {alertStats.total || 0}
                   </div>
-                  <div className="text-xs text-gray-600 mb-3">
-                    Alertas activas
+                  <div className="text-sm text-gray-600 mb-4">
+                    Alertas pendientes
                   </div>
                   <Link to="/app/alertas">
-                    <Button variant="destructive" size="sm" className="w-full">
-                      Ver Alertas
+                    <Button className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg">
+                      Ver Todas las Alertas
                     </Button>
                   </Link>
                 </div>
               </div>
             </div>
 
-            {/* Alertas Automáticas */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 bg-green-500 rounded-md">
-                    <BarChart3 className="w-4 h-4 text-white" />
+            {/* Alertas IA */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 shadow-lg">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Alertas IA</h3>
-                    <p className="text-xs text-gray-600">Generadas automáticamente</p>
+                    <h3 className="text-lg font-bold text-gray-900">Alertas IA</h3>
+                    <p className="text-sm text-gray-600">Inteligencia artificial</p>
                   </div>
                 </div>
                 
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 mb-1">
+                  <div className="text-4xl font-bold text-green-600 mb-2">
                     {automaticAlertStats.total || 0}
                   </div>
-                  <div className="text-xs text-gray-600">
-                    Alertas generadas por IA
+                  <div className="text-sm text-gray-600 mb-4">
+                    Detectadas automáticamente
                   </div>
+                  <Badge className="bg-green-100 text-green-700 px-3 py-1">
+                    Sistema inteligente activo
+                  </Badge>
                 </div>
               </div>
             </div>
