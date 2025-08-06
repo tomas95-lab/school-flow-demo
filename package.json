@@ -6,8 +6,28 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "tsc -b && vite build --mode production",
+    "preview": "vite preview",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "deploy": "npm run build:prod && firebase deploy",
+    "deploy:hosting": "npm run build:prod && firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "firebase:login": "firebase login",
+    "firebase:init": "firebase init",
+    "firebase:use": "firebase use",
+    "firebase:projects": "firebase projects:list",
+    "vercel:deploy": "vercel --prod",
+    "vercel:dev": "vercel dev",
+    "vercel:build": "npm run build:prod && vercel --prod",
+    "clean-collections": "node scripts/clean-collections.js",
+    "clean-firebase": "npm run clean-collections",
+    "list-collections": "node scripts/list-collections.js"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
@@ -27,6 +47,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
     "firebase": "^11.8.1",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
@@ -45,18 +66,24 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.2",
     "@types/react-date-range": "^1.4.10",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react-swc": "^3.9.0",
+    "@vitest/ui": "^3.2.4",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "jsdom": "^26.1.0",
     "tw-animate-css": "^1.3.4",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
   }
 }

@@ -37,13 +37,28 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private logError = (error: Error, errorInfo: ErrorInfo) => {
-    // TODO: Implement proper error logging service
-    // For now, just log to console
-    console.group('🚨 Application Error');
-    console.error('Error:', error);
-    console.error('Error Info:', errorInfo);
-    console.error('Component Stack:', errorInfo.componentStack);
-    console.groupEnd();
+    // Log error to console in development
+    if (import.meta.env.DEV) {
+      console.group('🚨 Application Error');
+      console.error('Error:', error);
+      console.error('Error Info:', errorInfo);
+      console.error('Component Stack:', errorInfo.componentStack);
+      console.groupEnd();
+    }
+
+    // In production, log to external service
+    if (import.meta.env.PROD) {
+      // TODO: Implement Firebase Analytics or Sentry
+      // For now, we could send to Firebase Functions
+      console.error('Production Error:', {
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      });
+    }
   };
 
   private handleRetry = () => {
@@ -77,7 +92,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Ha ocurrido un error inesperado. Nuestro equipo ha sido notificado.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details className="mb-4 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
                   Ver detalles del error (solo desarrollo)

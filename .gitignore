@@ -36,3 +36,9 @@ firestore.rules
 .scripts
 # Scripts directory
 src/scripts/
+
+# Vercel
+.vercel
+.env.local
+.env.production
+.env.development
