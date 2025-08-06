@@ -128,13 +128,13 @@ export default function GestionCursosMaterias() {
   const getRoleMessage = (role: string | undefined) => {
     switch (role) {
       case "admin":
-        return "Administra cursos, materias y asignaturas del sistema educativo completo.";
+        return "Administra cursos, materias y asignaturas de EduNova de forma completa.";
       case "docente":
         return "Gestiona tus cursos asignados y las materias que impartes.";
       case "alumno":
         return "Consulta información sobre tus cursos y materias inscritas.";
       default:
-        return "Panel de gestión académica del sistema educativo.";
+        return "Panel de gestión académica de EduNova.";
     }
   };
 
@@ -568,7 +568,7 @@ export default function GestionCursosMaterias() {
                       {user?.role === "alumno" && "Estudiante"}
                     </Badge>
                     <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">Sistema Educativo</span>
+                    <span className="text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
               </div>
@@ -1012,7 +1012,7 @@ export default function GestionCursosMaterias() {
                           className={course.status === 'active' ? 'text-orange-600' : 'text-gray-600'}
                         >
                           {course.status === 'active' ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                        </Button>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

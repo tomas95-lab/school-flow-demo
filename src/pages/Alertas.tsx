@@ -110,7 +110,7 @@ export default function Alertas() {
                       {user?.role === "alumno" && "Estudiante"}
                     </Badge>
                     <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">Sistema Educativo</span>
+                    <span className="text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
               </div>

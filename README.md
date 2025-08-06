@@ -1,8 +1,8 @@
-# 🏫 SchoolFlow MVP - Sistema de Gestión Educativa
+# 🏫 EduNova - Sistema de Gestión Educativa Innovadora
 
 ## 📋 Descripción del Proyecto
 
-**SchoolFlow MVP** es una plataforma web completa de gestión escolar desarrollada con **React**, **TypeScript** y **Vite**. Utiliza **Firebase** (Firestore y Auth) como backend para almacenamiento de datos y autenticación de usuarios. El sistema proporciona una solución integral para la administración moderna de instituciones educativas.
+**EduNova** es una plataforma web completa de gestión escolar desarrollada con **React**, **TypeScript** y **Vite**. Utiliza **Firebase** (Firestore y Auth) como backend para almacenamiento de datos y autenticación de usuarios. El sistema proporciona una solución integral para la administración moderna de instituciones educativas, combinando educación con innovación tecnológica.
 
 ## 🚀 Estado Actual del Sistema
 
@@ -346,7 +346,7 @@ chore: tareas de mantenimiento
 
 ## 🎉 Conclusión
 
-**SchoolFlow MVP** es un sistema educativo completo y funcional que proporciona todas las herramientas necesarias para la gestión moderna de una institución educativa. Con su arquitectura robusta, interfaz moderna y funcionalidades avanzadas, está listo para ser implementado en producción.
+**EduNova** es un sistema educativo completo y funcional que proporciona todas las herramientas necesarias para la gestión moderna de una institución educativa. Con su arquitectura robusta, interfaz moderna y funcionalidades avanzadas, está listo para ser implementado en producción.
 
 ### **Puntos Destacados**
 - ✅ **100% funcional** para uso en producción

@@ -67,13 +67,13 @@ export default function Calificaciones() {
   const getRoleMessage = (role: string | undefined) => {
     switch (role) {
       case "admin":
-        return "Gestiona y supervisa las calificaciones de todos los cursos, docentes y estudiantes del sistema educativo.";
+        return "Gestiona y supervisa las calificaciones de todos los cursos, docentes y estudiantes de EduNova.";
       case "docente":
         return "Registra y administra las calificaciones de tus materias y cursos asignados.";
       case "alumno":
         return "Consulta tu historial de calificaciones y mantente al día con tu rendimiento académico.";
       default:
-        return "Panel de gestión de calificaciones del sistema educativo.";
+        return "Panel de gestión de calificaciones de EduNova.";
     }
   };
 
@@ -168,7 +168,7 @@ export default function Calificaciones() {
                       {user?.role === "alumno" && "Estudiante"}
                     </Badge>
                     <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">Sistema Educativo</span>
+                    <span className="text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
               </div>
