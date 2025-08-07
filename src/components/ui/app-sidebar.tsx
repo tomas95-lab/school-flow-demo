@@ -1,6 +1,7 @@
 import * as React from "react"
 import { useContext } from "react"
 import { AuthContext } from "@/context/AuthContext"
+import { usePermission } from "@/hooks/usePermission"
 
 import {
   Sidebar,
@@ -81,23 +82,21 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useContext(AuthContext)
-  const userRole = user?.role || 'alumno'
+  const { can } = usePermission()
 
   // Filtrar elementos del menú según el rol del usuario
   const filteredNavMain = data.navMain.map(group => {
     // Si es el grupo "Gestión", filtrar elementos según el rol
     if (group.title === "Gestión") {
       const filteredItems = group.items.filter(item => {
-        // Solo mostrar "Usuarios" si es admin
         if (item.title === "Usuarios") {
-          return userRole === 'admin'
+          return can("canManageUsers" as any)
         }
-        // Mostrar otros elementos según el rol
         if (item.title === "Cursos y Materias") {
-          return userRole === 'admin' || userRole === 'docente'
+          return can("canManageCourses" as any) || can("canAssignSections" as any)
         }
         if (item.title === "Inscripciones") {
-          return userRole === 'admin'
+          return can("canManageCourses" as any)
         }
         return true
       })

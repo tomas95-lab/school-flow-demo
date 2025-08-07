@@ -6,6 +6,7 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig"; // Ajusta la ruta según tu estructura
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import { validateForm, formValidations } from "@/utils/validation";
 
 // Tipos mejorados
 interface FormData {
@@ -78,30 +79,29 @@ export default function CrearCalificacion({
     setAbsentStudentIds([]);
   };
 
-  const validateForm = (): boolean => {
+  const runValidation = (): boolean => {
+    const schema = formValidations.grade;
+    const result = validateForm(
+      {
+        studentId: selectedStudentIds[0] || "",
+        subjectId: subjectId || "",
+        valor: formData.valor,
+        fecha: formData.fecha,
+        actividad: formData.actividad,
+      },
+      schema as any
+    );
+
     const newErrors: Record<string, string> = {};
-
-    if (!formData.actividad.trim()) {
-      newErrors.actividad = 'La actividad es requerida';
-    }
-
-    if (!formData.valor.trim()) {
-      newErrors.valor = 'El valor es requerido';
-    } else {
-      const valor = parseFloat(formData.valor);
-      if (isNaN(valor) || valor < 0 || valor > 10) {
-        newErrors.valor = 'El valor debe estar entre 0 y 10';
+    if (!result.isValid) {
+      for (const err of result.errors) {
+        const [field, message] = err.split(": ");
+        newErrors[field] = message;
       }
     }
-
-    if (!formData.fecha) {
-      newErrors.fecha = 'La fecha es requerida';
-    }
-
     if (selectedStudentIds.length === 0) {
       newErrors.students = 'Debe seleccionar al menos un estudiante';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -116,7 +116,7 @@ export default function CrearCalificacion({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!runValidation()) return;
 
     setSaving(true);
     setErrors({});

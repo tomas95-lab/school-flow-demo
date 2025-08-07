@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { collection, onSnapshot, getFirestore, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, getFirestore, query, orderBy, limit, type QueryConstraint } from "firebase/firestore";
 import type { DocumentData } from "firebase/firestore";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +15,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
     orderBy?: string; 
     enableCache?: boolean;
     dependencies?: unknown[];
+    constraints?: QueryConstraint[];
   }
 ) {
   const [data, setData] = useState<T[]>([]);
@@ -53,18 +54,22 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       }
 
       // Crear query con opciones
-      let q = collection(db, path);
+      let qRef = collection(db, path);
+      let q = qRef as any;
       if (options?.orderBy) {
-        q = query(q, orderBy(options.orderBy));
+        q = query(qRef, orderBy(options.orderBy));
       }
       if (options?.limit) {
-        q = query(q, limit(options.limit));
+        q = query(qRef, limit(options.limit));
+      }
+      if (options?.constraints && options.constraints.length > 0) {
+        q = query(qRef, ...options.constraints);
       }
 
       const unsubscribe = onSnapshot(
-        q as any,
-        (snapshot) => {
-          const docs = snapshot.docs.map((doc) => ({
+        q,
+        (snapshot: any) => {
+          const docs = snapshot.docs.map((doc: any) => ({
             ...(doc.data() as T),
             firestoreId: doc.id,
           }));
@@ -162,16 +167,16 @@ export function useFirestoreCollectionOnce<T extends DocumentData & { firestoreI
 
       try {
         const { getDocs } = await import('firebase/firestore');
-        let q: unknown = collection(db, path);
-        
+        const colRef = collection(db, path);
+        let qRef = colRef as any;
         if (options?.orderBy) {
-          q = query(q, orderBy(options.orderBy));
+          qRef = query(colRef, orderBy(options.orderBy));
         }
         if (options?.limit) {
-          q = query(q, limit(options.limit));
+          qRef = query(colRef, limit(options.limit));
         }
 
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(qRef);
         const docs = snapshot.docs.map((doc) => ({
           ...(doc.data() as T),
           firestoreId: doc.id,

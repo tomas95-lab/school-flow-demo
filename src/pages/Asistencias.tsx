@@ -1,11 +1,13 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
-import { Calendar, BookOpen, Plus, Lock, AlertTriangle, Brain, Award, TrendingUp, Users, CheckCircle } from "lucide-react";
+import { Calendar, BookOpen, Plus, AlertTriangle, Brain, Award, TrendingUp, Users, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { AccessDenied } from "@/components/AccessDenied";
 import { Separator } from "@/components/ui/separator";
 
 // Componentes de vista por rol
@@ -20,6 +22,7 @@ import AttendanceAlert from "@/components/AttendanceAlert";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
+import { usePermission } from "@/hooks/usePermission";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -33,10 +36,19 @@ interface TabItem {
 
 export default function Asistencias() {
   const { user, loading: userLoading } = useContext(AuthContext);
-  const { loading: coursesLoading } = useFirestoreCollection("courses");
-  const { data: asistencias } = useFirestoreCollection("attendances");
-  const { data: students } = useFirestoreCollection("students");
-  const { data: courses } = useFirestoreCollection("courses");
+  const roleScope = user?.role;
+  const { loading: coursesLoading } = useFirestoreCollection("courses", {
+    constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+  });
+  const { data: asistencias } = useFirestoreCollection("attendances", {
+    constraints: roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : []
+  });
+  const { data: students } = useFirestoreCollection("students", {
+    constraints: roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : []
+  });
+  const { data: courses } = useFirestoreCollection("courses", {
+    constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+  });
   const { data: subjects } = useFirestoreCollection("subjects");
   const [activeView, setActiveView] = useState("overview");
 
@@ -104,15 +116,16 @@ export default function Asistencias() {
     }
   };
 
-  // Verificar permisos de acceso
-  const canAccessAttendance = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
-  const canRegisterAttendance = user?.role === "docente";
-  const canViewCalendar = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
+  // Verificar permisos de acceso (centralizado)
+  const { can } = usePermission();
+  const canAccessAttendance = Boolean(user);
+  const canRegisterAttendance = can("canEditAttendance");
+  const canViewCalendar = Boolean(user);
 
   // Filtrar pestañas según permisos
   const availableTabs = tabs.filter(tab => {
-    if (tab.requiresPermission && tab.permissionCheck) {
-      return tab.permissionCheck(user?.role);
+    if (tab.requiresPermission) {
+      return can("canEditAttendance");
     }
     return true;
   });
@@ -130,30 +143,7 @@ export default function Asistencias() {
 
   // Si no tiene permisos de acceso
   if (!canAccessAttendance) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Acceso Restringido
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  No tienes permisos para acceder al módulo de asistencias.
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Contacta al administrador del sistema si crees que esto es un error.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <AccessDenied message="No tienes permisos para acceder al módulo de asistencias." />
   }
 
   // Generar datos para charts

@@ -19,6 +19,7 @@ import ReportesInteligentesOverview from "@/components/ReportesInteligentesOverv
 import ExplicacionBoletinOverview from "@/components/ExplicacionBoletinOverview";
 import BotOverview from "@/components/BotOverview";
 import { PrivateRoute } from "./PrivateRoute";
+import { PermissionRoute } from "./PermissionRoute";
 
 // import ReportesInteligentesOverview from "@/components/ReportesInteligentesOverview";
 // import ExplicacionBoletinOverview from "@/components/ExplicacionBoletinOverview";
@@ -46,8 +47,22 @@ export function AppRoutes() {
           <Route path="/app/boletines" element={<Boletines />} />
           <Route path="/app/boletines/cursos" element={<BoletinesCurso />} />
           <Route path="/app/alertas" element={<Alertas />} />
-          <Route path="/app/usuarios" element={<Usuarios />} />
-          <Route path="/app/gestion-cursos-materias" element={<GestionCursosMaterias />} />
+          <Route
+            path="/app/usuarios"
+            element={
+              <PermissionRoute permission={"canManageUsers"}>
+                <Usuarios />
+              </PermissionRoute>
+            }
+          />
+          <Route
+            path="/app/gestion-cursos-materias"
+            element={
+              <PermissionRoute permission={"canManageCourses"}>
+                <GestionCursosMaterias />
+              </PermissionRoute>
+            }
+          />
           <Route path="/app/test-observaciones" element={<TestObservaciones />} />
           <Route path="/app/mensajes" element={<Mensajes />} />
           <Route path="/app/mensajes/detalles" element={<DetallesMuro />} />

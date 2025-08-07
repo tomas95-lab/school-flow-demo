@@ -1,36 +1,15 @@
 import React from "react"
-import {
-  Users,
-  GraduationCap,
-  BookOpen,
-  AlertCircle,
-  PlusCircle,
-  Settings,
-  Book,
-  Sunrise, 
-  Sun, 
-  Moon,
-  TrendingUp,
-  Calendar,
-  FileText,
-  Award,
-  CheckCircle,
-  ArrowRight,
-  Activity,
-  BarChart3,
-  Home,
-  Star,
-  Clock,
-} from "lucide-react"
-import { ReutilizableCard } from "@/components/ReutilizableCard"
+import { Users, GraduationCap, BookOpen, AlertCircle, PlusCircle, Settings, Book, Sunrise, Sun, Moon, TrendingUp, Calendar, FileText, Award, CheckCircle, ArrowRight, Activity, BarChart3, Home } from "lucide-react"
+// import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
 import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
-import { StatsCard } from "@/components/StatCards"
+// import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
+import { where } from "firebase/firestore"
 import { useTeacherStudents } from "@/hooks/useTeacherCourses"
 import { 
   generarAlertasAutomaticas, 
@@ -286,13 +265,14 @@ export default function Dashboard() {
   });
 
   // Usar hooks optimizados con cache
-  const { data: students } = useFirestoreCollection("students", { enableCache: true });
-  const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
-  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
-  const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true });
-  const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true });
-  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
-  const { data: alerts } = useFirestoreCollection("alerts", { enableCache: true });
+  const roleScope = user?.role
+  const { data: students } = useFirestoreCollection("students", { enableCache: true, constraints: roleScope === 'docente' ? [where('docenteId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : [] });
+  const { data: courses } = useFirestoreCollection("courses", { enableCache: true, constraints: roleScope === 'docente' ? [where('docenteId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : [] });
+  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true, constraints: roleScope === 'docente' ? [where('firestoreId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [] : [] });
+  const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [] });
+  const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [] });
+  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true, constraints: roleScope === 'docente' ? [where('docenteId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [] : [] });
+  const { data: alerts } = useFirestoreCollection("alerts", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [] });
 
   // Hook para obtener estudiantes del docente
   const { teacherStudents } = useTeacherStudents(user?.teacherId);

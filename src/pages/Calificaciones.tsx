@@ -1,11 +1,13 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
-import { BookOpen, Plus, Calendar, Lock, AlertTriangle, Brain, Award, TrendingUp, Users } from "lucide-react";
+import { BookOpen, Plus, Calendar, AlertTriangle, Brain, Award, TrendingUp, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { AccessDenied } from "@/components/AccessDenied";
 import { Separator } from "@/components/ui/separator";
 
 // Componentes de vista por rol
@@ -17,7 +19,8 @@ import AlumnoCalificacionesOverview from "@/components/AlumnoCalificacionesOverv
 import QuickGradeRegister from "@/components/QuickGradeRegister";
 import GradesCalendar from "@/components/GradesCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
-import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
+// Charts import no utilizado en esta vista
+import { usePermission } from "@/hooks/usePermission";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -31,7 +34,10 @@ interface TabItem {
 
 export default function Calificaciones() {
   const { user, loading: userLoading } = useContext(AuthContext);
-  const { loading: coursesLoading } = useFirestoreCollection("courses");
+  const roleScope = user?.role;
+  const { loading: coursesLoading } = useFirestoreCollection("courses", {
+    constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+  });
   const [activeView, setActiveView] = useState("overview");
 
   // Configuración de pestañas
@@ -92,15 +98,16 @@ export default function Calificaciones() {
     }
   };
 
-  // Verificar permisos de acceso
-  const canAccessGrades = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
-  const canRegisterGrades = user?.role === "docente";
-  const canViewCalendar = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
+  // Verificar permisos de acceso (centralizado)
+  const { can } = usePermission();
+  const canAccessGrades = Boolean(user);
+  const canRegisterGrades = can("canEditGrades");
+  const canViewCalendar = Boolean(user);
 
   // Filtrar pestañas según permisos
   const availableTabs = tabs.filter(tab => {
-    if (tab.requiresPermission && tab.permissionCheck) {
-      return tab.permissionCheck(user?.role);
+    if (tab.requiresPermission) {
+      return can("canEditGrades");
     }
     return true;
   });
@@ -118,30 +125,7 @@ export default function Calificaciones() {
 
   // Si no tiene permisos de acceso
   if (!canAccessGrades) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Acceso Restringido
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  No tienes permisos para acceder al módulo de calificaciones.
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Contacta al administrador del sistema si crees que esto es un error.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <AccessDenied message="No tienes permisos para acceder al módulo de calificaciones." />
   }
 
   const RoleIcon = getRoleIcon(user?.role);

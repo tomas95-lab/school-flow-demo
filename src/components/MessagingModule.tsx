@@ -10,6 +10,8 @@ import { LoadingState } from "@/components/LoadingState";
 import OverviewDashboard from "./messaging/OverviewDashboard";
 import ConversationsView from "./messaging/ConversationsView";
 import AnnouncementsView from "./messaging/AnnouncementsView";
+import AnnouncementsPlaceholder from "./messaging/AnnouncementsPlaceholder";
+import ConversationsPlaceholder from "./messaging/ConversationsPlaceholder";
 import WallView from "./messaging/WallView";
 import AdminMensajesOverview from "./AdminMensajesOverview";
 import TeacherMensajesOverview from "./TeacherMensajesOverview";
@@ -81,7 +83,8 @@ export default function MessagingModule() {
     const tabParam = searchParams.get('tab') as TabType;
     if (tabParam && tabs.some(tab => tab.id === tabParam)) {
       const targetTab = tabs.find(tab => tab.id === tabParam);
-      if (targetTab && targetTab.enabled && hasRoleAccess(targetTab)) {
+      if (targetTab && hasRoleAccess(targetTab)) {
+        // Permitir navegar también a pestañas en desarrollo para mostrar placeholder
         setActiveTab(tabParam);
       } else {
         // Si la pestaña no está habilitada o no tiene acceso, redirigir a overview
@@ -107,6 +110,9 @@ export default function MessagingModule() {
     }
 
     if (!tab.enabled) {
+      // Permitir seleccionar y mostrar placeholder en desarrollo
+      setActiveTab(tabId);
+      setSearchParams({ tab: tabId });
       toast.info("Esta funcionalidad está en desarrollo");
       return;
     }
@@ -202,9 +208,9 @@ export default function MessagingModule() {
           <OverviewDashboard />
         );
       case "conversations":
-        return <ConversationsView />;
+        return tabs.find(t => t.id === "conversations")?.enabled ? <ConversationsView /> : <ConversationsPlaceholder />;
       case "announcements":
-        return <AnnouncementsView />;
+        return tabs.find(t => t.id === "announcements")?.enabled ? <AnnouncementsView /> : <AnnouncementsPlaceholder />;
       case "wall":
         return <WallView />;
       default:
@@ -283,7 +289,6 @@ export default function MessagingModule() {
                   <button
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
-                    disabled={!tab.enabled}
                     className={`
                       flex items-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-200 relative
                       ${isFirst ? 'rounded-tl-2xl' : ''} 
@@ -292,7 +297,7 @@ export default function MessagingModule() {
                         ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 border-b-2 border-purple-500' 
                         : tab.enabled 
                           ? 'text-gray-600 hover:text-purple-600 hover:bg-purple-50/50' 
-                          : 'text-gray-400 cursor-not-allowed'
+                          : 'text-gray-400'
                       }
                     `}
                   >

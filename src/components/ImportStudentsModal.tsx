@@ -15,6 +15,7 @@ import {
   Plus
 } from "lucide-react";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { commonValidations } from "@/utils/validation";
 import { db } from "@/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import ReutilizableDialog from "@/components/DialogReutlizable";
@@ -59,12 +60,10 @@ export default function ImportStudentsModal({ open: externalOpen, onOpenChange: 
     const warnings: string[] = [];
 
     // Validar campos requeridos
-    if (!student.nombre || student.nombre.trim() === '') {
-      errors.push('Nombre es requerido');
-    }
-    if (!student.apellido || student.apellido.trim() === '') {
-      errors.push('Apellido es requerido');
-    }
+    const nameError = commonValidations.name.custom?.(student.nombre || "");
+    if (nameError) errors.push(`Nombre: ${nameError}`);
+    const lastNameError = commonValidations.name.custom?.(student.apellido || "");
+    if (lastNameError) errors.push(`Apellido: ${lastNameError}`);
     if (!student.cursoId || student.cursoId.trim() === '') {
       errors.push('cursoId es requerido');
     }
@@ -79,10 +78,8 @@ export default function ImportStudentsModal({ open: externalOpen, onOpenChange: 
 
     // Validar email si está presente
     if (student.email && student.email.trim() !== '') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(student.email)) {
-        errors.push('Email no tiene formato válido');
-      }
+      const emailError = commonValidations.email.custom?.(student.email);
+      if (emailError) errors.push(`Email: ${emailError}`);
     }
 
     // Validar status si está presente

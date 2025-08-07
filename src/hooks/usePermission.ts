@@ -6,18 +6,19 @@ type PermissionKey = keyof (typeof rolePermissions)[keyof typeof rolePermissions
 
 export function usePermission() {
   const { user } = useContext(AuthContext);
-  const role = user?.role as keyof typeof rolePermissions | undefined;
+  const userRole = user?.role;
 
-  const permissions = useMemo(() => {
-    if (!role) return {} as Record<string, boolean>;
-    return rolePermissions[role] as Record<string, boolean>;
-  }, [role]);
+  const { role, permissions } = useMemo(() => {
+    const validRole = (userRole && userRole in rolePermissions)
+      ? (userRole as keyof typeof rolePermissions)
+      : undefined;
+    const perms = validRole ? rolePermissions[validRole] : ({} as Record<string, boolean>);
+    return { role: validRole, permissions: perms as Record<string, boolean> };
+  }, [userRole]);
 
-  const can = (permission: PermissionKey) => {
-    return Boolean(permissions[permission as string]);
-  };
+  const can = (permission: PermissionKey) => Boolean((permissions as any)?.[permission as string]);
 
-  return { role, permissions, can };
+  return { role: userRole, permissions, can };
 }
 
 

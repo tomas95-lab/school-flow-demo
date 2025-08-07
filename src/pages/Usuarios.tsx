@@ -1,33 +1,24 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
-import { 
-  Users, 
-  GraduationCap, 
-  UserCheck,
-  Shield,
-  Plus,
-  Lock,
-  AlertTriangle,
-  Award,
-  TrendingUp,
-  UserPlus
-} from "lucide-react";
+import { Users, GraduationCap, UserCheck, Shield, Plus, AlertTriangle, Award, TrendingUp, UserPlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { AccessDenied } from "@/components/AccessDenied";
 import { Separator } from "@/components/ui/separator";
 import { ReutilizableCard } from "@/components/ReutilizableCard";
 import { StatsCard } from "@/components/StatCards";
 import { DataTable } from "@/components/data-table";
 import { useColumnsUsuarios } from "../app/usuarios/columns";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { UserModal } from "@/components/UserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 import ImportStudentsModal from "@/components/ImportStudentsModal";
+import { usePermission } from "@/hooks/usePermission";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -105,10 +96,12 @@ export default function Usuarios() {
     }
   };
 
-  // Verificar permisos de acceso
-  const canAccessUsuarios = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
-  const canCreateUsuarios = user?.role === "admin";
-  const canImportUsuarios = user?.role === "admin";
+  // Verificar permisos de acceso (centralizado)
+  const { can } = usePermission();
+  const canAccessUsuarios = Boolean(user); // acceso general si está autenticado
+  const canCreateUsuarios = can("canManageUsers");
+  // Import masivo usa misma permisión que crear/gestionar
+  const canImportUsuarios = can("canManageUsers");
 
   // Filtrar pestañas según permisos
   const availableTabs = tabs.filter(tab => {
@@ -122,7 +115,10 @@ export default function Usuarios() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const usersSnapshot = await getDocs(collection(db, "users"));
+      const colRef = collection(db, "users");
+      // Para no admins, limitar vista a roles no administrativos
+      const qRef = user?.role === 'admin' ? colRef : query(colRef, where('role', 'in', ['docente', 'alumno']));
+      const usersSnapshot = await getDocs(qRef);
       const usersData = usersSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -193,30 +189,7 @@ export default function Usuarios() {
 
   // Si no tiene permisos de acceso
   if (!canAccessUsuarios) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Acceso Restringido
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  No tienes permisos para acceder al módulo de usuarios.
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Contacta al administrador del sistema si crees que esto es un error.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <AccessDenied message="No tienes permisos para acceder al módulo de usuarios." />
   }
 
   const RoleIcon = getRoleIcon(user?.role);
@@ -292,23 +265,23 @@ export default function Usuarios() {
             </div>
             <div className="flex items-center gap-2">
               {canCreateUsuarios && (
-                <>
-                  <Button 
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Crear Usuario
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => setShowImportModal(true)}
-                    className="hover:bg-gray-50"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Importar
-                  </Button>
-                </>
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Usuario
+                </Button>
+              )}
+              {canImportUsuarios && (
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowImportModal(true)}
+                  className="hover:bg-gray-50"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Importar
+                </Button>
               )}
             </div>
           </div>
