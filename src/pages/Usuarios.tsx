@@ -13,6 +13,7 @@ import {
   TrendingUp,
   UserPlus
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +63,8 @@ export default function Usuarios() {
   } | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const { handleError } = useGlobalError();
 
   // Configuración de pestañas
@@ -71,22 +74,6 @@ export default function Usuarios() {
       label: "Resumen",
       icon: Users,
       description: "Vista general de usuarios"
-    },
-    {
-      id: "create",
-      label: "Crear",
-      icon: Plus,
-      description: "Crear nuevos usuarios",
-      requiresPermission: true,
-      permissionCheck: (role) => role === "admin"
-    },
-    {
-      id: "import",
-      label: "Importar",
-      icon: UserPlus,
-      description: "Importar usuarios masivamente",
-      requiresPermission: true,
-      permissionCheck: (role) => role === "admin"
     }
   ];
 
@@ -239,7 +226,7 @@ export default function Usuarios() {
     label: string;
     value: string;
     subtitle: string;
-    icon: unknown;
+    icon: LucideIcon;
     color: "blue" | "purple" | "green" | "orange" | "red" | "indigo" | "emerald" | "yellow" | "pink" | "gray";
   }> = [
     {
@@ -303,28 +290,25 @@ export default function Usuarios() {
                 {getRoleMessage(user?.role)}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
-                      <Users className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Usuarios Activos</p>
-                      <p className="font-bold text-gray-900">{users.filter(u => u.status === "active").length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex items-center gap-2">
               {canCreateUsuarios && (
-                <Button 
-                  onClick={() => setActiveView("create")}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Usuario
-                </Button>
+                <>
+                  <Button 
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Usuario
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowImportModal(true)}
+                    className="hover:bg-gray-50"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Importar
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -438,58 +422,13 @@ export default function Usuarios() {
             </div>
           )}
 
-          {activeView === "create" && canCreateUsuarios && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
-              <UserModal 
-                mode="create" 
-                onUserCreated={fetchUsers}
-              />
-            </div>
-          )}
+          
 
-          {activeView === "import" && canImportUsuarios && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
-              <ImportStudentsModal />
-            </div>
-          )}
           
-          {/* Estado vacío para creación sin permisos */}
-          {activeView === "create" && !canCreateUsuarios && (
-            <div className="text-center py-12 animate-in fade-in-50 duration-500">
-              <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
-                  <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle className="h-8 w-8 text-orange-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Acceso Restringido
-                  </h3>
-                  <p className="text-gray-600">
-                    Solo los administradores pueden crear usuarios.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
           
-          {/* Estado vacío para importación sin permisos */}
-          {activeView === "import" && !canImportUsuarios && (
-            <div className="text-center py-12 animate-in fade-in-50 duration-500">
-              <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
-                  <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle className="h-8 w-8 text-orange-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Acceso Restringido
-                  </h3>
-                  <p className="text-gray-600">
-                    Solo los administradores pueden importar usuarios.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          
+          
+          
         </div>
 
         {/* Footer con información adicional */}
@@ -596,6 +535,26 @@ export default function Usuarios() {
               setShowDeleteModal(false);
               setSelectedUser(null);
             }}
+          />
+        )}
+
+        {showCreateModal && (
+          <UserModal
+            mode="create"
+            open={showCreateModal}
+            onOpenChange={setShowCreateModal}
+            onUserCreated={() => {
+              fetchUsers();
+              setShowCreateModal(false);
+            }}
+          />
+        )}
+
+        {showImportModal && (
+          <ImportStudentsModal 
+            open={showImportModal}
+            onOpenChange={setShowImportModal}
+            showTrigger={false}
           />
         )}
       </div>

@@ -33,8 +33,14 @@ interface ValidationResult {
   warnings: string[];
 }
 
-export default function ImportStudentsModal() {
-  const [isOpen, setIsOpen] = useState(false);
+type ImportStudentsModalProps = {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+};
+
+export default function ImportStudentsModal({ open: externalOpen, onOpenChange: externalOnOpenChange, showTrigger = true }: ImportStudentsModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [csvData, setCsvData] = useState<CSVStudent[]>([]);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -432,21 +438,30 @@ Carlos,Rodríguez,xwJLTZ0InAN52zIzVYJg,carlos.rodriguez@email.com,active`;
     </div>
   );
 
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const handleOpenChange = (newOpen: boolean) => {
+    if (externalOnOpenChange) {
+      externalOnOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
+
   return (
     <ReutilizableDialog
-      triger={
+      triger={showTrigger && externalOpen === undefined ? (
         <span className="flex items-center gap-2">
           <Upload className="" />
           Importar Estudiantes
         </span>
-      }
+      ) : undefined}
       background
       title="Importar Estudiantes desde CSV"
       description="Sube un archivo CSV para importar múltiples estudiantes de una vez"
       content={content}
       footer={footer}
       open={isOpen}
-      onOpenChange={setIsOpen}
+      onOpenChange={handleOpenChange}
       small={false}
     />
   );
