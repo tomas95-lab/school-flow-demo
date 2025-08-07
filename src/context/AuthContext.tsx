@@ -18,16 +18,19 @@ type AppUser = {
 type AuthContextType = {
   user: AppUser | null;
   loading: boolean;
+  initialized: boolean;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  initialized: false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -60,13 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
       setLoading(false);
+      setInitialized(true);
     });
 
     return () => unsub();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, initialized }}>
       {children}
     </AuthContext.Provider>
   );

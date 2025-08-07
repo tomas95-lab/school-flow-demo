@@ -1,9 +1,10 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { LoadingState } from "@/components/LoadingState";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ErrorState } from "@/components/ErrorState";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { BookOpen, Lock, AlertTriangle, Award, TrendingUp, Users, FileText } from "lucide-react";
+import { BookOpen, AlertTriangle, Award, TrendingUp, Users, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -70,30 +71,7 @@ export default function Boletines() {
 
   // Si no tiene permisos de acceso
   if (!canAccessBoletines) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Acceso Restringido
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  No tienes permisos para acceder al módulo de boletines.
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Contacta al administrador del sistema si crees que esto es un error.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    return <AccessDenied message="No tienes permisos para acceder al módulo de boletines." />
   }
 
   const RoleIcon = getRoleIcon(user?.role);
@@ -113,6 +91,7 @@ export default function Boletines() {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">
                     Panel de Boletines
                   </h1>
+                  <p className="text-sm text-gray-500">Revisa el estado de los boletines por curso. Los datos se actualizan cada 5 minutos.</p>
                   <div className="flex items-center gap-3">
                     <Badge variant="secondary" className="text-sm px-3 py-1">
                       <RoleIcon className="h-3 w-3 mr-1" />

@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccessDenied } from "@/components/AccessDenied";
+import { EmptyState } from "@/components/EmptyState";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Componentes de vista por rol
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
@@ -240,13 +242,20 @@ export default function Asistencias() {
             </div>
             <div className="flex items-center gap-4">
               {canRegisterAttendance && (
-                <Button 
-                  onClick={() => setActiveView("register")}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Registrar Asistencias
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => setActiveView("register")}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Registrar Asistencias
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Registra asistencias para tus cursos asignados
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -265,19 +274,25 @@ export default function Asistencias() {
               const isActive = activeView === tab.id;
               
               return (
-                <Button
-                  key={tab.id}
-                  variant={isActive ? "default" : "outline"}
-                  onClick={() => setActiveView(tab.id)}
-                  className={`flex items-center gap-2 transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg' 
-                      : 'hover:bg-gray-50 hover:shadow-md'
-                  }`}
-                >
-                  <TabIcon className="h-4 w-4" />
-                  {tab.label}
-                </Button>
+                <Tooltip key={tab.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isActive ? "default" : "outline"}
+                      onClick={() => setActiveView(tab.id)}
+                      className={`flex items-center gap-2 transition-all duration-300 ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg' 
+                          : 'hover:bg-gray-50 hover:shadow-md'
+                      }`}
+                    >
+                      <TabIcon className="h-4 w-4" />
+                      {tab.label}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {tab.description}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -287,13 +302,29 @@ export default function Asistencias() {
         <div className="space-y-6 animate-in fade-in-50 duration-500">
           {activeView === "overview" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
-              {/* Vista según rol */}
-              {user?.role === "admin" ? (
-                <AdminAttendanceOverview />
-              ) : user?.role === "docente" ? (
-                <TeacherAttendanceOverview />
+              {/* Estado vacío si no hay asistencias */}
+              {Array.isArray(asistencias) && asistencias.length === 0 ? (
+                <EmptyState
+                  icon={CheckCircle}
+                  title="Sin asistencias registradas"
+                  description={
+                    user?.role === 'docente'
+                      ? 'Aún no registraste asistencias. Usa el botón “Registrar Asistencias”.'
+                      : user?.role === 'alumno'
+                        ? 'Todavía no se cargaron asistencias para tu cuenta.'
+                        : 'No hay registros de asistencia aún.'
+                  }
+                />
               ) : (
-                <AlumnoAttendanceOverview />
+                <>
+                  {user?.role === "admin" ? (
+                    <AdminAttendanceOverview />
+                  ) : user?.role === "docente" ? (
+                    <TeacherAttendanceOverview />
+                  ) : (
+                    <AlumnoAttendanceOverview />
+                  )}
+                </>
               )}
             </div>
           )}

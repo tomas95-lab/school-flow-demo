@@ -111,9 +111,17 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn("space-y-4", className)}>
       {(title || description) && (
-        <div className="space-y-1">
-          {title && <h3 className="text-lg font-semibold text-gray-900">{title}</h3>}
-          {description && <p className="text-sm text-gray-600">{description}</p>}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            {title && <h3 className="text-lg font-semibold text-gray-900">{title}</h3>}
+            {description && <p className="text-sm text-gray-600">{description}</p>}
+          </div>
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">{columnFilters.length + (globalFilter ? 1 : 0)} filtros activos</Badge>
+              <Button variant="outline" size="sm" onClick={clearAllFilters}>Limpiar filtros</Button>
+            </div>
+          )}
         </div>
       )}
 

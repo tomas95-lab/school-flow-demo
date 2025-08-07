@@ -523,6 +523,9 @@ const BotOverview: React.FC = () => {
           <CardHeader>
             <CardTitle className="text-center">Cargando Bot IA</CardTitle>
             <CardDescription className="text-center">
+              <div className="relative mx-auto mb-3 h-8 w-8">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-500 via-pink-500 to-rose-500 animate-spin-slow [mask-image:radial-gradient(transparent_58%,black_60%)]" />
+              </div>
               Analizando datos del sistema educativo...
             </CardDescription>
           </CardHeader>

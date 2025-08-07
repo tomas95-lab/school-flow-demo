@@ -386,6 +386,8 @@ export default function Usuarios() {
                           },
                         ]}
                         exportable={false}
+                        title="Usuarios"
+                        description="Usa los filtros para refinar resultados."
                         emptyMessage="No se encontraron usuarios. Comienza creando el primer usuario del sistema."
                       />
                     )}

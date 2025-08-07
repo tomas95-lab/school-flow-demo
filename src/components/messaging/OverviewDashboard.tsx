@@ -20,6 +20,7 @@ import {
   XCircle
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import type { Message, Course, Subject } from "@/types";
 
@@ -216,6 +217,17 @@ export default function OverviewDashboard() {
           </AlertDescription>
         </Alert>
       </div>
+    );
+  }
+
+  // Estado vacío de mensajería
+  if (!messagesLoading && (messages?.length || 0) === 0) {
+    return (
+      <EmptyState
+        icon={MessageSquare}
+        title="Sin actividad de mensajería"
+        description="Aún no hay mensajes. Cuando se publiquen, verás la actividad aquí."
+      />
     );
   }
 

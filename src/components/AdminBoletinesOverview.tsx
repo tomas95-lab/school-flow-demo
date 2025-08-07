@@ -27,11 +27,11 @@ interface Calificacion {
   fecha: string;
 }
 
-interface Asistencia {
-  studentId: string;
-  fecha: string;
-  presente: boolean;
-}
+// interface Asistencia {
+//   studentId: string;
+//   fecha: string;
+//   presente: boolean;
+// }
 
 interface Subject {
   firestoreId: string;
@@ -96,14 +96,16 @@ export default function AdminBoletinesOverview() {
 
       // Generar observación automática
       const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === alumno.firestoreId);
-      const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === alumno.firestoreId);
+      const asistenciasAlumno = asistencias
+        .filter((asist) => asist.studentId === alumno.firestoreId)
+        .map((a) => ({ present: (a as any).presente ?? (a as any).present ?? false, fecha: (a as any).fecha }));
 
       // Obtener período anterior (simplificado)
       const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
 
       const observacionAutomatica = generarObservacionAutomaticaBoletin(
         calificacionesAlumno as Calificacion[],
-        asistenciasAlumno as Asistencia[],
+        asistenciasAlumno as any,
         alumno.firestoreId || '',
         periodoActual,
         periodoAnterior
@@ -197,29 +199,24 @@ export default function AdminBoletinesOverview() {
   }, [boletines, boletinesCalculados, promedioGlobal]);
 
   if (!courses || !subjects || !calificaciones || !alumnos || !teachers) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="p-8">
+        <div className="animate-pulse grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="h-32 bg-gray-100 rounded-xl" />
+          <div className="h-32 bg-gray-100 rounded-xl" />
+          <div className="h-32 bg-gray-100 rounded-xl" />
+        </div>
+      </div>
+    );
   }
 
   // Si es docente y no hay boletines, mostrar mensaje
   if (user?.role === "docente" && boletines.length === 0) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center text-center">
-        <div className="bg-gradient-to-br from-amber-100 to-orange-100 rounded-full p-8 mb-8">
-          <svg className="h-16 w-16 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-        </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          No hay boletines disponibles
-        </h3>
-        <p className="text-gray-600 max-w-md mb-8">
-          No hay boletines creados por el Administrador aún. Los boletines se generan al final de cada período académico.
-        </p>
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-amber-800 text-sm">
-            <strong>Nota:</strong> Solo los administradores pueden crear y generar boletines. 
-            Los docentes pueden revisar los boletines una vez que hayan sido creados.
-          </p>
+      <div className="p-8">
+        <div className="bg-white rounded-2xl border border-amber-200 p-8 text-center">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay boletines disponibles</h3>
+          <p className="text-gray-600">Los boletines se generan al final de cada período académico.</p>
         </div>
       </div>
     );

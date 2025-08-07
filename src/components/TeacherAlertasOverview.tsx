@@ -10,6 +10,7 @@ import { Input } from "./ui/input";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { CreateAlertModal } from "./CreateAlertModal";
+import { SchoolSpinner } from "./SchoolSpinner";
 
 export default function TeacherAlertasOverview() {
   const { user } = useContext(AuthContext);
@@ -19,7 +20,7 @@ export default function TeacherAlertasOverview() {
   const [filterPriority, setFilterPriority] = useState("all");
 
   if (!alerts) {
-    return <div>Cargando...</div>;
+    return <SchoolSpinner text="Cargando alertas del docente..." fullScreen={false} />;
   }
 
 

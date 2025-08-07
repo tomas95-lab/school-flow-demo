@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccessDenied } from "@/components/AccessDenied";
+import { EmptyState } from "@/components/EmptyState";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Componentes de vista por rol
 import AdminCalificacionesOverview from "@/components/AdminCalificacionesOverview";
@@ -37,6 +39,11 @@ export default function Calificaciones() {
   const roleScope = user?.role;
   const { loading: coursesLoading } = useFirestoreCollection("courses", {
     constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+  });
+  // Datos mínimos para estado vacío en overview (solo alumno)
+  const { data: calificaciones } = useFirestoreCollection("calificaciones", {
+    constraints: roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [],
+    enableCache: true
   });
   const [activeView, setActiveView] = useState("overview");
 
@@ -163,13 +170,20 @@ export default function Calificaciones() {
             </div>
             <div className="flex items-center gap-4">
               {canRegisterGrades && (
-                <Button 
-                  onClick={() => setActiveView("register")}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Registrar Calificaciones
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => setActiveView("register")}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Registrar Calificaciones
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Registra notas para tus evaluaciones
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -183,19 +197,25 @@ export default function Calificaciones() {
               const isActive = activeView === tab.id;
               
               return (
-                <Button
-                  key={tab.id}
-                  variant={isActive ? "default" : "outline"}
-                  onClick={() => setActiveView(tab.id)}
-                  className={`flex items-center gap-2 transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg' 
-                      : 'hover:bg-gray-50 hover:shadow-md'
-                  }`}
-                >
-                  <TabIcon className="h-4 w-4" />
-                  {tab.label}
-                </Button>
+                <Tooltip key={tab.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isActive ? "default" : "outline"}
+                      onClick={() => setActiveView(tab.id)}
+                      className={`flex items-center gap-2 transition-all duration-300 ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg' 
+                          : 'hover:bg-gray-50 hover:shadow-md'
+                      }`}
+                    >
+                      <TabIcon className="h-4 w-4" />
+                      {tab.label}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {tab.description}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -205,13 +225,23 @@ export default function Calificaciones() {
         <div className="space-y-6 animate-in fade-in-50 duration-500">
           {activeView === "overview" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
-              {/* Vista según rol */}
-              {user?.role === "admin" ? (
-                <AdminCalificacionesOverview />
-              ) : user?.role === "docente" ? (
-                <TeacherCalificacionesOverview />
+              {/* Estado vacío para alumno sin calificaciones */}
+              {user?.role === 'alumno' && Array.isArray(calificaciones) && calificaciones.length === 0 ? (
+                <EmptyState
+                  icon={BookOpen}
+                  title="Sin calificaciones registradas"
+                  description="Aún no hay calificaciones disponibles. Vuelve más tarde."
+                />
               ) : (
-                <AlumnoCalificacionesOverview />
+                <>
+                  {user?.role === "admin" ? (
+                    <AdminCalificacionesOverview />
+                  ) : user?.role === "docente" ? (
+                    <TeacherCalificacionesOverview />
+                  ) : (
+                    <AlumnoCalificacionesOverview />
+                  )}
+                </>
               )}
             </div>
           )}

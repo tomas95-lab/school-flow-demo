@@ -1,7 +1,23 @@
 import * as React from "react"
-import { useContext } from "react"
+import { useContext, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
 import { usePermission } from "@/hooks/usePermission"
+import { NavLink, useLocation } from "react-router-dom"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  LayoutDashboard,
+  CalendarCheck2,
+  NotebookText,
+  FileText,
+  MessagesSquare,
+  Bell,
+  Users2,
+  BookOpen,
+  Layers3,
+  Bot,
+  LineChart,
+  Settings2
+} from "lucide-react"
 
 import {
   Sidebar,
@@ -81,11 +97,29 @@ const data = {
   
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useContext(AuthContext)
+  // Se mantiene para posibles futuros condicionamientos visuales (tema, avatar)
+  void useContext(AuthContext)
   const { can } = usePermission()
+  const location = useLocation()
+
+  const iconMap: Record<string, React.ElementType> = {
+    "Dashboard": LayoutDashboard,
+    "Asistencias": CalendarCheck2,
+    "Calificaciones": NotebookText,
+    "Boletines": FileText,
+    "Mensajes": MessagesSquare,
+    "Alertas": Bell,
+    "Usuarios": Users2,
+    "Cursos y Materias": Layers3,
+    "Inscripciones": BookOpen,
+    "Reportes Inteligentes": LineChart,
+    "Explicación Boletín": FileText,
+    "Bot IA": Bot,
+    "General": Settings2,
+  }
 
   // Filtrar elementos del menú según el rol del usuario
-  const filteredNavMain = data.navMain.map(group => {
+  const filteredNavMain = useMemo(() => data.navMain.map(group => {
     // Si es el grupo "Gestión", filtrar elementos según el rol
     if (group.title === "Gestión") {
       const filteredItems = group.items.filter(item => {
@@ -114,7 +148,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     
     // Para otros grupos, mostrar todos los elementos
     return group
-  }).filter(Boolean) // Remover grupos vacíos
+  }).filter(Boolean), [can]) // Remover grupos vacíos
 
   return (
     <Sidebar {...props}>
@@ -126,13 +160,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((menuItem) => (
-                  <SidebarMenuItem key={menuItem.title}>
-                    <SidebarMenuButton asChild isActive={menuItem.isActive}>
-                      <a href={menuItem.url}>{menuItem.title}</a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {item.items.map((menuItem) => {
+                  const isActive = location.pathname === menuItem.url || location.pathname.startsWith(menuItem.url + "/")
+                  const Icon = iconMap[menuItem.title] || LayoutDashboard
+                  return (
+                    <SidebarMenuItem key={menuItem.title}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton asChild isActive={isActive} aria-label={menuItem.title}>
+                            <NavLink to={menuItem.url} className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              <span>{menuItem.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">{menuItem.title}</TooltipContent>
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

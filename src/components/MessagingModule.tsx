@@ -243,6 +243,7 @@ export default function MessagingModule() {
                   <h1 className="text-4xl font-bold text-gray-900 mb-2">
                     Panel de Mensajería
                   </h1>
+                  <p className="text-sm text-gray-500">Selecciona una pestaña para comenzar. Las secciones marcadas como "En desarrollo" estarán disponibles pronto.</p>
                   <div className="flex items-center gap-3">
                     <Badge variant="secondary" className="text-sm px-3 py-1">
                       {(() => {
