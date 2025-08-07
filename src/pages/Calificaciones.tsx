@@ -17,6 +17,7 @@ import AlumnoCalificacionesOverview from "@/components/AlumnoCalificacionesOverv
 import QuickGradeRegister from "@/components/QuickGradeRegister";
 import GradesCalendar from "@/components/GradesCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
+import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
 
 // Tipos para las pestañas
 interface TabItem {

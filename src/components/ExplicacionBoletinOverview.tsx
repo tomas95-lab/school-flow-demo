@@ -17,6 +17,7 @@ import {
   BookMarked,
   Award,
   AlertCircle,
+  Sparkles,
   } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -29,6 +30,8 @@ import { } from "date-fns/locale";
 import { LoadingState } from "./LoadingState";
 import { EmptyState } from "./EmptyState";
 import ReutilizableDialog from "./DialogReutlizable";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 
 // Tipos TypeScript para los datos
 interface Student {
@@ -108,6 +111,14 @@ interface Alert {
   selectedStudents?: string[];
 }
 
+interface Teacher {
+  firestoreId: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  role: string;
+}
+
 export default function ExplicacionBoletinOverview() {
   const { user } = useContext(AuthContext);
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
@@ -115,6 +126,7 @@ export default function ExplicacionBoletinOverview() {
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [showExplanationModal, setShowExplanationModal] = useState(false);
   const [selectedBoletin, setSelectedBoletin] = useState<Boletin | null>(null);
+  const [isGeneratingExplanations, setIsGeneratingExplanations] = useState(false);
 
   // Obtener todos los datos necesarios
   const { data: students, loading: loadingStudents } = useFirestoreCollection<Student>("students");
@@ -124,31 +136,40 @@ export default function ExplicacionBoletinOverview() {
   const { data: grades, loading: loadingGrades } = useFirestoreCollection<Grade>("calificaciones");
   const { data: boletines, loading: loadingBoletines } = useFirestoreCollection<Boletin>("boletines");
   const { data: alerts, loading: loadingAlerts } = useFirestoreCollection<Alert>("alerts");
+  const { data: teachers, loading: loadingTeachers } = useFirestoreCollection<Teacher>("users");
 
   // Análisis inteligente de boletines
   const analysis = useMemo(() => {
-    if (!students || !courses || !subjects || !attendances || !grades || !boletines || !alerts) {
+    if (!students || !courses || !subjects || !attendances || !grades || !boletines || !alerts || !teachers) {
       return null;
     }
 
+    // Filtrar boletines según los filtros seleccionados
+    const filteredBoletines = boletines.filter(boletin => {
+      const studentMatch = selectedStudent === "all" || boletin.alumnoId === selectedStudent;
+      const periodMatch = selectedPeriod === "all" || boletin.periodo === selectedPeriod;
+      const courseMatch = selectedCourse === "all" || boletin.curso === selectedCourse;
+      return studentMatch && periodMatch && courseMatch;
+    });
+
     // 1. Análisis General de Boletines
     const generalAnalysis = {
-      totalBoletines: boletines.length,
+      totalBoletines: filteredBoletines.length,
       totalStudents: students.length,
       totalCourses: courses.length,
       totalSubjects: subjects.length,
       
       // Estadísticas de rendimiento
       performanceStats: {
-        excellent: boletines.filter(b => b.promedioTotal >= 9).length,
-        good: boletines.filter(b => b.promedioTotal >= 7 && b.promedioTotal < 9).length,
-        average: boletines.filter(b => b.promedioTotal >= 6 && b.promedioTotal < 7).length,
-        belowAverage: boletines.filter(b => b.promedioTotal >= 4 && b.promedioTotal < 6).length,
-        poor: boletines.filter(b => b.promedioTotal < 4).length
+        excellent: filteredBoletines.filter(b => b.promedioTotal >= 9).length,
+        good: filteredBoletines.filter(b => b.promedioTotal >= 7 && b.promedioTotal < 9).length,
+        average: filteredBoletines.filter(b => b.promedioTotal >= 6 && b.promedioTotal < 7).length,
+        belowAverage: filteredBoletines.filter(b => b.promedioTotal >= 4 && b.promedioTotal < 6).length,
+        poor: filteredBoletines.filter(b => b.promedioTotal < 4).length
       },
 
       // Análisis por período
-      periodAnalysis: boletines.reduce((acc, boletin) => {
+      periodAnalysis: filteredBoletines.reduce((acc, boletin) => {
         if (!acc[boletin.periodo]) {
           acc[boletin.periodo] = {
             count: 0,
@@ -165,22 +186,31 @@ export default function ExplicacionBoletinOverview() {
 
     // 2. Análisis Inteligente por Materia
     const subjectAnalysis = subjects.map(subject => {
-      const subjectBoletines = boletines.filter(b => 
+      const subjectBoletines = filteredBoletines.filter(b => 
         b.materias.some(m => m.nombre.toLowerCase() === subject.nombre.toLowerCase())
       );
       
-      const subjectGrades = grades.filter(g => 
-        subjectBoletines.some(b => b.alumnoId === g.studentId)
-      );
+      // Obtener calificaciones específicas de esta materia
+      const subjectGrades = grades.filter(g => {
+        // Verificar que la calificación pertenece a un estudiante que tiene boletín
+        const hasBoletin = subjectBoletines.some(b => b.alumnoId === g.studentId);
+        // Verificar que la calificación es de esta materia específica
+        const isSubjectGrade = g.subjectId === subject.firestoreId;
+        return hasBoletin && isSubjectGrade;
+      });
 
       const averageGrade = subjectGrades.length > 0 
         ? subjectGrades.reduce((sum, g) => sum + g.valor, 0) / subjectGrades.length 
         : 0;
 
+      // Buscar el profesor de la materia
+      const teacher = teachers.find((t: Teacher) => t.firestoreId === subject.teacherId);
+      const teacherName = teacher ? `${teacher.nombre} ${teacher.apellido}` : "No asignado";
+
       return {
         subjectId: subject.firestoreId,
         subjectName: subject.nombre,
-        teacherName: "No asignado",
+        teacherName,
         boletinCount: subjectBoletines.length,
         averageGrade,
         gradeCount: subjectGrades.length,
@@ -194,7 +224,7 @@ export default function ExplicacionBoletinOverview() {
     // 3. Detección de Patrones Inteligentes
     const intelligentPatterns = {
       // Estudiantes con mejor rendimiento
-      topPerformers: boletines
+      topPerformers: filteredBoletines
         .filter(b => b.promedioTotal >= 8)
         .sort((a, b) => b.promedioTotal - a.promedioTotal)
         .slice(0, 5)
@@ -207,7 +237,7 @@ export default function ExplicacionBoletinOverview() {
         })),
 
       // Estudiantes que necesitan apoyo
-      needsSupport: boletines
+      needsSupport: filteredBoletines
         .filter(b => b.promedioTotal < 6)
         .sort((a, b) => a.promedioTotal - b.promedioTotal)
         .slice(0, 5)
@@ -303,39 +333,12 @@ export default function ExplicacionBoletinOverview() {
       patterns: intelligentPatterns,
       explanations: intelligentExplanations
     };
-  }, [students, courses, subjects, attendances, grades, boletines, alerts]);
-
-  // Verificar acceso
-  if (user?.role !== "admin" && user?.role !== "docente") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <AlertTriangle className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Acceso Restringido
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Solo administradores y docentes pueden acceder a la explicación de boletines.
-                </p>
-                <p className="text-sm text-gray-500">
-                  Tu rol actual: {user?.role || 'No definido'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  }, [students, courses, subjects, attendances, grades, boletines, alerts, teachers, selectedStudent, selectedPeriod, selectedCourse]);
 
   // Estados de carga
-  if (loadingStudents || loadingCourses || loadingSubjects || 
-      loadingAttendances || loadingGrades || loadingBoletines || loadingAlerts) {
+
+  if ((loadingStudents || loadingCourses || loadingSubjects || 
+      loadingAttendances || loadingGrades || loadingBoletines || loadingAlerts || loadingTeachers) || user?.role === undefined) {
     return (
       <LoadingState 
         text="Analizando boletines con IA..."
@@ -345,7 +348,35 @@ export default function ExplicacionBoletinOverview() {
     );
   }
 
-  if (!analysis) {
+
+    // Verificar acceso
+    if (user?.role !== "admin" && user?.role !== "docente") {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="p-8">
+            <Card className="max-w-md mx-auto">
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle className="h-8 w-8 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Acceso Restringido
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Solo administradores y docentes pueden acceder a la explicación de boletines.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Tu rol actual: {user?.role || 'No definido'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+  if (!analysis || !boletines || boletines.length === 0) {
     return (
       <EmptyState
         icon={BookOpen}
@@ -388,6 +419,129 @@ export default function ExplicacionBoletinOverview() {
     }
   };
 
+  const handleGenerateExplanations = async () => {
+    if (!boletines || boletines.length === 0) {
+      toast.error('No hay boletines disponibles para generar explicaciones');
+      return;
+    }
+
+    setIsGeneratingExplanations(true);
+    
+    try {
+      // Filtrar boletines que no tienen observación automática
+      const boletinesSinExplicacion = boletines.filter(boletin => 
+        !boletin.observacionAutomatica || !boletin.observacionAutomatica.texto
+      );
+
+      if (boletinesSinExplicacion.length === 0) {
+        toast.success('Todos los boletines ya tienen explicaciones generadas');
+        setIsGeneratingExplanations(false);
+        return;
+      }
+
+      let generatedCount = 0;
+      
+      // Generar explicaciones para boletines que no las tienen
+      for (const boletin of boletinesSinExplicacion.slice(0, 10)) { // Limitar a 10 para demo
+        const performanceLevel = getPerformanceLevel(boletin.promedioTotal);
+        
+        // Generar explicación basada en el rendimiento
+        const explanation = generateExplanationForBoletin(boletin, performanceLevel);
+        
+        try {
+          // Actualizar en Firestore
+          const boletinRef = doc(db, "boletines", boletin.firestoreId);
+          await updateDoc(boletinRef, {
+            observacionAutomatica: explanation,
+            fechaGeneracion: new Date().toISOString()
+          });
+          
+          generatedCount++;
+          
+          // Simular delay para mostrar progreso
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (error) {
+          console.error(`Error al actualizar boletín ${boletin.firestoreId}:`, error);
+        }
+      }
+
+      toast.success(`Se generaron ${generatedCount} explicaciones automáticamente`);
+      
+      // Recargar datos después de un breve delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error al generar explicaciones:', error);
+      toast.error('Error al generar explicaciones automáticas');
+    } finally {
+      setIsGeneratingExplanations(false);
+    }
+  };
+
+  const generateExplanationForBoletin = (boletin: Boletin, performanceLevel: string) => {
+    const explanations = {
+      excellent: {
+        tipo: "rendimiento_excepcional",
+        texto: `${boletin.alumnoNombre} demuestra un rendimiento excepcional con un promedio de ${boletin.promedioTotal.toFixed(1)}. Su dedicación y esfuerzo son evidentes en todas las materias. Se recomienda mantener este alto nivel de compromiso académico.`,
+        prioridad: "baja",
+        reglaAplicada: "promedio_superior_a_9",
+        datosSoporte: {
+          promedio: boletin.promedioTotal,
+          materiasCount: boletin.materias.length,
+          asistencias: boletin.asistenciasTotales
+        }
+      },
+      good: {
+        tipo: "rendimiento_bueno",
+        texto: `${boletin.alumnoNombre} mantiene un buen rendimiento académico con un promedio de ${boletin.promedioTotal.toFixed(1)}. Sus logros reflejan un trabajo consistente y dedicación. Se sugiere continuar con las estrategias de estudio actuales.`,
+        prioridad: "media",
+        reglaAplicada: "promedio_entre_7_y_9",
+        datosSoporte: {
+          promedio: boletin.promedioTotal,
+          materiasCount: boletin.materias.length,
+          asistencias: boletin.asistenciasTotales
+        }
+      },
+      average: {
+        tipo: "rendimiento_promedio",
+        texto: `${boletin.alumnoNombre} cumple con los objetivos básicos con un promedio de ${boletin.promedioTotal.toFixed(1)}. Hay oportunidades de mejora implementando técnicas de estudio más efectivas y buscando apoyo académico adicional.`,
+        prioridad: "media",
+        reglaAplicada: "promedio_entre_6_y_7",
+        datosSoporte: {
+          promedio: boletin.promedioTotal,
+          materiasCount: boletin.materias.length,
+          asistencias: boletin.asistenciasTotales
+        }
+      },
+      belowAverage: {
+        tipo: "rendimiento_bajo",
+        texto: `${boletin.alumnoNombre} enfrenta dificultades académicas con un promedio de ${boletin.promedioTotal.toFixed(1)}. Se requiere intervención pedagógica específica e implementar un plan de apoyo académico intensivo.`,
+        prioridad: "alta",
+        reglaAplicada: "promedio_entre_4_y_6",
+        datosSoporte: {
+          promedio: boletin.promedioTotal,
+          materiasCount: boletin.materias.length,
+          asistencias: boletin.asistenciasTotales
+        }
+      },
+      poor: {
+        tipo: "rendimiento_insuficiente",
+        texto: `${boletin.alumnoNombre} requiere intervención urgente con un promedio de ${boletin.promedioTotal.toFixed(1)}. Es fundamental identificar las causas y establecer un plan de acción inmediato con evaluación psicopedagógica.`,
+        prioridad: "crítica",
+        reglaAplicada: "promedio_menor_a_4",
+        datosSoporte: {
+          promedio: boletin.promedioTotal,
+          materiasCount: boletin.materias.length,
+          asistencias: boletin.asistenciasTotales
+        }
+      }
+    };
+
+    return explanations[performanceLevel as keyof typeof explanations] || explanations.average;
+  };
+
   const getPerformanceLevel = (promedio: number) => {
     if (promedio >= 9) return "excellent";
     if (promedio >= 7) return "good";
@@ -424,29 +578,48 @@ export default function ExplicacionBoletinOverview() {
               </div>
               <p className="text-gray-600 text-lg max-w-2xl">
                 Análisis avanzado y explicaciones automáticas de rendimiento académico generadas por inteligencia artificial.
+                {isGeneratingExplanations && (
+                  <span className="inline-flex items-center gap-2 ml-2 text-sm text-green-600">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
+                    Generando explicaciones IA...
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg">
-                      <Brain className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">IA Activa</p>
-                      <p className="font-bold text-gray-900">Análisis en Tiempo Real</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Button 
-                onClick={() => handleExportExplanation("completa")}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar Análisis
-              </Button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleGenerateExplanations}
+                    disabled={isGeneratingExplanations}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    {isGeneratingExplanations ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generar Explicaciones IA
+                      </>
+                    )}
+                  </Button>
+                  {boletines && (
+                    <Badge variant="outline" className="text-xs">
+                      {boletines.filter(b => !b.observacionAutomatica || !b.observacionAutomatica.texto).length} pendientes
+                    </Badge>
+                  )}
+                </div>
+                <Button 
+                  onClick={() => handleExportExplanation("completa")}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Análisis
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -608,22 +781,30 @@ export default function ExplicacionBoletinOverview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                {analysis.patterns.topPerformers.map((student, index) => (
-                  <div key={student.studentId} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-green-600">{index + 1}</span>
+                {analysis.patterns.topPerformers.length > 0 ? (
+                  analysis.patterns.topPerformers.map((student, index) => (
+                    <div key={student.studentId} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-green-600">{index + 1}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{student.studentName}</p>
+                          <p className="text-xs text-gray-600">{student.periodo}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{student.studentName}</p>
-                        <p className="text-xs text-gray-600">{student.periodo}</p>
-                      </div>
+                      <Badge variant="default" className="bg-green-600">
+                        {student.promedio.toFixed(1)}
+                      </Badge>
                     </div>
-                    <Badge variant="default" className="bg-green-600">
-                      {student.promedio.toFixed(1)}
-                    </Badge>
+                  ))
+                ) : (
+                  <div className="p-6 bg-gray-50 rounded-lg text-center">
+                    <Award className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-1">No hay estudiantes destacados</h4>
+                    <p className="text-xs text-gray-500">No se encontraron estudiantes con rendimiento excelente</p>
                   </div>
-                ))}
+                )}
               </div>
               
               <Button 
@@ -647,27 +828,35 @@ export default function ExplicacionBoletinOverview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                {analysis.patterns.needsSupport.map((student, index) => (
-                  <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-red-600">{index + 1}</span>
+                {analysis.patterns.needsSupport.length > 0 ? (
+                  analysis.patterns.needsSupport.map((student, index) => (
+                    <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-red-600">{index + 1}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{student.studentName}</p>
+                          <p className="text-xs text-gray-600">{student.periodo}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{student.studentName}</p>
-                        <p className="text-xs text-gray-600">{student.periodo}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="destructive">
+                          {student.promedio.toFixed(1)}
+                        </Badge>
+                        <Badge variant={student.priority === 'alta' ? 'destructive' : 'secondary'}>
+                          {student.priority}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="destructive">
-                        {student.promedio.toFixed(1)}
-                      </Badge>
-                      <Badge variant={student.priority === 'alta' ? 'destructive' : 'secondary'}>
-                        {student.priority}
-                      </Badge>
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 bg-gray-50 rounded-lg text-center">
+                    <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-1">No hay estudiantes que necesiten apoyo</h4>
+                    <p className="text-xs text-gray-500">Todos los estudiantes tienen buen rendimiento</p>
                   </div>
-                ))}
+                )}
               </div>
               
               <Button 
@@ -691,24 +880,32 @@ export default function ExplicacionBoletinOverview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                {analysis.patterns.subjectTrends.map((subject) => (
-                  <div key={subject.subjectId} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">{subject.subjectName}</span>
-                      <Badge variant={
-                        subject.trend === "positiva" ? "default" :
-                        subject.trend === "estable" ? "secondary" : "destructive"
-                      }>
-                        {subject.trend}
-                      </Badge>
+                {analysis.patterns.subjectTrends.length > 0 ? (
+                  analysis.patterns.subjectTrends.map((subject) => (
+                    <div key={subject.subjectId} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-900">{subject.subjectName}</span>
+                        <Badge variant={
+                          subject.trend === "positiva" ? "default" :
+                          subject.trend === "estable" ? "secondary" : "destructive"
+                        }>
+                          {subject.trend}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Promedio: {subject.averageGrade.toFixed(1)}</span>
+                        <span className="text-gray-600">Prof: {subject.teacherName}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">{subject.recommendation}</p>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Promedio: {subject.averageGrade.toFixed(1)}</span>
-                      <span className="text-gray-600">Prof: {subject.teacherName}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">{subject.recommendation}</p>
+                  ))
+                ) : (
+                  <div className="p-6 bg-gray-50 rounded-lg text-center">
+                    <BookMarked className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                    <h4 className="text-sm font-medium text-gray-900 mb-1">No hay análisis de materias</h4>
+                    <p className="text-xs text-gray-500">No se encontraron materias con datos suficientes</p>
                   </div>
-                ))}
+                )}
               </div>
               
               <Button 
@@ -732,9 +929,63 @@ export default function ExplicacionBoletinOverview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                {/* This section was removed as per the new_code, but the modal still references it.
-                    To avoid breaking the modal, we'll keep the structure but remove the content.
-                    The modal will now show a placeholder if this section is removed. */}
+                {(() => {
+                  const filteredBoletines = boletines?.filter(boletin => {
+                    const studentMatch = selectedStudent === "all" || boletin.alumnoId === selectedStudent;
+                    const periodMatch = selectedPeriod === "all" || boletin.periodo === selectedPeriod;
+                    const courseMatch = selectedCourse === "all" || boletin.curso === selectedCourse;
+                    return studentMatch && periodMatch && courseMatch;
+                  }) || [];
+
+                  if (filteredBoletines.length > 0) {
+                    return filteredBoletines.slice(0, 5).map((boletin: Boletin) => {
+                      // Calcular porcentaje de asistencia
+                      const studentAttendances = attendances?.filter(a => a.studentId === boletin.alumnoId) || [];
+                      const totalDays = studentAttendances.length;
+                      const presentDays = studentAttendances.filter(a => a.present).length;
+                      const attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
+                      
+                      // Determinar correlación
+                      let correlation = "neutral";
+                      if (boletin.promedioTotal >= 7 && attendancePercentage >= 80) {
+                        correlation = "positiva";
+                      } else if (boletin.promedioTotal < 6 && attendancePercentage < 70) {
+                        correlation = "negativa";
+                      }
+                      
+                      return (
+                        <div key={boletin.firestoreId} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-900">{boletin.alumnoNombre}</span>
+                            <Badge variant={
+                              correlation === "positiva" ? "default" :
+                              correlation === "negativa" ? "destructive" : "secondary"
+                            }>
+                              {correlation}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Promedio: {boletin.promedioTotal.toFixed(1)}</span>
+                            <span className="text-gray-600">Asistencia: {attendancePercentage.toFixed(1)}%</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {correlation === "positiva" ? "Buena correlación entre asistencia y rendimiento" :
+                             correlation === "negativa" ? "Baja asistencia afecta el rendimiento" :
+                             "Correlación moderada"}
+                          </p>
+                        </div>
+                      );
+                    });
+                  } else {
+                    return (
+                      <div className="p-6 bg-gray-50 rounded-lg text-center">
+                        <BarChart3 className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                        <h4 className="text-sm font-medium text-gray-900 mb-1">No hay datos de correlación</h4>
+                        <p className="text-xs text-gray-500">No se encontraron boletines con datos de asistencia</p>
+                      </div>
+                    );
+                  }
+                })()}
               </div>
               
               <Button 
@@ -760,45 +1011,78 @@ export default function ExplicacionBoletinOverview() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {boletines?.slice(0, 9).map((boletin) => {
-                  const performanceLevel = getPerformanceLevel(boletin.promedioTotal);
-                  const explanation = analysis.explanations.performanceExplanations[performanceLevel];
-                  
-                  return (
-                    <div key={boletin.firestoreId} className="p-4 border rounded-lg hover:shadow-md transition-all bg-white/60 backdrop-blur-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-gray-900">{boletin.alumnoNombre}</h4>
-                        <Badge variant={
-                          performanceLevel === "excellent" ? "default" :
-                          performanceLevel === "good" ? "secondary" :
-                          performanceLevel === "average" ? "outline" :
-                          performanceLevel === "belowAverage" ? "destructive" : "destructive"
-                        }>
-                          {boletin.promedioTotal.toFixed(1)}
-                        </Badge>
-                      </div>
+                {(() => {
+                  const filteredBoletines = boletines?.filter(boletin => {
+                    const studentMatch = selectedStudent === "all" || boletin.alumnoId === selectedStudent;
+                    const periodMatch = selectedPeriod === "all" || boletin.periodo === selectedPeriod;
+                    const courseMatch = selectedCourse === "all" || boletin.curso === selectedCourse;
+                    return studentMatch && periodMatch && courseMatch;
+                  }) || [];
+
+                  if (filteredBoletines.length > 0) {
+                    return filteredBoletines.slice(0, 9).map((boletin: Boletin) => {
+                      const performanceLevel = getPerformanceLevel(boletin.promedioTotal);
+                      const explanation = analysis.explanations.performanceExplanations[performanceLevel];
                       
-                      <div className="space-y-2 mb-3">
-                        <p className="text-sm text-gray-600">{explanation.description}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3" />
-                          <span>{boletin.periodo}</span>
-                          <BookMarked className="h-3 w-3" />
-                          <span>{boletin.materias.length} materias</span>
+                      return (
+                        <div key={boletin.firestoreId} className="p-4 border rounded-lg hover:shadow-md transition-all bg-white/60 backdrop-blur-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-gray-900">{boletin.alumnoNombre}</h4>
+                            <Badge variant={
+                              performanceLevel === "excellent" ? "default" :
+                              performanceLevel === "good" ? "secondary" :
+                              performanceLevel === "average" ? "outline" :
+                              performanceLevel === "belowAverage" ? "destructive" : "destructive"
+                            }>
+                              {boletin.promedioTotal.toFixed(1)}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2 mb-3">
+                            <p className="text-sm text-gray-600">{explanation.description}</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <Calendar className="h-3 w-3" />
+                              <span>{boletin.periodo}</span>
+                              <BookMarked className="h-3 w-3" />
+                              <span>{boletin.materias.length} materias</span>
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            onClick={() => handleViewExplanation(boletin)}
+                            size="sm"
+                            className="w-full"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver Explicación IA
+                          </Button>
+                        </div>
+                      );
+                    });
+                  } else {
+                    return (
+                      <div className="col-span-full p-8 text-center">
+                        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay boletines disponibles</h3>
+                        <p className="text-gray-600 mb-4">
+                          Los filtros aplicados no muestran resultados. Intenta ajustar los filtros o agregar más boletines.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setSelectedStudent("all");
+                              setSelectedPeriod("all");
+                              setSelectedCourse("all");
+                            }}
+                          >
+                            Limpiar Filtros
+                          </Button>
                         </div>
                       </div>
-                      
-                      <Button 
-                        onClick={() => handleViewExplanation(boletin)}
-                        size="sm"
-                        className="w-full"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ver Explicación IA
-                      </Button>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                })()}
               </div>
             </CardContent>
           </Card>
@@ -880,42 +1164,64 @@ export default function ExplicacionBoletinOverview() {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Análisis por Materia</h4>
                 <div className="space-y-3">
-                  {selectedBoletin.materias.map((materia, index) => {
-                    const promedioMateria = (materia.T1 + materia.T2 + materia.T3) / 3;
-                    const tendencia = materia.T3 > materia.T1 ? "mejora" : 
-                                    materia.T3 < materia.T1 ? "disminuye" : "estable";
-                    
-                    return (
-                      <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-gray-900">{materia.nombre}</span>
-                          <Badge variant={
-                            promedioMateria >= 7 ? "default" :
-                            promedioMateria >= 6 ? "secondary" : "destructive"
-                          }>
-                            {promedioMateria.toFixed(1)}
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="text-center">
-                            <span className="text-gray-600">T1</span>
-                            <div className="font-medium">{materia.T1}</div>
+                  {selectedBoletin.materias && selectedBoletin.materias.length > 0 ? (
+                    selectedBoletin.materias.map((materia, index) => {
+                      // Calcular promedio solo si hay calificaciones válidas
+                      const calificaciones = [materia.T1, materia.T2, materia.T3].filter(cal => cal > 0);
+                      const promedioMateria = calificaciones.length > 0 
+                        ? calificaciones.reduce((sum, cal) => sum + cal, 0) / calificaciones.length 
+                        : 0;
+                      
+                      // Determinar tendencia solo si hay datos suficientes
+                      let tendencia = "sin datos";
+                      if (materia.T1 > 0 && materia.T3 > 0) {
+                        if (materia.T3 > materia.T1 + 0.5) {
+                          tendencia = "mejora";
+                        } else if (materia.T3 < materia.T1 - 0.5) {
+                          tendencia = "disminuye";
+                        } else {
+                          tendencia = "estable";
+                        }
+                      }
+                      
+                      return (
+                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-900">{materia.nombre}</span>
+                            <Badge variant={
+                              promedioMateria >= 7 ? "default" :
+                              promedioMateria >= 6 ? "secondary" : "destructive"
+                            }>
+                              {promedioMateria > 0 ? promedioMateria.toFixed(1) : "Sin calificaciones"}
+                            </Badge>
                           </div>
-                          <div className="text-center">
-                            <span className="text-gray-600">T2</span>
-                            <div className="font-medium">{materia.T2}</div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <span className="text-gray-600">T1</span>
+                              <div className="font-medium">{materia.T1 > 0 ? materia.T1 : "-"}</div>
+                            </div>
+                            <div className="text-center">
+                              <span className="text-gray-600">T2</span>
+                              <div className="font-medium">{materia.T2 > 0 ? materia.T2 : "-"}</div>
+                            </div>
+                            <div className="text-center">
+                              <span className="text-gray-600">T3</span>
+                              <div className="font-medium">{materia.T3 > 0 ? materia.T3 : "-"}</div>
+                            </div>
                           </div>
-                          <div className="text-center">
-                            <span className="text-gray-600">T3</span>
-                            <div className="font-medium">{materia.T3}</div>
+                          <div className="mt-2 text-xs text-gray-600">
+                            Tendencia: <span className="font-medium">{tendencia}</span>
                           </div>
                         </div>
-                        <div className="mt-2 text-xs text-gray-600">
-                          Tendencia: <span className="font-medium">{tendencia}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="p-6 bg-gray-50 rounded-lg text-center">
+                      <BookMarked className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">No hay materias registradas</h4>
+                      <p className="text-xs text-gray-500">Este boletín no contiene información de materias</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -923,12 +1229,17 @@ export default function ExplicacionBoletinOverview() {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Recomendaciones IA</h4>
                 <div className="space-y-2">
-                  {analysis.explanations.performanceExplanations[getPerformanceLevel(selectedBoletin.promedioTotal)].recommendations.map((rec, index) => (
+                  {analysis.explanations.performanceExplanations[getPerformanceLevel(selectedBoletin.promedioTotal)]?.recommendations?.map((rec, index) => (
                     <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded">
                       <Lightbulb className="h-4 w-4 text-blue-600" />
                       <span className="text-sm text-gray-700">{rec}</span>
                     </div>
-                  ))}
+                  )) || (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <Lightbulb className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm text-gray-700">No hay recomendaciones disponibles</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -10,10 +10,14 @@ import AdminAlertasOverview from "@/components/AdminAlertasOverview";
 import TeacherAlertasOverview from "@/components/TeacherAlertasOverview";
 import AlumnoAlertasOverview from "@/components/AlumnoAlertasOverview";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
+import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
 
 export default function Alertas() {
   const { user, loading: userLoading } = useContext(AuthContext);
   const { loading: coursesLoading } = useFirestoreCollection("courses");
+  const { data: alerts } = useFirestoreCollection("alerts");
+  const { data: students } = useFirestoreCollection("students");
+  const { data: courses } = useFirestoreCollection("courses");
 
   // Función para obtener el mensaje según el rol
   const getRoleMessage = (role: string | undefined) => {
@@ -84,6 +88,58 @@ export default function Alertas() {
       </div>
     );
   }
+
+  // Generar datos para charts de alertas
+  const generateAlertChartData = () => {
+    if (!alerts || !students || !courses) {
+      return null;
+    }
+
+    // Datos para bar chart de alertas por prioridad
+    const alertsByPriority = [
+      { prioridad: 'Crítica', cantidad: alerts.filter(a => a.priority === 'critical').length },
+      { prioridad: 'Alta', cantidad: alerts.filter(a => a.priority === 'high').length },
+      { prioridad: 'Media', cantidad: alerts.filter(a => a.priority === 'medium').length },
+      { prioridad: 'Baja', cantidad: alerts.filter(a => a.priority === 'low').length }
+    ].filter(item => item.cantidad > 0);
+
+    // Datos para line chart de alertas por mes
+    const alertsByMonth = [
+      { mes: 'Ene', alertas: 0 },
+      { mes: 'Feb', alertas: 0 },
+      { mes: 'Mar', alertas: 0 },
+      { mes: 'Abr', alertas: 0 },
+      { mes: 'May', alertas: 0 },
+      { mes: 'Jun', alertas: 0 }
+    ];
+
+    // Calcular alertas por mes
+    alerts.forEach(alert => {
+      if (alert.createdAt) {
+        const date = new Date(alert.createdAt);
+        const month = date.getMonth();
+        if (month >= 0 && month < 6) {
+          alertsByMonth[month].alertas += 1;
+        }
+      }
+    });
+
+    // Datos para pie chart de distribución de tipos de alerta
+    const alertTypeDistribution = [
+      { tipo: 'Académica', cantidad: alerts.filter(a => a.type === 'academic').length },
+      { tipo: 'Asistencia', cantidad: alerts.filter(a => a.type === 'attendance').length },
+      { tipo: 'Comportamiento', cantidad: alerts.filter(a => a.type === 'behavior').length },
+      { tipo: 'Sistema', cantidad: alerts.filter(a => a.type === 'system').length }
+    ].filter(item => item.cantidad > 0);
+
+    return {
+      alertsByPriority,
+      alertsByMonth,
+      alertTypeDistribution
+    };
+  };
+
+  const chartData = generateAlertChartData();
 
   const RoleIcon = getRoleIcon(user?.role);
 
@@ -158,6 +214,112 @@ export default function Alertas() {
             />
           </div>
         </div>
+
+        {/* Sección de Charts de Alertas */}
+        {chartData ? (
+          <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Análisis de Alertas</h2>
+              <p className="text-gray-600">Visualizaciones y estadísticas de las alertas del sistema</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+              {/* Chart de Alertas por Prioridad */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                <BarChartComponent
+                  data={chartData.alertsByPriority}
+                  xKey="prioridad"
+                  yKey="cantidad"
+                  title="Alertas por Prioridad"
+                  description="Distribución de alertas según su nivel de urgencia"
+                  className="h-80"
+                />
+              </div>
+
+              {/* Chart de Alertas por Mes */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                <LineChartComponent
+                  data={chartData.alertsByMonth}
+                  xKey="mes"
+                  yKey="alertas"
+                  title="Tendencia de Alertas"
+                  description="Número de alertas generadas por mes"
+                  className="h-80"
+                  color="#ef4444"
+                />
+              </div>
+
+              {/* Chart de Distribución de Tipos de Alerta */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                <PieChartComponent
+                  data={chartData.alertTypeDistribution}
+                  dataKey="cantidad"
+                  nameKey="tipo"
+                  title="Distribución por Tipo"
+                  description="Tipos de alertas en el sistema"
+                  className="h-80"
+                  colors={["#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6"]}
+                />
+              </div>
+
+              {/* Estadísticas Generales de Alertas */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                <div className="h-80 flex items-center justify-center">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas Generales</h3>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-red-600">
+                          {alerts?.length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Total Alertas</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-orange-600">
+                          {alerts?.filter(a => a.priority === 'critical').length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Críticas</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-600">
+                          {alerts?.filter(a => a.status === 'pending').length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Pendientes</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-600">
+                          {alerts?.filter(a => a.status === 'resolved').length || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Resueltas</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Análisis de Alertas</h2>
+              <p className="text-gray-600">Visualizaciones y estadísticas de las alertas del sistema</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+              <div className="text-center max-w-md mx-auto">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin alertas disponibles</h3>
+                <p className="text-gray-600 mb-4">Los charts aparecerán cuando haya alertas en el sistema</p>
+                <p className="text-gray-400 text-sm">Datos cargados desde Firestore</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer con información adicional */}
         <Separator className="my-12" />

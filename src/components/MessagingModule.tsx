@@ -6,6 +6,7 @@ import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Skeleton } from "./ui/skeleton";
+import { LoadingState } from "@/components/LoadingState";
 import OverviewDashboard from "./messaging/OverviewDashboard";
 import ConversationsView from "./messaging/ConversationsView";
 import AnnouncementsView from "./messaging/AnnouncementsView";
@@ -13,7 +14,7 @@ import WallView from "./messaging/WallView";
 import AdminMensajesOverview from "./AdminMensajesOverview";
 import TeacherMensajesOverview from "./TeacherMensajesOverview";
 import AlumnoMensajesOverview from "./AlumnoMensajesOverview";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 type TabType = "overview" | "conversations" | "announcements" | "wall";
@@ -21,7 +22,7 @@ type TabType = "overview" | "conversations" | "announcements" | "wall";
 interface TabConfig {
   id: TabType;
   label: string;
-  icon: unknown;
+  icon: React.ElementType;
   description: string;
   enabled: boolean;
   development?: boolean;
@@ -29,9 +30,8 @@ interface TabConfig {
 }
 
 export default function MessagingModule() {
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,9 +159,20 @@ export default function MessagingModule() {
 
   const quickStats = getQuickStats();
 
+  // Spinner de carga global (misma lógica y componente que otros módulos)
+  if (authLoading || user?.role === undefined) {
+    return (
+      <LoadingState
+        text="Cargando módulo de mensajería..."
+        timeout={8000}
+        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+      />
+    );
+  }
+
   // Renderizar contenido de la pestaña activa
   const renderTabContent = () => {
-    if (isLoading) {
+    if (isLoading && user?.role !== undefined) {
       return (
         <div className="space-y-4">
           <Skeleton className="h-8 w-full" />
@@ -201,30 +212,6 @@ export default function MessagingModule() {
     }
   };
 
-  // Verificar si el usuario tiene acceso al módulo
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              Acceso Denegado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Debes iniciar sesión para acceder al módulo de mensajería.
-            </p>
-            <Button onClick={() => navigate('/login')} className="w-full">
-              Ir al Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Función para obtener el icono del rol
   const getRoleIcon = (role: string | undefined) => {
     switch (role) {
@@ -239,44 +226,44 @@ export default function MessagingModule() {
     <div className="min-h-screen bg-gray-50">
       <div className="p-8">
         {/* Header moderno siguiendo el patrón de otros módulos */}
-        <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 rounded-3xl shadow-2xl mb-8">
-          <div className="p-8 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                  <MessageCircle className="h-12 w-12 text-white" />
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
+                  <MessageCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-4xl font-bold">Mensajería</h1>
-                    <div className="flex items-center gap-2">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                    Panel de Mensajería
+                  </h1>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="text-sm px-3 py-1">
                       {(() => {
                         const RoleIcon = getRoleIcon(user?.role);
-                        return <RoleIcon className="h-6 w-6 text-purple-200" />;
+                        return <RoleIcon className="h-3 w-3 mr-1" />;
                       })()}
-                      <Badge className="bg-white/20 text-white border-white/30">
-                        {user?.role === "admin" && "Administrador"}
-                        {user?.role === "docente" && "Docente"}
-                        {user?.role === "alumno" && "Estudiante"}
-                      </Badge>
-                      <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                      <span className="text-sm text-gray-300">EduNova</span>
-                    </div>
-                  </div>
-                  <p className="text-purple-100 text-lg max-w-2xl">
-                    {getRoleMessage(user?.role)}
-                  </p>
-                  <div className="flex items-center gap-4 mt-4">
-                    <Badge variant="outline" className="bg-green-500/20 text-green-100 border-green-300/30">
-                      {quickStats.availableFeatures} funcionalidades disponibles
+                      {user?.role === "admin" && "Administrador"}
+                      {user?.role === "docente" && "Docente"}
+                      {user?.role === "alumno" && "Estudiante"}
                     </Badge>
-                    {quickStats.developmentFeatures > 0 && (
-                      <Badge variant="outline" className="bg-yellow-500/20 text-yellow-100 border-yellow-300/30">
-                        {quickStats.developmentFeatures} en desarrollo
-                      </Badge>
-                    )}
+                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
+              </div>
+              <p className="text-gray-600 text-lg max-w-2xl">
+                {getRoleMessage(user?.role)}
+              </p>
+              <div className="flex items-center gap-4 mt-4">
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  {quickStats.availableFeatures} funcionalidades disponibles
+                </Badge>
+                {quickStats.developmentFeatures > 0 && (
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                    {quickStats.developmentFeatures} en desarrollo
+                  </Badge>
+                )}
               </div>
             </div>
           </div>

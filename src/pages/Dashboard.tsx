@@ -36,6 +36,7 @@ import {
   generarAlertasAutomaticas, 
   type DatosAlumno
 } from "@/utils/alertasAutomaticas";
+import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -302,6 +303,85 @@ export default function Dashboard() {
       return null;
     }
 
+    // Generar datos para charts
+    const generateChartData = () => {
+      // Datos para bar chart de rendimiento por curso
+      const performanceByCourse = courses.map(course => {
+        const courseGrades = calificaciones.filter(g => g.courseId === course.firestoreId);
+        const avgGrade = courseGrades.length > 0 
+          ? courseGrades.reduce((sum, g) => sum + g.valor, 0) / courseGrades.length 
+          : 0;
+        return {
+          curso: course.nombre || course.name || 'Sin nombre',
+          promedio: parseFloat(avgGrade.toFixed(1))
+        };
+      }).filter(item => item.promedio > 0);
+
+      // Datos para line chart de asistencia por mes (datos reales de Firestore)
+      const generateAttendanceByMonth = () => {
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+        const currentYear = new Date().getFullYear();
+        
+        return months.map((month, index) => {
+          const monthNumber = index + 1;
+          const monthAsistencias = asistencias.filter(a => {
+            if (!a.fecha) return false;
+            const attendanceDate = new Date(a.fecha);
+            return attendanceDate.getFullYear() === currentYear && 
+                   attendanceDate.getMonth() === index;
+          });
+          
+          const presentCount = monthAsistencias.filter(a => a.present).length;
+          const attendancePercentage = monthAsistencias.length > 0 
+            ? Math.round((presentCount / monthAsistencias.length) * 100)
+            : 0;
+          
+          return {
+            mes: month,
+            asistencia: attendancePercentage
+          };
+        });
+      };
+      
+      const attendanceByMonth = generateAttendanceByMonth();
+
+      // Datos para pie chart de distribución de calificaciones
+      const gradeDistribution = [
+        { rango: 'Excelente (9-10)', cantidad: calificaciones.filter(g => g.valor >= 9).length },
+        { rango: 'Bueno (7-8.9)', cantidad: calificaciones.filter(g => g.valor >= 7 && g.valor < 9).length },
+        { rango: 'Regular (6-6.9)', cantidad: calificaciones.filter(g => g.valor >= 6 && g.valor < 7).length },
+        { rango: 'Bajo (<6)', cantidad: calificaciones.filter(g => g.valor < 6).length }
+      ].filter(item => item.cantidad > 0);
+
+      // Datos para bar chart de rendimiento por materia
+      const performanceBySubject = subjects.map(subject => {
+        const subjectGrades = calificaciones.filter(g => g.subjectId === subject.firestoreId);
+        const avgGrade = subjectGrades.length > 0 
+          ? subjectGrades.reduce((sum, g) => sum + g.valor, 0) / subjectGrades.length 
+          : 0;
+        return {
+          materia: subject.nombre || subject.name || 'Sin nombre',
+          promedio: parseFloat(avgGrade.toFixed(1))
+        };
+      }).filter(item => item.promedio > 0);
+
+      // Datos para pie chart de distribución de asistencias
+      const attendanceDistribution = [
+        { estado: 'Presente', cantidad: asistencias.filter(a => a.present).length },
+        { estado: 'Ausente', cantidad: asistencias.filter(a => !a.present).length }
+      ].filter(item => item.cantidad > 0);
+
+      return {
+        performanceByCourse,
+        attendanceByMonth,
+        gradeDistribution,
+        performanceBySubject,
+        attendanceDistribution
+      };
+    };
+
+    const chartData = generateChartData();
+
     // Calcular estadísticas básicas (admin)
     const totalStudents = students.length;
     const totalTeachers = teachers.length;
@@ -436,7 +516,10 @@ export default function Dashboard() {
       }
     }
 
-    return roleStats;
+    return {
+      ...roleStats,
+      chartData
+    };
   }, [students, courses, teachers, calificaciones, asistencias, subjects, user, teacherStudents]);
 
   // Actualizar stats cuando calculatedStats cambie
@@ -647,6 +730,124 @@ export default function Dashboard() {
             )
           })}
         </div>
+
+        {/* Sección de Charts */}
+        {calculatedStats?.chartData ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8">
+            {/* Chart de Rendimiento por Curso */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+              <BarChartComponent
+                data={calculatedStats.chartData.performanceByCourse}
+                xKey="curso"
+                yKey="promedio"
+                title="Rendimiento por Curso"
+                description="Promedio de calificaciones por curso"
+                className="h-80"
+              />
+            </div>
+
+            {/* Chart de Asistencia Mensual */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+              <LineChartComponent
+                data={calculatedStats.chartData.attendanceByMonth}
+                xKey="mes"
+                yKey="asistencia"
+                title="Tendencia de Asistencia"
+                description="Porcentaje de asistencia por mes"
+                className="h-80"
+                color="#10b981"
+              />
+            </div>
+
+            {/* Chart de Distribución de Calificaciones */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+              <PieChartComponent
+                data={calculatedStats.chartData.gradeDistribution}
+                dataKey="cantidad"
+                nameKey="rango"
+                title="Distribución de Calificaciones"
+                description="Distribución de calificaciones por rango"
+                className="h-80"
+              />
+            </div>
+
+            {/* Chart de Rendimiento por Materia */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+              <BarChartComponent
+                data={calculatedStats.chartData.performanceBySubject}
+                xKey="materia"
+                yKey="promedio"
+                title="Rendimiento por Materia"
+                description="Promedio de calificaciones por materia"
+                className="h-80"
+              />
+            </div>
+
+            {/* Chart de Distribución de Asistencias */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+              <PieChartComponent
+                data={calculatedStats.chartData.attendanceDistribution}
+                dataKey="cantidad"
+                nameKey="estado"
+                title="Distribución de Asistencias"
+                description="Estado de asistencia general"
+                className="h-80"
+                colors={["#10b981", "#ef4444"]}
+              />
+            </div>
+
+            {/* Chart de Estadísticas por Rol */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+              <div className="h-80 flex items-center justify-center">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Estadísticas por Rol</h3>
+                  <p className="text-sm text-gray-600 mb-4">Datos específicos según tu rol</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {stats.totalStudents || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Estudiantes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {stats.totalTeachers || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Docentes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {stats.totalCourses || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Cursos</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {stats.avgAttendance || "0%"}
+                      </div>
+                      <div className="text-sm text-gray-600">Asistencia</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-8">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+              <div className="text-center max-w-md mx-auto">
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin datos disponibles</h3>
+                <p className="text-gray-600 mb-4">Los charts aparecerán cuando haya datos en el sistema</p>
+                <p className="text-gray-400 text-sm">Datos cargados desde Firestore</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Sección principal modernizada */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

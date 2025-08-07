@@ -19,6 +19,7 @@ import AttendanceAlert from "@/components/AttendanceAlert";
 // Componente de calendario
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
+import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -33,6 +34,10 @@ interface TabItem {
 export default function Asistencias() {
   const { user, loading: userLoading } = useContext(AuthContext);
   const { loading: coursesLoading } = useFirestoreCollection("courses");
+  const { data: asistencias } = useFirestoreCollection("attendances");
+  const { data: students } = useFirestoreCollection("students");
+  const { data: courses } = useFirestoreCollection("courses");
+  const { data: subjects } = useFirestoreCollection("subjects");
   const [activeView, setActiveView] = useState("overview");
 
   // Configuración de pestañas
@@ -42,6 +47,12 @@ export default function Asistencias() {
       label: "Resumen",
       icon: BookOpen,
       description: "Vista general de asistencias"
+    },
+    {
+      id: "charts",
+      label: "Gráficos",
+      icon: TrendingUp,
+      description: "Visualizaciones de asistencias"
     },
     {
       id: "register",
@@ -145,6 +156,65 @@ export default function Asistencias() {
     );
   }
 
+  // Generar datos para charts
+  const generateAttendanceChartData = () => {
+    if (!asistencias || !students || !courses || !subjects) {
+      return null;
+    }
+
+    // Datos para line chart de asistencia por día de la semana
+    const attendanceByDayOfWeek = [
+      { dia: 'Lun', asistencia: 0 },
+      { dia: 'Mar', asistencia: 0 },
+      { dia: 'Mié', asistencia: 0 },
+      { dia: 'Jue', asistencia: 0 },
+      { dia: 'Vie', asistencia: 0 },
+      { dia: 'Sáb', asistencia: 0 },
+      { dia: 'Dom', asistencia: 0 }
+    ];
+
+    // Calcular asistencia por día de la semana
+    asistencias.forEach(attendance => {
+      if (attendance.fecha) {
+        const date = new Date(attendance.fecha);
+        const dayOfWeek = date.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convertir a índice 0-6 (Lun-Dom)
+        
+        if (dayIndex >= 0 && dayIndex < 7) {
+          attendanceByDayOfWeek[dayIndex].asistencia += attendance.present ? 1 : 0;
+        }
+      }
+    });
+
+    // Datos para bar chart de asistencia por curso
+    const attendanceByCourse = courses.map(course => {
+      const courseAttendances = asistencias.filter(a => a.courseId === course.firestoreId);
+      const presentCount = courseAttendances.filter(a => a.present).length;
+      const attendancePercentage = courseAttendances.length > 0 
+        ? Math.round((presentCount / courseAttendances.length) * 100)
+        : 0;
+      
+      return {
+        curso: course.nombre || course.name || 'Sin nombre',
+        asistencia: attendancePercentage
+      };
+    }).filter(item => item.asistencia > 0);
+
+    // Datos para pie chart de distribución de asistencias
+    const attendanceDistribution = [
+      { estado: 'Presente', cantidad: asistencias.filter(a => a.present).length },
+      { estado: 'Ausente', cantidad: asistencias.filter(a => !a.present).length }
+    ].filter(item => item.cantidad > 0);
+
+    return {
+      attendanceByDayOfWeek,
+      attendanceByCourse,
+      attendanceDistribution
+    };
+  };
+
+  const chartData = generateAttendanceChartData();
+
   const RoleIcon = getRoleIcon(user?.role);
 
   return (
@@ -237,6 +307,100 @@ export default function Asistencias() {
               )}
             </div>
           )}
+
+          {activeView === "charts" && (chartData ? (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                                 {/* Chart de Asistencia por Día de la Semana */}
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                   <LineChartComponent
+                     data={chartData.attendanceByDayOfWeek}
+                     xKey="dia"
+                     yKey="asistencia"
+                     title="Asistencia por Día de la Semana"
+                     description="Número de asistencias por día"
+                     className="h-80"
+                     color="#10b981"
+                   />
+                 </div>
+
+                                 {/* Chart de Asistencia por Curso */}
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                   <BarChartComponent
+                     data={chartData.attendanceByCourse}
+                     xKey="curso"
+                     yKey="asistencia"
+                     title="Asistencia por Curso"
+                     description="Porcentaje de asistencia por curso"
+                     className="h-80"
+                   />
+                 </div>
+
+                                 {/* Chart de Distribución de Asistencias */}
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                   <PieChartComponent
+                     data={chartData.attendanceDistribution}
+                     dataKey="cantidad"
+                     nameKey="estado"
+                     title="Distribución de Asistencias"
+                     description="Estado general de asistencias"
+                     className="h-80"
+                     colors={["#10b981", "#ef4444"]}
+                   />
+                 </div>
+
+                                 {/* Estadísticas Generales */}
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                  <div className="h-80 flex items-center justify-center">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas Generales</h3>
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-green-600">
+                            {asistencias?.filter(a => a.present).length || 0}
+                          </div>
+                          <div className="text-sm text-gray-600">Asistencias</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-red-600">
+                            {asistencias?.filter(a => !a.present).length || 0}
+                          </div>
+                          <div className="text-sm text-gray-600">Ausencias</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-blue-600">
+                            {students?.length || 0}
+                          </div>
+                          <div className="text-sm text-gray-600">Estudiantes</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-purple-600">
+                            {courses?.length || 0}
+                          </div>
+                          <div className="text-sm text-gray-600">Cursos</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+                <div className="text-center max-w-md mx-auto">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin datos de asistencias</h3>
+                  <p className="text-gray-600 mb-4">Los charts aparecerán cuando haya datos disponibles</p>
+                  <p className="text-gray-400 text-sm">Datos cargados desde Firestore</p>
+                </div>
+              </div>
+            </div>
+          ))}
 
           {activeView === "register" && canRegisterAttendance && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
