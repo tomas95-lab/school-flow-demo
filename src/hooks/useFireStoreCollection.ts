@@ -5,7 +5,7 @@ import { useGlobalError } from "@/components/GlobalErrorProvider";
 import { useAuth } from "@/context/AuthContext";
 
 // Cache global para evitar múltiples listeners
-const cache = new Map<string, { data: DocumentData[], timestamp: number, listeners: number }>();
+const cache = new Map<string, { data: DocumentData[]; timestamp: number; listeners: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 export function useFirestoreCollection<T extends DocumentData & { firestoreId?: string }>(
@@ -43,18 +43,17 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
     }
 
     try {
-      // Verificar cache si está habilitado
+      // Verificar cache si está habilitado y usar datos iniciales para evitar flashes
       if (options?.enableCache !== false && cache.has(cacheKey)) {
         const cached = cache.get(cacheKey)!;
-        if (Date.now() - cached.timestamp < CACHE_DURATION) {
+        if (Date.now() - cached.timestamp < CACHE_DURATION && (cached.data?.length ?? 0) > 0) {
           setData(cached.data as T[]);
-          setLoading(false);
-          return;
+          // No retornamos aún: continuamos para revalidar en segundo plano
         }
       }
 
       // Crear query con opciones
-      let q: unknown = collection(db, path);
+      let q = collection(db, path);
       if (options?.orderBy) {
         q = query(q, orderBy(options.orderBy));
       }
@@ -63,26 +62,27 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       }
 
       const unsubscribe = onSnapshot(
-        q, 
-        (snapshot: unknown) => {
-          const docs = snapshot.docs.map((doc: unknown) => ({
+        q as any,
+        (snapshot) => {
+          const docs = snapshot.docs.map((doc) => ({
             ...(doc.data() as T),
             firestoreId: doc.id,
           }));
-          
+
           setData(docs);
           setLoading(false);
 
           // Actualizar cache
           if (options?.enableCache !== false) {
+            const existing = cache.get(cacheKey);
             cache.set(cacheKey, {
               data: docs,
               timestamp: Date.now(),
-              listeners: (cache.get(cacheKey)?.listeners || 0) + 1
+              listeners: existing ? existing.listeners : 1,
             });
           }
         },
-        (error: unknown) => {
+        (error: any) => {
           console.error(`Error loading collection ${path}:`, error);
           
           // Handle specific permission errors
@@ -99,6 +99,16 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       );
 
       unsubscribeRef.current = unsubscribe;
+
+      // Incrementar contador de listeners solo al suscribirse
+      if (options?.enableCache !== false) {
+        const cached = cache.get(cacheKey);
+        cache.set(cacheKey, {
+          data: cached?.data || [],
+          timestamp: cached?.timestamp || Date.now(),
+          listeners: (cached?.listeners ?? 0) + 1,
+        });
+      }
     } catch (err) {
       console.error(`Error setting up collection listener for ${path}:`, err);
       handleError(err, `Setting up listener for: ${path}`);
@@ -124,7 +134,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       // Reducir contador de listeners en cache
       if (cache.has(cacheKey)) {
         const cached = cache.get(cacheKey)!;
-        cached.listeners--;
+        cached.listeners = Math.max(0, (cached.listeners || 1) - 1);
         if (cached.listeners <= 0) {
           cache.delete(cacheKey);
         }

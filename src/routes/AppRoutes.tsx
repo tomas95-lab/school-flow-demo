@@ -18,6 +18,7 @@ import InscripcionesOverview from "@/components/InscripcionesOverview";
 import ReportesInteligentesOverview from "@/components/ReportesInteligentesOverview";
 import ExplicacionBoletinOverview from "@/components/ExplicacionBoletinOverview";
 import BotOverview from "@/components/BotOverview";
+import { PrivateRoute } from "./PrivateRoute";
 
 // import ReportesInteligentesOverview from "@/components/ReportesInteligentesOverview";
 // import ExplicacionBoletinOverview from "@/components/ExplicacionBoletinOverview";
@@ -29,7 +30,14 @@ export function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/app" element={<Layout />}>
+        <Route
+          path="/app"
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
           <Route path="/app/dashboard" element={<Dashboard />} />
           <Route path="/app/asistencias" element={<Asistencias />} />
           <Route path="/app/asistencias/detalles" element={<DetalleAsistencia />} />
