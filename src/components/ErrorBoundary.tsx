@@ -48,16 +48,31 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // In production, log to external service
     if (import.meta.env.PROD) {
-      // TODO: Implement Firebase Analytics or Sentry
-      // For now, we could send to Firebase Functions
-      console.error('Production Error:', {
-        message: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href
-      });
+      try {
+        // Lightweight Sentry init guard via window.Sentry if present
+        const anyWindow = window as any;
+        if (anyWindow.Sentry && anyWindow.Sentry.captureException) {
+          anyWindow.Sentry.captureException(error, {
+            contexts: {
+              react: { componentStack: errorInfo.componentStack },
+            },
+            tags: { source: 'ErrorBoundary' },
+          });
+          return;
+        }
+        // Fallback: send to console (or to a Cloud Function endpoint if configured)
+        // fetch('/api/log-error', { method: 'POST', body: JSON.stringify({...}) })
+        console.error('Production Error:', {
+          message: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          url: window.location.href
+        });
+      } catch {
+        // no-op
+      }
     }
   };
 

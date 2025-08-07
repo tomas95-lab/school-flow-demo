@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -18,6 +19,18 @@ const app = initializeApp(firebaseConfig);
 // Exportar instancias de Auth y Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Analytics (solo en navegadores soportados y cuando está habilitado)
+export let analytics: Analytics | null = null;
+if (import.meta.env.PROD && import.meta.env.VITE_ENABLE_ANALYTICS === 'true') {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }).catch(() => {
+    analytics = null;
+  });
+}
 
 // Configuración adicional para producción
 if (import.meta.env.PROD) {

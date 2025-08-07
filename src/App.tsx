@@ -1,4 +1,5 @@
 import './App.css'
+// Optional Sentry loader (can be injected via script tag in index.html)
 import { AppRoutes } from './routes/AppRoutes'
 import { AuthProvider } from './context/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
