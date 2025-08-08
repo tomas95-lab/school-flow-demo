@@ -1,7 +1,10 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { ErrorList } from './ErrorNotification';
+import { subscribeToNotifications, type Notification } from '@/utils/notifications';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface GlobalErrorContextType {
   handleError: (error: unknown, context?: string) => void;
@@ -26,6 +29,21 @@ interface GlobalErrorProviderProps {
 
 export function GlobalErrorProvider({ children }: GlobalErrorProviderProps) {
   const { errors, handleError, clearErrors, removeError, hasErrors } = useErrorHandler();
+  const { user } = useAuth();
+  const shownIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = subscribeToNotifications(user.uid, (items: Notification[]) => {
+      items.forEach((n) => {
+        if (!shownIdsRef.current.has(n.firestoreId)) {
+          shownIdsRef.current.add(n.firestoreId);
+          toast(n.title, { description: n.message });
+        }
+      });
+    });
+    return () => unsub();
+  }, [user?.uid]);
 
   return (
     <GlobalErrorContext.Provider value={{ handleError, clearErrors, removeError, hasErrors }}>

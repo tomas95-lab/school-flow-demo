@@ -11,6 +11,7 @@ import ReutilizableDialog from "@/components/DialogReutlizable";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "../ui/textarea";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+// import { createNotification } from "@/utils/notifications";
 
 export default function AnnouncementsView() {
   const { user } = useContext(AuthContext);
@@ -40,6 +41,8 @@ export default function AnnouncementsView() {
       targetRole,
       targetCourseId: targetCourseId || null,
     });
+    // Emitir notificaciones básicas por rol (admin/docente/alumno) — se puede optimizar por curso
+    // Para MVP: solo si targetRole != 'all', notificar por rol (requeriría query a users)
     setTitle("");
     setContent("");
     setOpen(false);
@@ -61,7 +64,7 @@ export default function AnnouncementsView() {
         </div>
       </div>
 
-      {announcements.length === 0 && (
+      {announcements.filter((a) => a.targetRole === 'all' || a.targetRole === user?.role).length === 0 && (
         <Alert className="border-yellow-200 bg-yellow-50">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
@@ -80,7 +83,10 @@ export default function AnnouncementsView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {announcements.slice(0,6).map((a) => (
+              {announcements
+                .filter((a) => a.targetRole === 'all' || a.targetRole === user?.role)
+                .slice(0,6)
+                .map((a) => (
                 <div key={a.id} className="border rounded-md p-3">
                   <p className="font-medium text-gray-900">{a.title}</p>
                   <p className="text-sm text-gray-600 line-clamp-2">{a.content}</p>
