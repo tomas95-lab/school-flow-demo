@@ -43,46 +43,30 @@ vi.mock('react-firebase-hooks/firestore', () => ({
 // Mock react-router-dom
 vi.mock('react-router-dom', () => ({
   BrowserRouter: ({ children }: { children: React.ReactNode }) => children,
+  MemoryRouter: ({ children }: { children: React.ReactNode }) => children,
   Routes: ({ children }: { children: React.ReactNode }) => children,
   Route: ({ children }: { children: React.ReactNode }) => children,
+  Navigate: () => null,
+  NavLink: ({ children }: { children: React.ReactNode }) => children,
   useNavigate: () => vi.fn(),
   useLocation: () => ({ pathname: '/' }),
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => 
-    `<a href="${to}">${children}</a>`,
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }))
 
-// Mock context - Fixed to export AuthContext
-const mockAuthContext = {
-  user: null,
-  loading: false,
-}
-
-vi.mock('@/context/AuthContext', () => ({
-  AuthContext: mockAuthContext,
-  useAuth: () => mockAuthContext,
-}))
-
-// Mock useContext to return our mock context
-vi.mock('react', async () => {
-  const actual = await vi.importActual('react') as any
-  return {
-    ...actual,
-    useContext: vi.fn((context) => {
-      if (context === mockAuthContext) {
-        return mockAuthContext
-      }
-      return actual.useContext(context)
-    })
-  }
-})
+// Note: do not mock AuthContext globally; tests can provide the real provider when needed.
 
 // Mock hooks
-vi.mock('@/hooks/useFirestoreCollection', () => ({
+vi.mock('@/hooks/useFireStoreCollection', () => ({
+  useFirestoreCollection: vi.fn(() => ({
+    data: [],
+    loading: false,
+    error: null,
+  })),
   default: vi.fn(() => ({
     data: [],
     loading: false,
-    error: null
-  }))
+    error: null,
+  })),
 }))
 
 vi.mock('@/hooks/useTeacherCourses', () => ({
