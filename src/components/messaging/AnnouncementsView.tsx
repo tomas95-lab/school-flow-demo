@@ -1,29 +1,68 @@
+import { useContext, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { } from "../ui/button";
+import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Megaphone, Bell, Calendar, Settings, Code, GitBranch, AlertTriangle, Users, FileText, Star } from "lucide-react";
+import { Megaphone, Bell, Calendar, Settings, GitBranch, AlertTriangle, Users, FileText, Star } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
+import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+import { AuthContext } from "@/context/AuthContext";
+import ReutilizableDialog from "@/components/DialogReutlizable";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "../ui/textarea";
 
 export default function AnnouncementsView() {
+  const { user } = useContext(AuthContext);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  useEffect(() => {
+    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q as any, (snap: any) => {
+      setAnnouncements((snap.docs as any[]).map((d: any) => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!user || !title.trim() || !content.trim()) return;
+    await addDoc(collection(db, "announcements"), {
+      title: title.trim(),
+      content: content.trim(),
+      createdAt: serverTimestamp(),
+      createdBy: user.uid,
+    });
+    setTitle("");
+    setContent("");
+    setOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Anuncios</h2>
-          <p className="text-gray-600">Comunicaciones generales del sistema educativo</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Anuncios</h2>
+          <p className="text-gray-600 text-sm sm:text-base">Comunicaciones generales del sistema educativo</p>
         </div>
-        <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-          <Code className="h-3 w-3 mr-1" />
-          En Desarrollo
-        </Badge>
+        <div className="flex items-center gap-2">
+          {user?.role !== "alumno" && (
+            <Button onClick={() => setOpen(true)} className="whitespace-nowrap">
+              Nuevo anuncio
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Alert className="border-yellow-200 bg-yellow-50">
-        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-        <AlertDescription className="text-yellow-800">
-          Esta funcionalidad está actualmente en desarrollo. Próximamente podrás gestionar y recibir anuncios del sistema.
-        </AlertDescription>
-      </Alert>
+      {announcements.length === 0 && (
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            No hay anuncios todavía.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="border-dashed border-2 border-gray-200 bg-gray-50">
@@ -34,16 +73,13 @@ export default function AnnouncementsView() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <Megaphone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Comunicaciones Institucionales</h3>
-              <p className="text-gray-500 text-sm mb-4">
-                Anuncios importantes de la institución
-              </p>
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                <GitBranch className="h-3 w-3 mr-1" />
-                Próximamente
-              </Badge>
+            <div className="space-y-3">
+              {announcements.slice(0,6).map((a) => (
+                <div key={a.id} className="border rounded-md p-3">
+                  <p className="font-medium text-gray-900">{a.title}</p>
+                  <p className="text-sm text-gray-600 line-clamp-2">{a.content}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -94,7 +130,7 @@ export default function AnnouncementsView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -203,6 +239,33 @@ export default function AnnouncementsView() {
           </div>
         </CardContent>
       </Card>
+
+      <ReutilizableDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Nuevo anuncio"
+        description="Publica un anuncio para todos o para un grupo"
+        content={
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-gray-700">Título</label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-gray-700">Contenido</label>
+              <Textarea value={content} onChange={(e) => setContent(e.target.value)} />
+            </div>
+          </div>
+        }
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={!title.trim() || !content.trim()}>Publicar</Button>
+          </div>
+        }
+        background={false}
+        small={false}
+      />
     </div>
   );
 } 

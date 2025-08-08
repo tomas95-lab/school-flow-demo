@@ -211,7 +211,7 @@ export default function Asistencias() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -221,7 +221,7 @@ export default function Asistencias() {
                   <CheckCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Panel de Asistencias
                   </h1>
                   <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function Asistencias() {
                 {getRoleMessage(user?.role)}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               {canRegisterAttendance && (
                 <Tooltip>
                   <TooltipTrigger asChild>

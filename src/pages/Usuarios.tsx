@@ -239,7 +239,7 @@ export default function Usuarios() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -249,7 +249,7 @@ export default function Usuarios() {
                   <Users className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Gestión de Usuarios
                   </h1>
                   <div className="flex items-center gap-3">

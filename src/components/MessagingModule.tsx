@@ -54,8 +54,8 @@ export default function MessagingModule() {
       label: "Conversaciones",
       icon: MessageSquare,
       description: "Chats y mensajes directos",
-      enabled: false,
-      development: true,
+      enabled: true,
+      development: false,
       roleAccess: ["admin", "docente", "alumno"]
     },
     {
@@ -63,8 +63,8 @@ export default function MessagingModule() {
       label: "Anuncios",
       icon: Megaphone,
       description: "Comunicaciones generales",
-      enabled: false,
-      development: true,
+      enabled: true,
+      development: false,
       roleAccess: ["admin", "docente"]
     },
     {
@@ -233,7 +233,7 @@ export default function MessagingModule() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Header moderno siguiendo el patrón de otros módulos */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -243,7 +243,7 @@ export default function MessagingModule() {
                   <MessageCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Panel de Mensajería
                   </h1>
                   <p className="text-sm text-gray-500">Selecciona una pestaña para comenzar. Las secciones marcadas como "En desarrollo" estarán disponibles pronto.</p>
@@ -280,9 +280,9 @@ export default function MessagingModule() {
         </div>
 
         {/* Navegación por pestañas moderna */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8 overflow-x-auto">
           <div className="border-b border-gray-200">
-            <div className="flex space-x-0">
+            <div className="flex space-x-0 min-w-max">
               {tabs.filter(tab => hasRoleAccess(tab)).map((tab, index) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -325,7 +325,7 @@ export default function MessagingModule() {
             </div>
           </div>
 
-          <div className="p-8">
+          <div className="p-4 sm:p-6 md:p-8">
             {renderTabContent()}
           </div>
         </div>

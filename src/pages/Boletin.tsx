@@ -78,7 +78,7 @@ export default function Boletines() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -88,7 +88,7 @@ export default function Boletines() {
                   <FileText className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Panel de Boletines
                   </h1>
                   <p className="text-sm text-gray-500">Revisa el estado de los boletines por curso. Los datos se actualizan cada 5 minutos.</p>
