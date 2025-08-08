@@ -19,6 +19,9 @@ import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 import ImportStudentsModal from "@/components/ImportStudentsModal";
 import { usePermission } from "@/hooks/usePermission";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { EmptyState } from "@/components/EmptyState";
+import { trackEvent } from "@/services/analytics";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -147,6 +150,7 @@ export default function Usuarios() {
 
   // Función para manejar la edición de usuarios
   const handleEditUser = (user: { id: string; name: string; email: string; role: string }) => {
+    trackEvent("user_edit_click", { user_role: user.role });
     setSelectedUser({
       id: user.id,
       firestoreId: user.id,
@@ -161,6 +165,7 @@ export default function Usuarios() {
 
   // Función para manejar la eliminación de usuarios
   const handleDeleteUser = (user: { id: string; name: string; email: string; role: string }) => {
+    trackEvent("user_delete_click", { user_role: user.role });
     setSelectedUser({
       id: user.id,
       firestoreId: user.id,
@@ -265,23 +270,33 @@ export default function Usuarios() {
             </div>
             <div className="flex items-center gap-2">
               {canCreateUsuarios && (
-                <Button 
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Usuario
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => setShowCreateModal(true)}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Crear Usuario
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Crear un usuario individual</TooltipContent>
+                </Tooltip>
               )}
               {canImportUsuarios && (
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowImportModal(true)}
-                  className="hover:bg-gray-50"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Importar
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowImportModal(true)}
+                      className="hover:bg-gray-50"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Importar
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Importar usuarios desde CSV</TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -336,6 +351,18 @@ export default function Usuarios() {
                 title="Lista de Usuarios"
                 description="Gestiona y administra todos los usuarios del sistema"
               >
+                {/* EmptyState cuando no hay usuarios */}
+                {!loading && users.length === 0 && (
+                  <div className="p-6">
+                    <EmptyState
+                      icon={Users}
+                      title="Aún no hay usuarios"
+                      description="Crea el primer usuario del sistema o realiza una importación masiva."
+                      actionText={canCreateUsuarios ? "Crear usuario" : undefined}
+                      onAction={canCreateUsuarios ? () => setShowCreateModal(true) : undefined}
+                    />
+                  </div>
+                )}
                 {/* Table */}
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full">
                   <div className="overflow-x-auto">

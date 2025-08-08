@@ -18,6 +18,7 @@ import TeacherMensajesOverview from "./TeacherMensajesOverview";
 import AlumnoMensajesOverview from "./AlumnoMensajesOverview";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { trackEvent } from "@/services/analytics";
 
 type TabType = "overview" | "conversations" | "announcements" | "wall";
 
@@ -114,6 +115,7 @@ export default function MessagingModule() {
       setActiveTab(tabId);
       setSearchParams({ tab: tabId });
       toast.info("Esta funcionalidad está en desarrollo");
+      trackEvent("messaging_tab_dev_selected", { tab: tabId });
       return;
     }
 
@@ -129,6 +131,7 @@ export default function MessagingModule() {
       setActiveTab(tabId);
       setSearchParams({ tab: tabId });
       toast.success(`Cambiado a ${tab.label}`);
+      trackEvent("messaging_tab_selected", { tab: tabId });
     } catch (err) {
       setError("Error al cambiar de pestaña");
       console.error("Error changing tab:", err);
@@ -287,34 +290,36 @@ export default function MessagingModule() {
                 const isLast = index === tabs.filter(tab => hasRoleAccess(tab)).length - 1;
                 
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={`
-                      flex items-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-200 relative
-                      ${isFirst ? 'rounded-tl-2xl' : ''} 
-                      ${isLast ? 'rounded-tr-2xl' : ''}
-                      ${isActive 
-                        ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 border-b-2 border-purple-500' 
-                        : tab.enabled 
-                          ? 'text-gray-600 hover:text-purple-600 hover:bg-purple-50/50' 
-                          : 'text-gray-400'
-                      }
-                    `}
-                  >
-                    <Icon className={`h-5 w-5 ${isActive ? 'text-purple-600' : ''}`} />
-                    <span>{tab.label}</span>
-                    {tab.development && (
-                      <Badge variant="outline" className="ml-1 text-xs bg-yellow-50 text-yellow-600 border-yellow-200">
-                        En desarrollo
-                      </Badge>
-                    )}
-                    {!tab.enabled && (
-                      <Badge variant="outline" className="ml-1 text-xs bg-gray-50 text-gray-500 border-gray-200">
-                        Próximamente
-                      </Badge>
-                    )}
-                  </button>
+                  <div key={tab.id} className="relative">
+                    <div className="absolute -top-1 right-2">
+                      {tab.development && (
+                        <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-600 border-yellow-200">Dev</Badge>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleTabChange(tab.id)}
+                      title={tab.description}
+                      className={`
+                        flex items-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-200 relative
+                        ${isFirst ? 'rounded-tl-2xl' : ''} 
+                        ${isLast ? 'rounded-tr-2xl' : ''}
+                        ${isActive 
+                          ? 'bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-700 border-b-2 border-purple-500' 
+                          : tab.enabled 
+                            ? 'text-gray-600 hover:text-purple-600 hover:bg-purple-50/50' 
+                            : 'text-gray-400'
+                        }
+                      `}
+                    >
+                      <Icon className={`h-5 w-5 ${isActive ? 'text-purple-600' : ''}`} />
+                      <span>{tab.label}</span>
+                      {!tab.enabled && (
+                        <Badge variant="outline" className="ml-1 text-xs bg-gray-50 text-gray-500 border-gray-200">
+                          Próximamente
+                        </Badge>
+                      )}
+                    </button>
+                  </div>
                 );
               })}
             </div>
