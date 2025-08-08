@@ -4,20 +4,7 @@ import fs from 'fs';
 
 async function exportData() {
   // Obtener todas las colecciones disponibles
-  const collections = [
-    'attendances', 
-    'students', 
-    'courses', 
-    'subjects', 
-    'teachers', 
-    'alerts',
-    'inscripciones',
-    'calificaciones',
-    'boletines',
-    'messages',
-    'reportes',
-    'configuraciones'
-  ];
+  const collections = ['users', 'teachers', 'courses'];
   let allData = {};
 
   try {

@@ -1,5 +1,5 @@
 import React from "react"
-import { Users, GraduationCap, BookOpen, AlertCircle, PlusCircle, Settings, Book, Sunrise, Sun, Moon, TrendingUp, Calendar, FileText, Award, CheckCircle, ArrowRight, Activity, BarChart3, Home } from "lucide-react"
+import { Users, GraduationCap, BookOpen, AlertCircle, PlusCircle, Settings, Book, Sunrise, Sun, Moon, TrendingUp, Calendar, FileText, Award, CheckCircle, ArrowRight, Activity, BarChart3 } from "lucide-react"
 // import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
@@ -269,7 +269,9 @@ export default function Dashboard() {
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
   const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
 
-  const { data: students } = useFirestoreCollection("students", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('cursoId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : [], dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId] });
+  // Traer alumnos considerando variantes cursoId|courseId
+  const { data: studentsByCurso } = useFirestoreCollection("students", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('cursoId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : [], dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId] });
+  const { data: studentsByCourse } = useFirestoreCollection("students", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0,10))] : [], dependencies: [roleScope, teacherCourseIds.join(',')] });
   const { data: courses } = useFirestoreCollection("courses", { enableCache: true, constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId', '==', user.teacherId)] : roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : [], dependencies: [roleScope, user?.teacherId, user?.studentId] });
   const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true, constraints: roleScope === 'docente' ? [where('firestoreId', '==', user?.teacherId || '')] : [], dependencies: [roleScope, user?.teacherId] });
   const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [], dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId] });
@@ -282,7 +284,13 @@ export default function Dashboard() {
 
   // Memoizar cálculos pesados
   const calculatedStats = useMemo(() => {
-    if (!students || !courses || !teachers || !calificaciones || !asistencias || !subjects) {
+    // Merge de alumnos de ambas colecciones
+    const studentsMap = new Map<string, any>();
+    (studentsByCurso || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
+    (studentsByCourse || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
+    const mergedStudents = Array.from(studentsMap.values());
+
+    if (!mergedStudents || !courses || !teachers || !calificaciones || !asistencias || !subjects) {
       return null;
     }
 
@@ -306,7 +314,7 @@ export default function Dashboard() {
         const currentYear = new Date().getFullYear();
         
         return months.map((month, index) => {
-          const monthNumber = index + 1;
+          // const monthNumber = index + 1;
           const monthAsistencias = asistencias.filter(a => {
             if (!a.fecha) return false;
             const attendanceDate = new Date(a.fecha);
@@ -366,7 +374,7 @@ export default function Dashboard() {
     const chartData = generateChartData();
 
     // Calcular estadísticas básicas (admin)
-    const totalStudents = students.length;
+      const totalStudents = mergedStudents.length;
     const totalTeachers = teachers.length;
     const totalCourses = courses.length;
 
@@ -396,21 +404,39 @@ export default function Dashboard() {
 
       const teacherInfo = teacherMap.get(user.teacherId);
       if (teacherInfo) {
-        const teacherCourses = courses.filter(c => c.firestoreId === teacherInfo.cursoId);
-        // Calcular asistencia del docente de forma optimizada
-        const teacherSubjectIds = new Set(subjects.filter(s => s.teacherId === user.teacherId).map(s => s.firestoreId));
-        const teacherAsistencias = asistencias.filter(a => 
-          teacherSubjectIds.has(a.courseId)
+        // Cursos del docente: usar cursos ya filtrados por teacherId + cursoId en teacher (string o array), normalizando espacios
+        const normalizedTeacherCursoIds = new Set<string>(
+          Array.isArray((teacherInfo as any).cursoId)
+            ? ((teacherInfo as any).cursoId || []).map((id: string) => (typeof id === 'string' ? id.trim() : id)).filter(Boolean)
+            : ((teacherInfo as any).cursoId ? [((teacherInfo as any).cursoId as string).trim()] : [])
         );
+
+        const coursesByTeacherId = courses; // ya viene filtrado arriba por teacherId
+        const unionCourseIds = new Set<string>();
+        // IDs provenientes de courses filtrados por teacherId
+        coursesByTeacherId.forEach(c => { if (c.firestoreId) unionCourseIds.add(c.firestoreId); });
+        // Solo contar cursoId del teacher si existe entre los courses del docente
+        normalizedTeacherCursoIds.forEach(id => {
+          if (id && coursesByTeacherId.some(c => c.firestoreId === id)) {
+            unionCourseIds.add(id);
+          }
+        });
+
+        // Calcular asistencia del docente basada en sus cursos (courseId)
+        const teacherCourseIdsSet = unionCourseIds;
+        const teacherAsistencias = asistencias.filter(a => a.courseId && teacherCourseIdsSet.has(a.courseId));
         
         const teacherPresentCount = teacherAsistencias.filter(a => a.present).length;
         const teacherAttendance = teacherAsistencias.length > 0
           ? `${Math.round((teacherPresentCount / teacherAsistencias.length) * 100)}%`
           : "0%";
 
-        // Calcular calificaciones del docente de forma optimizada
+        // Calcular calificaciones del docente (si hay subjects asociados)
+        const teacherSubjectIds = new Set(
+          subjects.filter(s => s.teacherId === user.teacherId).map(s => s.firestoreId).filter(Boolean)
+        );
         const teacherCalificaciones = calificaciones.filter(c => 
-          teacherSubjectIds.has(c.subjectId)
+          c.subjectId && teacherSubjectIds.has(c.subjectId)
         );
         
         const teacherGradesSum = teacherCalificaciones.reduce((sum: number, c) => sum + (c.valor || 0), 0);
@@ -438,7 +464,7 @@ export default function Dashboard() {
         const pendingTasks = teacherCalificaciones.filter(c => !c.valor || c.valor === 0).length;
 
         Object.assign(roleStats, {
-          myCourses: teacherCourses.length,
+          myCourses: unionCourseIds.size,
           myStudents: teacherStudents.length,
           myAttendanceDocente: teacherAttendance,
           myGrades: teacherGrades,
@@ -450,7 +476,7 @@ export default function Dashboard() {
 
     if (user?.role === 'alumno' && user?.studentId) {
       // Crear maps para búsqueda más rápida
-      const studentMap = new Map(students.map(s => [s.firestoreId || '', s]));
+      const studentMap = new Map(mergedStudents.map((s: any) => [s.firestoreId || '', s]));
       
       const studentInfo = studentMap.get(user.studentId);
       if (studentInfo) {
@@ -503,7 +529,7 @@ export default function Dashboard() {
       ...roleStats,
       chartData
     };
-  }, [students, courses, teachers, calificaciones, asistencias, subjects, user, teacherStudents]);
+  }, [studentsByCurso, studentsByCourse, courses, teachers, calificaciones, asistencias, subjects, user, teacherStudents]);
 
   // Actualizar stats cuando calculatedStats cambie
   useEffect(() => {
@@ -514,7 +540,12 @@ export default function Dashboard() {
 
   // Calcular alertas automáticas generadas
   const alertasAutomaticas = useMemo(() => {
-    if (!calificaciones || !asistencias || !students || !teachers) return [];
+    const studentsMap = new Map<string, any>();
+    (studentsByCurso || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
+    (studentsByCourse || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
+    const mergedStudents = Array.from(studentsMap.values());
+
+    if (!calificaciones || !asistencias || !mergedStudents || !teachers) return [];
 
     const getPeriodoActual = () => {
       const now = new Date();
@@ -542,7 +573,7 @@ export default function Dashboard() {
     switch (user?.role) {
       case 'admin':
         // Para admin: alertas de todos los estudiantes
-        return students.flatMap((student) => {
+        return mergedStudents.flatMap((student: any) => {
           const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
           const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
           
@@ -605,7 +636,7 @@ export default function Dashboard() {
       default:
         return [];
     }
-  }, [user, calificaciones, asistencias, students, teachers, teacherStudents]);
+  }, [user, calificaciones, asistencias, studentsByCurso, studentsByCourse, teachers, teacherStudents]);
 
   // Calcular estadísticas de alertas normales (de la base de datos)
   useEffect(() => {
@@ -658,29 +689,7 @@ export default function Dashboard() {
     );
   }
 
-  // Función para obtener el icono del rol
-  const getRoleIcon = (role: string | undefined) => {
-    switch (role) {
-      case "admin": return Users;
-      case "docente": return GraduationCap;
-      case "alumno": return BookOpen;
-      default: return Home;
-    }
-  };
-
-  // Función para obtener mensaje del rol
-  const getRoleMessage = (role: string | undefined) => {
-    switch (role) {
-      case "admin":
-        return "Panel de administración completo de EduNova con estadísticas en tiempo real.";
-      case "docente":
-        return "Tu espacio de trabajo para gestionar clases, calificaciones y estudiantes.";
-      case "alumno":
-        return "Tu panel personal con calificaciones, asistencias y actividades académicas.";
-      default:
-        return "Bienvenido a EduNova.";
-    }
-  };
+  // (Eliminadas funciones no utilizadas getRoleIcon/getRoleMessage)
 
   return (
     <div className="min-h-screen bg-gray-50">

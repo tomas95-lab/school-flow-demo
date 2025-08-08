@@ -3,7 +3,7 @@ import ReutilizableDialog from "@/components/DialogReutlizable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { AuthContext } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -25,7 +25,15 @@ export default function NewConversationModal({ open, onOpenChange, onCreated }: 
   const { data: users } = useFirestoreCollection("users", { enableCache: true });
 
   const handleCreate = async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error("Inicia sesión para crear una conversación");
+      return;
+    }
+    // Permisos: admin/docente/alumno pueden crear conversaciones directas
+    if (!['admin', 'docente', 'alumno', 'familiar'].includes(user.role)) {
+      toast.error("No tienes permisos para crear conversaciones");
+      return;
+    }
     if (!title.trim() || !recipientId.trim()) {
       toast.error("Completa el título y el destinatario");
       return;
@@ -36,6 +44,7 @@ export default function NewConversationModal({ open, onOpenChange, onCreated }: 
         title: title.trim(),
         members: [user.uid, recipientId.trim()],
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         createdBy: user.uid,
       });
       if (firstMessage.trim()) {
@@ -43,7 +52,16 @@ export default function NewConversationModal({ open, onOpenChange, onCreated }: 
           text: firstMessage.trim(),
           senderId: user.uid,
           createdAt: serverTimestamp(),
+          readBy: [user.uid],
         });
+        try {
+          await updateDoc(doc(db, "conversations", convRef.id), {
+            lastMessageText: firstMessage.trim(),
+            lastMessageSenderId: user.uid,
+            lastMessageAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        } catch {}
       }
       toast.success("Conversación creada");
       onOpenChange(false);

@@ -18,7 +18,7 @@ import TeacherCalificacionesOverview from "@/components/TeacherCalificacionesOve
 import AlumnoCalificacionesOverview from "@/components/AlumnoCalificacionesOverview";
 
 // Nuevos componentes
-import QuickGradeRegister from "@/components/QuickGradeRegister";
+// import QuickGradeRegister from "@/components/QuickGradeRegister";
 import GradesCalendar from "@/components/GradesCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 // Charts import no utilizado en esta vista
@@ -69,14 +69,7 @@ export default function Calificaciones() {
       icon: BookOpen,
       description: "Vista general de calificaciones"
     },
-    {
-      id: "register",
-      label: "Registrar",
-      icon: Plus,
-      description: "Registrar nuevas calificaciones",
-      requiresPermission: true,
-      permissionCheck: (role) => role === "docente"
-    },
+    // Registro rápido se movió al detalle; se elimina la pestaña Registrar
     {
       id: "calendar",
       label: "Calendario",
@@ -260,11 +253,7 @@ export default function Calificaciones() {
             </div>
           )}
 
-          {activeView === "register" && canRegisterGrades && (
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
-              <QuickGradeRegister />
-            </div>
-          )}
+          {/* Registro rápido eliminado: ahora va dentro de DetallesCalificaciones */}
 
           {activeView === "calendar" && canViewCalendar && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
@@ -301,24 +290,7 @@ export default function Calificaciones() {
             </div>
           )}
           
-          {/* Estado vacío para registro sin permisos */}
-          {activeView === "register" && !canRegisterGrades && (
-            <div className="text-center py-12 animate-in fade-in-50 duration-500">
-              <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
-                  <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle className="h-8 w-8 text-orange-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Acceso Restringido
-                  </h3>
-                  <p className="text-gray-600">
-                    Solo los docentes pueden registrar calificaciones.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Sin estado de registrar */}
           
           {/* Estado vacío para calendario sin permisos */}
           {activeView === "calendar" && !canViewCalendar && (

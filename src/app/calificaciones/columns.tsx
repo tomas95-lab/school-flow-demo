@@ -1,6 +1,8 @@
 import React from "react";
 import ReutilizableDialog from "@/components/DialogReutlizable";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 import { Pencil, Award, TrendingUp, TrendingDown, Minus, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Edit } from 'lucide-react';
 import EditCalificaciones from "@/components/EditCalificaciones";
@@ -190,6 +192,9 @@ function EditGradeCell({ row }: { row: { original: CalificacionesRow } }) {
 }
 
 export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
+  const { user } = useContext(AuthContext);
+  const canEdit = user?.role === "admin" || user?.role === "docente";
+
   const columns: ColumnDef<CalificacionesRow>[] = [
     {
       accessorKey: "Nombre",
@@ -334,12 +339,15 @@ export function useColumnsDetalle(): ColumnDef<CalificacionesRow>[] {
         return rowDate >= startDate && rowDate <= endDate;
       },
     },
-    {
+  ];
+
+  if (canEdit) {
+    columns.push({
       accessorKey: "id",
       header: "Acciones",
       cell: ({ row }) => <EditGradeCell row={row} />,
-    },
-  ];
+    });
+  }
 
   return columns;
 }

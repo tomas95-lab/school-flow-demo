@@ -47,7 +47,7 @@ export { default as MessagingModule } from './MessagingModule';
 export { default as ObservacionAutomatica } from './ObservacionAutomatica';
 export { default as ObservacionesAutomaticasPanel } from './ObservacionesAutomaticasPanel';
 export { default as QuickAttendanceRegister } from './QuickAttendanceRegister';
-export { default as QuickGradeRegister } from './QuickGradeRegister';
+// export { default as QuickGradeRegister } from './QuickGradeRegister';
 export { default as ReutilizableCard } from './ReutilizableCard';
 export { default as SchoolSpinner } from './SchoolSpinner';
 export { default as StatCards } from './StatCards';

@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { BookOpen,EyeClosed, Eye, UserCheck, UserX } from "lucide-react";
 import { Button } from "./ui/button";
@@ -14,7 +15,10 @@ export default function AlumnoAttendanceOverview(){
     const studentId = user?.studentId
 
     const { data: students } = useFirestoreCollection("students")
-    const { data: asistencias } = useFirestoreCollection("attendances")
+    const { data: asistencias } = useFirestoreCollection("attendances", {
+        constraints: user?.role === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+        dependencies: [user?.role, user?.studentId]
+    })
     const { data: subjects } = useFirestoreCollection("subjects")
     const studentInfo = students.find((student)=> student.firestoreId == studentId)
 
@@ -24,10 +28,13 @@ export default function AlumnoAttendanceOverview(){
 
 
     const subjectsInCourse = useMemo(() => {
-        const base = subjects.filter(s => s.cursoId.map((id: string) => id === studentInfo?.cursoId));
-        if (user?.role === "admin" || user?.role === "alumno") return base;
-        return base;
-    }, [subjects, user, studentInfo]);
+        const courseId = studentInfo?.cursoId;
+        return subjects.filter((s: any) => {
+            if (!courseId) return false;
+            if (Array.isArray(s.cursoId)) return s.cursoId.includes(courseId);
+            return s.cursoId === courseId;
+        });
+    }, [subjects, studentInfo?.cursoId]);
 
 
 

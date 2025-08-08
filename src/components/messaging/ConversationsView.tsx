@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -9,6 +9,8 @@ import { db } from "@/firebaseConfig";
 import { AuthContext } from "@/context/AuthContext";
 import NewConversationModal from "./NewConversationModal";
 import ConversationDetail from "./ConversationDetail";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 export default function ConversationsView() {
   const { user } = useContext(AuthContext);
@@ -25,10 +27,27 @@ export default function ConversationsView() {
     );
     const unsub = onSnapshot(q as any, (snap: any) => {
       const items = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-      setConversations(items);
+      // filtro defensivo
+      setConversations(items.filter((c: any) => Array.isArray(c.members) && c.members.includes(user.uid)));
     });
     return () => unsub();
   }, [user?.uid]);
+
+  const sorted = useMemo(() => {
+    return [...conversations].sort((a, b) => {
+      const atA = a.lastMessageAt?.toDate ? a.lastMessageAt.toDate().getTime() : 0;
+      const atB = b.lastMessageAt?.toDate ? b.lastMessageAt.toDate().getTime() : 0;
+      return atB - atA;
+    });
+  }, [conversations]);
+
+  const getUnreadCount = (c: any) => {
+    const myId = user?.uid;
+    if (!myId) return 0;
+    const lastRead = c.reads?.[myId]?.toDate ? c.reads[myId].toDate().getTime() : 0;
+    const lastAt = c.lastMessageAt?.toDate ? c.lastMessageAt.toDate().getTime() : 0;
+    return lastAt > lastRead ? 1 : 0; // lightweight indicator (>=1)
+  };
 
   if (activeConvId) {
     return (
@@ -71,11 +90,30 @@ export default function ConversationsView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {conversations.slice(0,6).map((c) => (
+              {sorted.slice(0, 6).map((c) => (
                 <div key={c.id} className="flex items-center justify-between border rounded-md p-3">
                   <div>
-                    <p className="font-medium text-gray-900">{c.title || "Sin asunto"}</p>
-                    <p className="text-xs text-gray-500">Miembros: {Array.isArray(c.members) ? c.members.length : 0}</p>
+                    <p className="font-medium text-gray-900 flex items-center gap-2">
+                      {c.title || "Sin asunto"}
+                      {getUnreadCount(c) > 0 && (
+                        <span className="inline-block w-2 h-2 bg-blue-600 rounded-full" />
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {c.lastMessageText ? (
+                        <>
+                          {c.lastMessageText.slice(0, 60)}{c.lastMessageText.length > 60 ? '…' : ''}
+                          {c.lastMessageAt?.toDate && (
+                            <>
+                              {' • '}
+                              {formatDistanceToNow(c.lastMessageAt.toDate(), { locale: es, addSuffix: true })}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>Miembros: {Array.isArray(c.members) ? c.members.length : 0}</>
+                      )}
+                    </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => { setActiveConvId(c.id as string); setActiveTitle(c.title as string); }}>Abrir</Button>
                 </div>

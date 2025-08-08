@@ -1,6 +1,7 @@
 import { useContext, useState, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { StatsCard } from "./StatCards";
 import { DataTable } from "./data-table";
@@ -26,7 +27,10 @@ export default function AlumnoCalificacionesOverview() {
   const { user } = useContext(AuthContext);
   
   // All hooks at the top level
-  const { data: calificaciones, loading: calificacionesLoading } = useFirestoreCollection("calificaciones");
+  const { data: calificaciones, loading: calificacionesLoading } = useFirestoreCollection("calificaciones", {
+    constraints: user?.role === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [user?.role, user?.studentId]
+  });
   const { data: subjects } = useFirestoreCollection("subjects");
   const { data: students } = useFirestoreCollection("students");
   const { data: courses } = useFirestoreCollection("courses");

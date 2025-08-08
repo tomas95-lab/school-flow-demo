@@ -1,4 +1,5 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { format, subDays, isToday, isYesterday } from "date-fns";
@@ -44,9 +45,18 @@ export default function AttendanceAlert() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Obtener datos
-  const { data: courses } = useFirestoreCollection("courses");
-  const { data: subjects } = useFirestoreCollection<Subject>("subjects");
-  const { data: attendances } = useFirestoreCollection<Attendance>("attendances");
+  const { data: courses } = useFirestoreCollection("courses", {
+    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
+    dependencies: [user?.role, user?.teacherId]
+  });
+  const { data: subjects } = useFirestoreCollection<Subject>("subjects", {
+    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
+    dependencies: [user?.role, user?.teacherId]
+  });
+  const { data: attendances } = useFirestoreCollection<Attendance>("attendances", {
+    constraints: user?.role === 'docente' && courses?.length ? [where('courseId','in', courses.map(c => c.firestoreId).filter(Boolean).slice(0,10))] : [],
+    dependencies: [user?.role, courses?.map(c => c.firestoreId).join(',')]
+  });
 
   useEffect(() => {
     if (!user || !courses || !subjects || !attendances) return;

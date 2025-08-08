@@ -1,4 +1,6 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
@@ -14,10 +16,26 @@ import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/comp
 
 export default function Alertas() {
   const { user, loading: userLoading } = useContext(AuthContext);
-  const { loading: coursesLoading } = useFirestoreCollection("courses");
-  const { data: alerts } = useFirestoreCollection("alerts");
-  const { data: students } = useFirestoreCollection("students");
-  const { data: courses } = useFirestoreCollection("courses");
+  const roleScope = user?.role;
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
+  const { loading: coursesLoading } = useFirestoreCollection("courses", {
+    constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
+    dependencies: [roleScope, user?.teacherId]
+  });
+  const { data: alerts } = useFirestoreCollection("alerts", {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId','in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
+  });
+  const { data: students } = useFirestoreCollection("students", {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('cursoId','in', teacherCourseIds.slice(0,10))] : [],
+    dependencies: [roleScope, teacherCourseIds.join(',')]
+  });
+  const { data: courses } = useFirestoreCollection("courses", {
+    constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
+    dependencies: [roleScope, user?.teacherId]
+  });
 
   // Función para obtener el mensaje según el rol
   const getRoleMessage = (role: string | undefined) => {

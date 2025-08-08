@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { where } from "firebase/firestore";
+import { where, documentId } from "firebase/firestore";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses } from "@/hooks/useTeacherCourses";
@@ -30,14 +30,33 @@ export default function OverviewDashboard() {
   const { user } = useContext(AuthContext);
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
   const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+  
+  // Alumno: obtener su curso para filtrar
+  const { data: myStudentArr } = useFirestoreCollection("students", {
+    constraints: user?.role === 'alumno' && user?.studentId ? [where(documentId(), '==', user.studentId)] : [],
+    dependencies: [user?.role, user?.studentId]
+  });
+  const studentCourseId = Array.isArray(myStudentArr) && myStudentArr.length > 0
+    ? (myStudentArr[0]?.cursoId || myStudentArr[0]?.courseId)
+    : undefined;
 
   const { data: messages, loading: messagesLoading, error: messagesError, refetch: refetchMessages } = useFirestoreCollection<Message>("messages", {
-    constraints: user?.role === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))] : [],
-    dependencies: [user?.role, teacherCourseIds.join(',')]
+    constraints:
+      user?.role === 'docente' && teacherCourseIds.length > 0
+        ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))]
+        : user?.role === 'alumno' && studentCourseId
+          ? [where('courseId', '==', String(studentCourseId))]
+          : [],
+    dependencies: [user?.role, teacherCourseIds.join(','), String(studentCourseId || '')]
   });
   const { data: courses, loading: coursesLoading, error: coursesError } = useFirestoreCollection<Course>("courses", {
-    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId', '==', user.teacherId)] : [],
-    dependencies: [user?.role, user?.teacherId]
+    constraints:
+      user?.role === 'docente' && user?.teacherId
+        ? [where('teacherId', '==', user.teacherId)]
+        : user?.role === 'alumno' && studentCourseId
+          ? [where(documentId(), '==', String(studentCourseId))]
+          : [],
+    dependencies: [user?.role, user?.teacherId, String(studentCourseId || '')]
   });
   const { data: subjects, loading: subjectsLoading, error: subjectsError } = useFirestoreCollection<Subject>("subjects");
   
@@ -62,9 +81,10 @@ export default function OverviewDashboard() {
       if (user.role === 'admin') {
         totalCourses = courses.length;
       } else if (user.role === 'docente') {
-        totalCourses = subjects.filter(s => s.teacherId === user.teacherId).length;
+        // Usar cursos unificados del hook para evitar doble conteo y normalizar IDs
+        totalCourses = teacherCourses.length;
       } else if (user.role === 'alumno') {
-        totalCourses = courses.filter(c => c.firestoreId === user.studentId).length;
+        totalCourses = studentCourseId ? courses.filter(c => c.firestoreId === String(studentCourseId)).length : 0;
       }
 
       const totalActivity = messages.filter(m => m.status === 'active').length;

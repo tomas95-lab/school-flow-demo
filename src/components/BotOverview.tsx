@@ -1,6 +1,8 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { useFirestoreCollection } from '@/hooks/useFireStoreCollection';
+import { where } from 'firebase/firestore';
+import { useTeacherCourses } from '@/hooks/useTeacherCourses';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,15 +60,46 @@ const BotOverview: React.FC = () => {
 
 
   // Fetch all necessary data
-  const { data: students, loading: loadingStudents, error: errorStudents } = useFirestoreCollection('students');
-  const { data: courses, loading: loadingCourses, error: errorCourses } = useFirestoreCollection('courses');
-  const { data: teachers, loading: loadingTeachers, error: errorTeachers } = useFirestoreCollection('teachers');
-  const { data: subjects, loading: loadingSubjects, error: errorSubjects } = useFirestoreCollection('subjects');
-  const { data: attendances, loading: loadingAttendances, error: errorAttendances } = useFirestoreCollection('attendances');
-  const { data: calificaciones, loading: loadingCalificaciones, error: errorCalificaciones } = useFirestoreCollection('calificaciones');
-  const { data: boletines, loading: loadingBoletines, error: errorBoletines } = useFirestoreCollection('boletines');
-  const { data: alerts, loading: loadingAlerts, error: errorAlerts } = useFirestoreCollection('alerts');
-  const { data: inscripciones, loading: loadingInscripciones, error: errorInscripciones } = useFirestoreCollection('inscripciones');
+  const roleScope = user?.role;
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
+  const { data: students, loading: loadingStudents, error: errorStudents } = useFirestoreCollection('students', {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('cursoId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('firestoreId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
+  });
+  const { data: courses, loading: loadingCourses, error: errorCourses } = useFirestoreCollection('courses', {
+    constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : roleScope === 'alumno' ? [where('alumnos','array-contains', user?.studentId || '')] : [],
+    dependencies: [roleScope, user?.teacherId, user?.studentId]
+  });
+  const { data: teachers, loading: loadingTeachers, error: errorTeachers } = useFirestoreCollection('teachers', {
+    constraints: roleScope === 'docente' ? [where('firestoreId','==', user?.teacherId || '')] : [],
+    dependencies: [roleScope, user?.teacherId]
+  });
+  const { data: subjects, loading: loadingSubjects, error: errorSubjects } = useFirestoreCollection('subjects', {
+    constraints: roleScope === 'docente' ? [where('teacherId','==', user?.teacherId || '')] : [],
+    dependencies: [roleScope, user?.teacherId]
+  });
+  const { data: attendances, loading: loadingAttendances, error: errorAttendances } = useFirestoreCollection('attendances', {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId','in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
+  });
+  const { data: calificaciones, loading: loadingCalificaciones, error: errorCalificaciones } = useFirestoreCollection('calificaciones', {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId','in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
+  });
+  const { data: boletines, loading: loadingBoletines, error: errorBoletines } = useFirestoreCollection('boletines', {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('curso','in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('alumnoId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
+  });
+  const { data: alerts, loading: loadingAlerts, error: errorAlerts } = useFirestoreCollection('alerts', {
+    constraints: roleScope === 'docente' ? [where('teacherId','==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, user?.teacherId, user?.studentId]
+  });
+  const { data: inscripciones, loading: loadingInscripciones, error: errorInscripciones } = useFirestoreCollection('inscripciones', {
+    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId','in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
+  });
 
   // Predefined queries for the bot
   const predefinedQueries = [

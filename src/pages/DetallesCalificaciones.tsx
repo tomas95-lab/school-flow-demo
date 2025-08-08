@@ -34,10 +34,12 @@ import {
 } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthContext } from "@/context/AuthContext";
-import CrearCalificacion from "@/components/CalificacioneslForm";
+// import CrearCalificacion from "@/components/CalificacioneslForm";
+import InlineGradeForm from "@/components/InlineGradeForm";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import type { DocumentData } from "firebase/firestore";
+import { where } from "firebase/firestore";
 
 // Tipos TypeScript
 interface GradeDistribution {
@@ -102,16 +104,36 @@ export default function DetallesCalificaciones() {
     const { data: calificaciones, loading = false } = useFirestoreCollection<Calificacion>("calificaciones");
     const [endDate, setEndDate] = useState<Date>();
     const [startDate, setStartDate] = useState<Date>();
-    const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+    // const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const [activeView, setActiveView] = useState<"table" | "analytics" | "add">("table");
 
-    // Get teacher subjects for docente role
+    // Legacy: obtener cursoId desde teachers (permite acceso por curso asignado antiguo)
     const teacherSubjects = useMemo((): TeacherSubject[] => {
         if (user?.role === "docente" && teachers) {
-            return teachers.filter((teacher: DocumentData) => teacher.firestoreId === user.uid) as TeacherSubject[];
+            return teachers.filter((teacher: DocumentData) => teacher.firestoreId === user.teacherId) as TeacherSubject[];
         }
         return [];
     }, [user, teachers]);
+
+    console.log(id)
+    // Materias reales del docente (desde subjects)
+    const subjectsForTeacher = useMemo(() => {
+        if (user?.role !== "docente") return [] as Subject[];
+        return (subjects || []).filter((s: Subject) => (s as any).teacherId === user?.teacherId);
+    }, [subjects, user]);
+
+    // Precompute teacher course ids for access checks
+    const teacherCourseIds = useMemo(() => {
+        const ids = new Set<string>();
+        teacherSubjects.forEach((s: TeacherSubject) => {
+            if (Array.isArray(s.cursoId)) {
+                s.cursoId.forEach((courseId: string) => courseId && ids.add(courseId));
+            } else if (s.cursoId) {
+                ids.add(s.cursoId);
+            }
+        });
+        return ids;
+    }, [teacherSubjects]);
 
     const course = useMemo((): Course | null => {
         if (user?.role === "admin" && id) {
@@ -119,43 +141,55 @@ export default function DetallesCalificaciones() {
         } else if (user?.role === "docente") {
             if (id) {
                 const foundCourse = courses.find((c: Course) => c.firestoreId === id) || null;
-                const hasAccess = teacherSubjectId
-                    ? (Array.isArray(teacherSubjectId)
-                        ? teacherSubjectId.includes(id)
-                        : teacherSubjectId === id)
-                    : false;
+                // Acceso: permitir si el curso es del docente por teacherId o está en sus cursoId (legacy)
+                const ownsByTeacherId = foundCourse?.teacherId === user.teacherId;
+                const hasAccess = ownsByTeacherId || teacherCourseIds.has(id);
                 return hasAccess ? foundCourse : null;
             } else {
-                const teacherCourseIds = new Set<string>();
-                teacherSubjects.forEach((s: TeacherSubject) => {
-                    if (Array.isArray(s.cursoId)) {
-                        s.cursoId.forEach((courseId: string) => teacherCourseIds.add(courseId));
-                    } else if (s.cursoId) {
-                        teacherCourseIds.add(s.cursoId);
-                    }
-                });
                 return courses.find((c: Course) => c.firestoreId && teacherCourseIds.has(c.firestoreId)) || null;
             }
         }
         return null;
-    }, [user, id, courses, students, subjects, teachers, teacherSubjects]);
+    }, [user, id, courses, students, subjects, teachers, teacherSubjects, teacherCourseIds]);
+
+    // Cargar alumnos del curso con queries específicas (ambos campos: cursoId y courseId)
+    const { data: studentsByCurso } = useFirestoreCollection<Student>("students", {
+        constraints: course?.firestoreId ? [where('cursoId', '==', id)] : [],
+        enableCache: true,
+        dependencies: [course?.firestoreId]
+    });
+    const { data: studentsByCourse } = useFirestoreCollection<Student>("students", {
+        constraints: course?.firestoreId ? [where('courseId', '==', course.firestoreId)] : [],
+        enableCache: true,
+        dependencies: [course?.firestoreId]
+    });
 
     const studentsInCourse = useMemo((): Student[] => {
-        return course && course.firestoreId ? students.filter((s: Student) => s.cursoId === course.firestoreId) : [];
-    }, [course, students]);
+        if (!course || !course.firestoreId) return [];
+        // Preferir resultados directos; merge y únicos
+        const mergedMap = new Map<string, Student>();
+        [...(studentsByCurso || []), ...(studentsByCourse || [])].forEach((s: any) => {
+            if (s?.firestoreId) mergedMap.set(s.firestoreId, s);
+        });
+        const merged = Array.from(mergedMap.values());
+        if (merged.length > 0) return merged as Student[];
+        // Fallback a filtro local de la colección completa
+        return (students || []).filter((s: any) => {
+            const cid = (s.cursoId || s.courseId || "").toString().trim();
+            return cid === course.firestoreId;
+        }) as Student[];
+    }, [course, students, studentsByCurso, studentsByCourse]);
 
     const teacherSubjectId = useMemo((): string | undefined => {
         if (user?.role === "docente" && course && course.firestoreId) {
-            const subject = teacherSubjects.find((s: TeacherSubject) => {
-                if (Array.isArray(s.cursoId)) {
-                    return s.cursoId.includes(course.firestoreId!);
-                }
+            const subject = subjectsForTeacher.find((s: any) => {
+                if (Array.isArray(s.cursoId)) return s.cursoId.includes(course.firestoreId!);
                 return s.cursoId === course.firestoreId;
             });
             return subject?.firestoreId;
         }
         return undefined;
-    }, [user, course, teacherSubjects]);
+    }, [user, course, subjectsForTeacher]);
 
     const calificacionesFiltradas = useMemo((): Calificacion[] => {
         return calificaciones.filter((c: Calificacion) => {
@@ -541,7 +575,7 @@ export default function DetallesCalificaciones() {
               <BarChart3 className="h-4 w-4" />
               Análisis
             </Button>
-            {user?.role === "docente" && teacherSubjectId && (
+            {user?.role === "docente" && (
               <Button
                 variant={activeView === "add" ? "default" : "outline"}
                 onClick={() => setActiveView("add")}
@@ -770,26 +804,9 @@ export default function DetallesCalificaciones() {
               </div>
             )}
 
-            {activeView === "add" && user?.role === "docente" && teacherSubjectId && (
+            {activeView === "add" && user?.role === "docente" && (
               <div className="animate-in slide-in-from-bottom-4 duration-500">
-                <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="h-5 w-5 text-green-600" />
-                      Agregar Nueva Calificación
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
-                      <CrearCalificacion
-                        studentsInCourse={studentsInCourse as any}
-                        selectedStudentIds={selectedStudentIds}
-                        setSelectedStudentIds={setSelectedStudentIds}
-                        subjectId={teacherSubjectId}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <InlineGradeForm courseId={course?.firestoreId || ""} students={studentsInCourse as any} />
               </div>
             )}
           </div>

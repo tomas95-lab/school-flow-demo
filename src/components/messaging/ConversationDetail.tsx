@@ -4,10 +4,12 @@ import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { AuthContext } from "@/context/AuthContext";
 import { db } from "@/firebaseConfig";
-import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp, doc, getDoc, getDocs, where, documentId } from "firebase/firestore";
+import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp, doc, getDoc, getDocs, where, documentId, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "../ui/avatar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 type ConversationDetailProps = {
   conversationId: string;
@@ -17,15 +19,41 @@ type ConversationDetailProps = {
 
 export default function ConversationDetail({ conversationId, title, onBack }: ConversationDetailProps) {
   const { user } = useContext(AuthContext);
-  const [messages, setMessages] = useState<Array<{ id: string; text: string; senderId: string; createdAt?: any }>>([]);
+  const [messages, setMessages] = useState<Array<{ id: string; text: string; senderId: string; createdAt?: any; readBy?: string[] }>>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [members, setMembers] = useState<Array<{ uid: string; name: string; email?: string; role?: string }>>([]);
   const [resolvedTitle, setResolvedTitle] = useState<string | undefined>(title);
+  const [othersTyping, setOthersTyping] = useState<string[]>([]);
+  const typingTimerRef = useRef<any>(null);
+  const [isMember, setIsMember] = useState<boolean | null>(null);
+
+  // Validate membership and preload conversation meta
+  useEffect(() => {
+    const checkMembership = async () => {
+      if (!conversationId || !user) return;
+      try {
+        const conv = await getDoc(doc(db, "conversations", conversationId));
+        if (!conv.exists()) {
+          setIsMember(false);
+          return;
+        }
+        const data = conv.data() || {};
+        const memberIds: string[] = Array.isArray(data.members) ? data.members : [];
+        setIsMember(memberIds.includes(user.uid));
+        if (!resolvedTitle && typeof data.title === 'string') {
+          setResolvedTitle(data.title);
+        }
+      } catch {
+        setIsMember(false);
+      }
+    };
+    checkMembership();
+  }, [conversationId, user?.uid]);
 
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !isMember) return;
     const q = query(collection(db, `conversations/${conversationId}/messages`), orderBy("createdAt", "asc"));
     const unsub = onSnapshot(q as any, (snap: any) => {
       setMessages((snap.docs as any[]).map((d: any) => ({ id: d.id, ...(d.data() || {}) })));
@@ -33,7 +61,7 @@ export default function ConversationDetail({ conversationId, title, onBack }: Co
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     });
     return () => unsub();
-  }, [conversationId]);
+  }, [conversationId, isMember]);
 
   // Load members and optional conversation title
   useEffect(() => {
@@ -43,9 +71,6 @@ export default function ConversationDetail({ conversationId, title, onBack }: Co
         if (!conv.exists()) return;
         const data = conv.data() || {};
         const memberIds: string[] = Array.isArray(data.members) ? data.members : [];
-        if (!resolvedTitle && typeof data.title === 'string') {
-          setResolvedTitle(data.title);
-        }
         if (memberIds.length === 0) {
           setMembers([]);
           return;
@@ -79,17 +104,91 @@ export default function ConversationDetail({ conversationId, title, onBack }: Co
       }
     };
     loadMembers();
-  }, [conversationId, resolvedTitle]);
+  }, [conversationId]);
+
+  // Subscribe to typing indicators from other members
+  useEffect(() => {
+    if (!conversationId || !user || !isMember) return;
+    const typingCol = collection(db, `conversations/${conversationId}/typing`);
+    const unsub = onSnapshot(typingCol as any, (snap: any) => {
+      const now = Date.now();
+      const active = (snap.docs as any[])
+        .map((d: any) => ({ id: d.id, ...(d.data() || {}) }))
+        .filter((t: any) => t.id !== user.uid)
+        .filter((t: any) => {
+          const ts = t.updatedAt?.toDate ? t.updatedAt.toDate().getTime() : (typeof t.updatedAt === 'number' ? t.updatedAt : 0);
+          return now - ts < 5000; // last 5s
+        })
+        .map((t: any) => t.name || "Usuario");
+      setOthersTyping(active);
+    });
+    return () => unsub();
+  }, [conversationId, user?.uid, isMember]);
+
+  // Mark messages as read when they appear
+  useEffect(() => {
+    const markAsRead = async () => {
+      if (!user || messages.length === 0 || !isMember) return;
+      const myId = user.uid;
+      const toMark = messages.filter(m => m.senderId !== myId && !(m.readBy || []).includes(myId));
+      // Limit to avoid excessive writes
+      const latestToMark = toMark.slice(-20);
+      await Promise.all(latestToMark.map(async (m) => {
+        try {
+          await updateDoc(doc(db, `conversations/${conversationId}/messages`, m.id), {
+            readBy: arrayUnion(myId)
+          });
+        } catch {
+          // ignore
+        }
+      }));
+      try {
+        await updateDoc(doc(db, "conversations", conversationId), {
+          ["reads." + myId]: serverTimestamp(),
+        });
+      } catch {
+        // ignore
+      }
+    };
+    markAsRead();
+  }, [messages, conversationId, user?.uid]);
+
+  const emitTyping = async () => {
+    if (!user || !isMember) return;
+    try {
+      await setDoc(doc(db, `conversations/${conversationId}/typing`, user.uid), {
+        updatedAt: serverTimestamp(),
+        name: user.name || user.email || "Usuario"
+      }, { merge: true });
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSend = async () => {
     if (!user || !text.trim()) return;
+    if (!isMember) {
+      toast.error("No tienes acceso a esta conversación");
+      return;
+    }
     setSending(true);
     try {
       await addDoc(collection(db, `conversations/${conversationId}/messages`), {
         text: text.trim(),
         senderId: user.uid,
         createdAt: serverTimestamp(),
+        readBy: [user.uid],
       });
+      try {
+        await updateDoc(doc(db, "conversations", conversationId), {
+          lastMessageText: text.trim(),
+          lastMessageSenderId: user.uid,
+          lastMessageAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } catch {
+        // ignore
+      }
       setText("");
     } catch (e) {
       toast.error("No se pudo enviar el mensaje");
@@ -128,19 +227,50 @@ export default function ConversationDetail({ conversationId, title, onBack }: Co
             return (
               <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${mine ? 'bg-blue-600 text-white' : 'bg-white border'}`}>
-                  {m.text}
+                  <div className="whitespace-pre-wrap">{m.text}</div>
+                  <div className={`mt-1 text-[10px] opacity-80 ${mine ? 'text-blue-100' : 'text-gray-500'}`}>
+                    {m.createdAt?.toDate ? format(m.createdAt.toDate(), "dd MMM HH:mm", { locale: es }) : 'Enviando...'}
+                    {mine && (
+                      <>
+                        {' '}
+                        {(() => {
+                          const others = (m.readBy || []).filter(uid => uid !== user?.uid);
+                          if (others.length > 0) return '• Leído';
+                          return '• Enviado';
+                        })()}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
           <div ref={bottomRef} />
         </div>
+        {othersTyping.length > 0 && (
+          <div className="mt-2 text-xs text-gray-500">
+            {othersTyping.join(', ')} está escribiendo...
+          </div>
+        )}
         <div className="mt-3 flex items-center gap-2">
           <Textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+              emitTyping();
+              typingTimerRef.current = setTimeout(() => {
+                // typing timeout; no-op, indicator handled by time checks
+              }, 1500);
+            }}
             placeholder="Escribe un mensaje"
             className="min-h-[44px] h-[44px] resize-none"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           />
           <Button onClick={handleSend} disabled={!text.trim() || sending} className="shrink-0">
             <Send className="h-4 w-4" />

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses } from "@/hooks/useTeacherCourses";
-import { addDoc, collection, serverTimestamp, updateDoc, doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, updateDoc, doc, getDoc, where, documentId } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -124,16 +124,35 @@ export default function WallView() {
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
   const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
 
+  // Alumno: obtener su propio curso para filtrar
+  const { data: myStudentArr } = useFirestoreCollection("students", {
+    constraints: user?.role === 'alumno' && user?.studentId ? [where(documentId(), '==', user.studentId)] : [],
+    dependencies: [user?.role, user?.studentId]
+  });
+  const studentCourseId = Array.isArray(myStudentArr) && myStudentArr.length > 0
+    ? (myStudentArr[0]?.cursoId || myStudentArr[0]?.courseId)
+    : undefined;
+
   const { data: courses, loading: coursesLoading, error: coursesError } = useFirestoreCollection<Course>("courses", {
-    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId', '==', user.teacherId)] : [],
-    dependencies: [user?.role, user?.teacherId]
+    constraints:
+      user?.role === 'docente' && user?.teacherId
+        ? [where('teacherId', '==', user.teacherId)]
+        : user?.role === 'alumno' && studentCourseId
+          ? [where(documentId(), '==', String(studentCourseId))]
+          : [],
+    dependencies: [user?.role, user?.teacherId, String(studentCourseId || '')]
   });
 
   const { data: messages, loading: messagesLoading, error: messagesError, refetch: refetchMessages } = useFirestoreCollection<Message>("messages", {
     orderBy: "createdAt",
     enableCache: false,
-    constraints: user?.role === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))] : [],
-    dependencies: [user?.role, teacherCourseIds.join(',')]
+    constraints:
+      user?.role === 'docente' && teacherCourseIds.length > 0
+        ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))]
+        : user?.role === 'alumno' && studentCourseId
+          ? [where('courseId', '==', String(studentCourseId))]
+          : [],
+    dependencies: [user?.role, teacherCourseIds.join(','), String(studentCourseId || '')]
   });
   const { data: students, loading: studentsLoading } = useFirestoreCollection("students");
   const { data: teachers, loading: teachersLoading } = useFirestoreCollection("teachers");

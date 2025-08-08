@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { db } from "@/firebaseConfig";
 import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { subjectBelongsToCourse } from "@/utils/subjectUtils";
+import { where } from "firebase/firestore";
 
 type Student = {
   firestoreId: string;
@@ -53,25 +54,44 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
   // Verificar permisos
   const canRegisterAttendance = user?.role === "docente" || user?.role === "admin";
 
-  // Filtrar materias del docente que corresponden al curso específico
-  const teacherSubjectsForCourse = useMemo(() => 
-    subjects.filter(subject => 
-      subject.teacherId === user?.teacherId && 
-      subjectBelongsToCourse(subject, courseId)
-    ),
-    [subjects, user?.teacherId, courseId]
-  );
+  // Materias del docente en el curso actual (sin legacy)
+  const teacherSubjectsForCourse = useMemo(() => {
+    return subjects.filter(subject => {
+      if (subject.teacherId !== user?.teacherId) return false;
+      return subjectBelongsToCourse(subject, courseId);
+    });
+  }, [subjects, user?.teacherId, courseId]);
 
-  // Filtrar estudiantes del curso seleccionado
-  const teacherStudents = useMemo(() => 
-    students.filter(student => student.cursoId === courseId),
-    [students, courseId]
-  );
+  // Traer alumnos del curso actual con queries directas (cursoId y courseId) y fallback local
+  const { data: studentsByCurso } = useFirestoreCollection<Student>("students", {
+    constraints: courseId ? [where('cursoId', '==', courseId)] : [],
+    enableCache: true,
+    dependencies: [courseId]
+  });
+  const { data: studentsByCourse } = useFirestoreCollection<Student>("students", {
+    constraints: courseId ? [where('courseId', '==', courseId)] : [],
+    enableCache: true,
+    dependencies: [courseId]
+  });
+
+  const studentsInCourse = useMemo(() => {
+    const mergedMap = new Map<string, Student>();
+    [...(studentsByCurso || []), ...(studentsByCourse || [])].forEach((s: any) => {
+      if (s?.firestoreId) mergedMap.set(s.firestoreId, s);
+    });
+    const merged = Array.from(mergedMap.values());
+    if (courseId && merged.length > 0) return merged as Student[];
+
+    return (students || []).filter((s: any) => {
+      const cid = (s.cursoId || s.courseId || "").toString().trim();
+      return cid === courseId;
+    }) as Student[];
+  }, [studentsByCurso, studentsByCourse, students, courseId]);
 
   // Verificar si ya existe asistencia para la fecha y materia seleccionada
   const existingAttendanceForDate = useMemo(() => {
     if (!selectedSubject || !selectedDate || !attendances) return [];
-    
+    // Solo el curso actual
     return attendances.filter(att => 
       att.subject === selectedSubject &&
       att.courseId === courseId &&
@@ -84,21 +104,20 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
     if (teacherSubjectsForCourse.length === 1 && !selectedSubject) {
       setSelectedSubject(teacherSubjectsForCourse[0].nombre);
     } else if (teacherSubjectsForCourse.length > 1 && !selectedSubject) {
-      // Pre-seleccionar la primera materia si tiene múltiples
       setSelectedSubject(teacherSubjectsForCourse[0].nombre);
     }
   }, [teacherSubjectsForCourse, selectedSubject]);
 
   // Inicializar mapa de asistencias
   useEffect(() => {
-    if (teacherStudents.length > 0) {
+    if (studentsInCourse.length > 0) {
       const initialMap: Record<string, boolean> = {};
-      teacherStudents.forEach(student => {
+      studentsInCourse.forEach(student => {
         initialMap[student.firestoreId] = true; // Por defecto presentes
       });
       setAttendanceMap(initialMap);
     }
-  }, [teacherStudents]);
+  }, [studentsInCourse]);
 
   // Verificar si ya existe asistencia
   useEffect(() => {
@@ -114,7 +133,7 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
 
   const markAllPresent = () => {
     const newMap: Record<string, boolean> = {};
-    teacherStudents.forEach(student => {
+    studentsInCourse.forEach(student => {
       newMap[student.firestoreId] = true;
     });
     setAttendanceMap(newMap);
@@ -122,7 +141,7 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
 
   const markAllAbsent = () => {
     const newMap: Record<string, boolean> = {};
-    teacherStudents.forEach(student => {
+    studentsInCourse.forEach(student => {
       newMap[student.firestoreId] = false;
     });
     setAttendanceMap(newMap);
@@ -130,14 +149,14 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
 
   const resetAttendance = () => {
     const newMap: Record<string, boolean> = {};
-    teacherStudents.forEach(student => {
+    studentsInCourse.forEach(student => {
       newMap[student.firestoreId] = true; // Reset a presentes
     });
     setAttendanceMap(newMap);
   };
 
   const saveAttendance = async () => {
-    if (!selectedSubject || !courseId || teacherStudents.length === 0) return;
+    if (!selectedSubject || !courseId || studentsInCourse.length === 0) return;
     if (!canRegisterAttendance) return;
 
     setIsLoading(true);
@@ -145,7 +164,7 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
     try {
       const batch = [];
       
-      for (const student of teacherStudents) {
+      for (const student of studentsInCourse) {
         const attendanceId = `${student.firestoreId}_${courseId}_${selectedSubject}_${selectedDate}`;
         const attendanceData = {
           studentId: student.firestoreId,
@@ -179,7 +198,7 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
       await Promise.all(batch);
       
       toast.success('Asistencias guardadas', {
-        description: `${teacherStudents.length} asistencias ${existingAttendanceForDate.length > 0 ? 'actualizadas' : 'guardadas'} exitosamente`
+        description: `${studentsInCourse.length} asistencias ${existingAttendanceForDate.length > 0 ? 'actualizadas' : 'guardadas'} exitosamente`
       });
     } catch (error) {
       console.error("Error al guardar asistencias:", error);
@@ -192,7 +211,7 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
   };
 
   const presentCount = Object.values(attendanceMap).filter(Boolean).length;
-  const totalStudents = teacherStudents.length;
+  const totalStudents = studentsInCourse.length;
   const attendancePercentage = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
 
   // Si no tiene permisos, mostrar mensaje
@@ -305,11 +324,11 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
       </div>
 
       {/* Lista de estudiantes */}
-      {selectedSubject && teacherStudents.length > 0 && (
+      {selectedSubject && studentsInCourse.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Estudiantes ({teacherStudents.length})
+              Estudiantes ({studentsInCourse.length})
             </h3>
             <Button
               onClick={saveAttendance}
@@ -322,7 +341,7 @@ export default function QuickAttendanceRegister({courseId}: {courseId: string}) 
           </div>
           
           <div className="space-y-2">
-            {teacherStudents.map(student => {
+            {studentsInCourse.map(student => {
               const existingAttendance = existingAttendanceForDate.find(
                 att => att.studentId === student.firestoreId
               );

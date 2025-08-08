@@ -1,5 +1,6 @@
-import { } from "@/hooks/useFireStoreCollection";
-import { useTeacherCourses, useTeacherStudents } from "@/hooks/useTeacherCourses";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
+import { useTeacherCourses, useTeacherStudents, useTeacherSubjectsInCourse } from "@/hooks/useTeacherCourses";
 import { useContext, useState, useEffect, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,17 +12,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, AlertCircle, BookOpen, Users, FileText, Award, TrendingUp, Sparkles } from "lucide-react";
+import { CheckCircle, XCircle, BookOpen, Users, FileText, Award } from "lucide-react";
 import { LoadingState } from "./LoadingState";
 
 // Tipos TypeScript
 interface GradeFormData {
   courseId: string;
   subjectId: string;
-  subjectName: string;
   studentId: string;
+  activityName: string;
   gradeValue: number;
-  gradeType: string;
+  date: string; // yyyy-mm-dd
   comment: string;
 }
 
@@ -33,14 +34,15 @@ interface GradeValidation {
   bgColor: string;
 }
 
-const GRADE_TYPES = [
-  { value: "examen", label: "Examen", icon: "📝" },
-  { value: "trabajo_practico", label: "Trabajo Práctico", icon: "🔬" },
-  { value: "participacion", label: "Participación", icon: "💬" },
-  { value: "tarea", label: "Tarea", icon: "📚" },
-  { value: "proyecto", label: "Proyecto", icon: "🚀" },
-  { value: "otro", label: "Otro", icon: "📋" }
-] as const;
+// Tipos de evaluación (sin emojis)
+// const GRADE_TYPES = [
+//   { value: "examen", label: "Examen" },
+//   { value: "trabajo_practico", label: "Trabajo Práctico" },
+//   { value: "participacion", label: "Participación" },
+//   { value: "tarea", label: "Tarea" },
+//   { value: "proyecto", label: "Proyecto" },
+//   { value: "otro", label: "Otro" }
+// ] as const;
 
 export default function QuickGradeRegister() {
   const { user } = useContext(AuthContext);
@@ -49,36 +51,68 @@ export default function QuickGradeRegister() {
   const [formData, setFormData] = useState<GradeFormData>({
     courseId: "",
     subjectId: "",
-    subjectName: "",
     studentId: "",
+    activityName: "",
     gradeValue: 0,
-    gradeType: "examen",
+    date: new Date().toISOString().split('T')[0],
     comment: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Hooks estandarizados
-  const { teacherCourses, teacherSubjects, isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
+  const { teacherCourses, /* teacherSubjects,*/ isLoading: coursesLoading } = useTeacherCourses(user?.teacherId);
   const { teacherStudents, isLoading: studentsLoading } = useTeacherStudents(user?.teacherId);
+  const subjectsInSelectedCourse = useTeacherSubjectsInCourse(user?.teacherId, formData.courseId);
+
+  // Fallback directo por curso seleccionado (robustez ante datos legacy)
+  const { data: studentsByCourse } = useFirestoreCollection<any>("students", {
+    constraints: formData.courseId ? [where('cursoId', '==', formData.courseId)] : [],
+    enableCache: true,
+    dependencies: [formData.courseId]
+  });
+
+  const { data: studentsByCourseAlt } = useFirestoreCollection<any>("students", {
+    constraints: formData.courseId ? [where('courseId', '==', formData.courseId)] : [],
+    enableCache: true,
+    dependencies: [formData.courseId]
+  });
 
   // Auto-seleccionar curso y materia si el docente tiene una sola
   useEffect(() => {
     if (teacherCourses.length === 1 && !formData.courseId) {
       setFormData(prev => ({ ...prev, courseId: teacherCourses[0].firestoreId }));
     }
-    if (teacherSubjects.length === 1 && !formData.subjectName) {
-      setFormData(prev => ({ 
-        ...prev, 
-        subjectName: teacherSubjects[0].nombre,
-        subjectId: teacherSubjects[0].firestoreId || ""
-      }));
+  }, [teacherCourses, formData.courseId]);
+
+  // Cuando cambia el curso, limpiar materia/estudiante y auto-seleccionar materia si hay una sola
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, subjectId: "", studentId: "" }));
+    if (subjectsInSelectedCourse.length === 1) {
+      setFormData(prev => ({ ...prev, subjectId: subjectsInSelectedCourse[0].firestoreId || "" }));
     }
-  }, [teacherCourses, teacherSubjects, formData.courseId, formData.subjectName]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.courseId]);
 
   // Filtrar estudiantes del curso seleccionado
   const courseStudents = useMemo(() => {
-    return teacherStudents.filter(s => s.cursoId === formData.courseId);
-  }, [teacherStudents, formData.courseId]);
+    const byCurso = (studentsByCourse || []) as Array<any>;
+    const byCourse = (studentsByCourseAlt || []) as Array<any>;
+    const mergedMap = new Map<string, any>();
+    [...byCurso, ...byCourse].forEach(s => {
+      if (s?.firestoreId) mergedMap.set(s.firestoreId, s);
+    });
+    const merged = Array.from(mergedMap.values());
+
+    if (formData.courseId && merged.length > 0) {
+      return merged;
+    }
+
+    // Filtro local sobre la lista de estudiantes del docente
+    return teacherStudents.filter((s: any) => {
+      const cid = (s.cursoId || s.courseId || "").toString().trim();
+      return cid === formData.courseId;
+    });
+  }, [teacherStudents, studentsByCourse, studentsByCourseAlt, formData.courseId]);
 
   // Validar calificación
   const gradeValidation = useMemo((): GradeValidation => {
@@ -109,7 +143,7 @@ export default function QuickGradeRegister() {
         isValid: true,
         message: "Excelente",
         color: "text-emerald-600",
-        icon: <Sparkles className="h-4 w-4 text-emerald-600" />,
+        icon: <CheckCircle className="h-4 w-4 text-emerald-600" />,
         bgColor: "bg-emerald-50"
       };
     }
@@ -145,11 +179,15 @@ export default function QuickGradeRegister() {
 
   // Validar formulario completo
   const isFormValid = useMemo(() => {
-    return formData.courseId && 
-           formData.subjectName && 
-           formData.studentId && 
-           formData.gradeValue > 0 && 
-           formData.gradeValue <= 10;
+    return Boolean(
+      formData.courseId &&
+      formData.subjectId &&
+      formData.studentId &&
+      formData.activityName.trim() &&
+      formData.date &&
+      formData.gradeValue > 0 &&
+      formData.gradeValue <= 10
+    );
   }, [formData]);
 
   // Estados de carga
@@ -195,13 +233,12 @@ export default function QuickGradeRegister() {
     try {
       const gradeData = {
         studentId: formData.studentId,
-        subjectId: formData.subjectId || "",
-        subject: formData.subjectName,
+        subjectId: formData.subjectId,
         courseId: formData.courseId,
+        Actividad: formData.activityName,
+        Comentario: formData.comment,
         valor: formData.gradeValue,
-        tipo: formData.gradeType,
-        fecha: new Date().toISOString().split('T')[0],
-        comentario: formData.comment,
+        fecha: formData.date,
         createdAt: serverTimestamp(),
         teacherId: user?.teacherId
       };
@@ -210,14 +247,14 @@ export default function QuickGradeRegister() {
       
       toast.success("Calificación registrada exitosamente");
       
-      // Limpiar formulario
+      // Limpiar formulario (mantener curso y materia)
       setFormData({
-        courseId: formData.courseId, // Mantener curso seleccionado
-        subjectId: formData.subjectId, // Mantener materia seleccionada
-        subjectName: formData.subjectName,
+        courseId: formData.courseId,
+        subjectId: formData.subjectId,
         studentId: "",
+        activityName: "",
         gradeValue: 0,
-        gradeType: "examen",
+        date: new Date().toISOString().split('T')[0],
         comment: ""
       });
       
@@ -235,7 +272,7 @@ export default function QuickGradeRegister() {
 
   return (
     <div className="space-y-8">
-      {/* Header mejorado */}
+      {/* Header */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -291,23 +328,16 @@ export default function QuickGradeRegister() {
                   Materia *
                 </Label>
                 <Select 
-                  value={formData.subjectName} 
-                  onValueChange={(value) => {
-                    const subject = teacherSubjects.find(s => s.nombre === value);
-                    updateFormData('subjectName', value);
-                    updateFormData('subjectId', subject?.firestoreId || "");
-                  }}
+                  value={formData.subjectId}
+                  onValueChange={(value) => updateFormData('subjectId', value)}
                 >
                   <SelectTrigger className="h-12">
                     <SelectValue placeholder="Seleccionar materia" />
                   </SelectTrigger>
                   <SelectContent>
-                    {teacherSubjects.map((subject) => (
-                      <SelectItem key={subject.firestoreId} value={subject.nombre}>
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                          {subject.nombre}
-                        </div>
+                    {subjectsInSelectedCourse.map((subject) => (
+                      <SelectItem key={subject.firestoreId} value={subject.firestoreId || ""}>
+                        {subject.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -315,7 +345,7 @@ export default function QuickGradeRegister() {
               </div>
             </div>
 
-            {/* Segunda fila: Estudiante y Tipo */}
+            {/* Segunda fila: Estudiante y Actividad */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Estudiante */}
               <div className="space-y-2">
@@ -341,30 +371,18 @@ export default function QuickGradeRegister() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Tipo de evaluación */}
+              {/* Actividad */}
               <div className="space-y-2">
-                <Label htmlFor="type" className="text-sm font-semibold text-gray-700">
-                  Tipo de Evaluación *
+                <Label htmlFor="activity" className="text-sm font-semibold text-gray-700">
+                  Actividad *
                 </Label>
-                <Select 
-                  value={formData.gradeType} 
-                  onValueChange={(value) => updateFormData('gradeType', value)}
-                >
-                  <SelectTrigger className="h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GRADE_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div className="flex items-center gap-2">
-                          <span>{type.icon}</span>
-                          {type.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="activity"
+                  value={formData.activityName}
+                  onChange={(e) => updateFormData('activityName', e.target.value)}
+                  placeholder="Ej: Parcial 1"
+                  className="h-12"
+                />
               </div>
             </div>
 
@@ -401,19 +419,34 @@ export default function QuickGradeRegister() {
               )}
             </div>
 
-            {/* Comentario */}
-            <div className="space-y-2">
-              <Label htmlFor="comment" className="text-sm font-semibold text-gray-700">
-                Comentario (opcional)
-              </Label>
-              <Textarea
-                id="comment"
-                value={formData.comment}
-                onChange={(e) => updateFormData('comment', e.target.value)}
-                placeholder="Observaciones sobre la calificación..."
-                rows={4}
-                className="resize-none"
-              />
+            {/* Fecha y Comentario */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-sm font-semibold text-gray-700">
+                  Fecha *
+                </Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={formData.date}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => updateFormData('date', e.target.value)}
+                  className="h-12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="comment" className="text-sm font-semibold text-gray-700">
+                  Comentario (opcional)
+                </Label>
+                <Textarea
+                  id="comment"
+                  value={formData.comment}
+                  onChange={(e) => updateFormData('comment', e.target.value)}
+                  placeholder="Observaciones sobre la calificación..."
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
             </div>
 
             {/* Botón de envío mejorado */}
@@ -439,42 +472,6 @@ export default function QuickGradeRegister() {
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
-
-      {/* Información adicional mejorada */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <AlertCircle className="h-5 w-5 text-blue-600" />
-            Información y Consejos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Proceso Automático
-              </h4>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li>• Las calificaciones se registran con la fecha actual</li>
-                <li>• El sistema valida que la calificación esté entre 1 y 10</li>
-                <li>• Solo se muestran estudiantes de tus cursos</li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-600" />
-                Consejos de Uso
-              </h4>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li>• Registra calificaciones dentro de las 48 horas</li>
-                <li>• Agrega comentarios para mayor contexto</li>
-                <li>• Utiliza el registro rápido para evaluaciones masivas</li>
-              </ul>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

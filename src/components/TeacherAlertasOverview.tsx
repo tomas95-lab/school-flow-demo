@@ -1,4 +1,6 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { StatsCard } from "./StatCards";
 import { AlertTriangle, Bell, CheckCircle, Search } from "lucide-react";
 import { useContext, useState } from "react";
@@ -14,7 +16,12 @@ import { SchoolSpinner } from "./SchoolSpinner";
 
 export default function TeacherAlertasOverview() {
   const { user } = useContext(AuthContext);
-  const { data: alerts } = useFirestoreCollection("alerts");
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+  const { data: alerts } = useFirestoreCollection("alerts", {
+    constraints: teacherCourseIds.length > 0 ? [where('courseId','in', teacherCourseIds.slice(0,10))] : [],
+    dependencies: [teacherCourseIds.join(',')]
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");

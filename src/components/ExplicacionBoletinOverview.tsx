@@ -30,6 +30,7 @@ import { } from "date-fns/locale";
 import { LoadingState } from "./LoadingState";
 import { EmptyState } from "./EmptyState";
 import ReutilizableDialog from "./DialogReutlizable";
+import { useEffect } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 
@@ -138,6 +139,22 @@ export default function ExplicacionBoletinOverview() {
   const { data: alerts, loading: loadingAlerts } = useFirestoreCollection<Alert>("alerts");
   const { data: teachers, loading: loadingTeachers } = useFirestoreCollection<Teacher>("users");
 
+  const isAlumno = user?.role === 'alumno';
+  const currentStudent = useMemo(() => {
+    if (!isAlumno) return undefined;
+    return students?.find((s: any) => s.firestoreId === user?.studentId);
+  }, [isAlumno, students, user?.studentId]);
+
+  // Forzar filtros al alumno actual
+  useEffect(() => {
+    if (isAlumno && user?.studentId) {
+      setSelectedStudent(user.studentId);
+      if (currentStudent?.cursoId) {
+        setSelectedCourse(currentStudent.cursoId);
+      }
+    }
+  }, [isAlumno, user?.studentId, currentStudent?.cursoId]);
+
   // Análisis inteligente de boletines
   const analysis = useMemo(() => {
     if (!students || !courses || !subjects || !attendances || !grades || !boletines || !alerts || !teachers) {
@@ -155,8 +172,8 @@ export default function ExplicacionBoletinOverview() {
     // 1. Análisis General de Boletines
     const generalAnalysis = {
       totalBoletines: filteredBoletines.length,
-      totalStudents: students.length,
-      totalCourses: courses.length,
+      totalStudents: isAlumno ? 1 : students.length,
+      totalCourses: isAlumno ? (currentStudent?.cursoId ? 1 : 0) : courses.length,
       totalSubjects: subjects.length,
       
       // Estadísticas de rendimiento
@@ -348,34 +365,7 @@ export default function ExplicacionBoletinOverview() {
     );
   }
 
-
-    // Verificar acceso
-    if (user?.role !== "admin" && user?.role !== "docente") {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-          <div className="p-8">
-            <Card className="max-w-md mx-auto">
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle className="h-8 w-8 text-red-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Acceso Restringido
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Solo administradores y docentes pueden acceder a la explicación de boletines.
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Tu rol actual: {user?.role || 'No definido'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
-    }
+  // Permitir también a alumnos; sin guard de acceso
   if (!analysis || !boletines || boletines.length === 0) {
     return (
       <EmptyState
@@ -713,7 +703,8 @@ export default function ExplicacionBoletinOverview() {
           />
         </div>
 
-        {/* Filtros */}
+        {/* Filtros (ocultos para alumno) */}
+        {!isAlumno && (
         <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -768,6 +759,7 @@ export default function ExplicacionBoletinOverview() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Secciones de Análisis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

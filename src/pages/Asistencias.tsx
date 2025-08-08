@@ -12,6 +12,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { EmptyState } from "@/components/EmptyState";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+// Registro rápido se realiza en DetalleAsistencia
 
 // Componentes de vista por rol
 import AdminAttendanceOverview from "@/components/AdminAttendanceOverview";
@@ -43,6 +44,7 @@ export default function Asistencias() {
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
 
   const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+  // La selección de curso y registro rápido se realiza desde el panel (overview) → DetalleAsistencia
 
   const { loading: coursesLoading } = useFirestoreCollection("courses", {
     constraints: roleScope === 'alumno'
@@ -330,17 +332,13 @@ export default function Asistencias() {
         <div className="space-y-6 animate-in fade-in-50 duration-500">
           {activeView === "overview" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
-              {/* Estado vacío si no hay asistencias */}
-              {Array.isArray(asistencias) && asistencias.length === 0 ? (
+              {/* Estado vacío solo para alumno; docentes/admin ven su panel aunque no haya datos */}
+              {user?.role === 'alumno' && Array.isArray(asistencias) && asistencias.length === 0 ? (
                 <EmptyState
                   icon={CheckCircle}
                   title="Sin asistencias registradas"
                   description={
-                    user?.role === 'docente'
-                      ? 'Aún no registraste asistencias. Usa el botón “Registrar Asistencias”.'
-                      : user?.role === 'alumno'
-                        ? 'Todavía no se cargaron asistencias para tu cuenta.'
-                        : 'No hay registros de asistencia aún.'
+                    'Todavía no se cargaron asistencias para tu cuenta.'
                   }
                 />
               ) : (
@@ -453,20 +451,15 @@ export default function Asistencias() {
 
           {activeView === "register" && canRegisterAttendance && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
-              {/* Aquí iría el componente de registro rápido de asistencias */}
               <Card className="bg-white/80 backdrop-blur-sm">
                 <CardContent className="p-8">
-                  <div className="text-center">
-                    <div className="p-4 bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                      <Plus className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Registro de Asistencias
-                    </h3>
-                    <p className="text-gray-600">
-                      Funcionalidad de registro rápido en desarrollo.
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={BookOpen}
+                    title={user?.role === 'docente' ? 'Ir a Mis Cursos' : 'Sin permisos para registrar'}
+                    description={user?.role === 'docente' ? 'Selecciona un curso desde el panel de Mis Cursos para registrar asistencias.' : 'Solo los docentes pueden registrar asistencias.'}
+                    actionText={user?.role === 'docente' ? 'Ver Mis Cursos' : undefined}
+                    onAction={user?.role === 'docente' ? () => setActiveView('overview') : undefined}
+                  />
                 </CardContent>
               </Card>
             </div>

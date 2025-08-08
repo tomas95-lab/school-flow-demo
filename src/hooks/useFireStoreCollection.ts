@@ -23,7 +23,9 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
   const [error, setError] = useState<string | null>(null);
   const db = getFirestore();
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  const cacheKey = `${path}_${options?.limit || 'all'}_${options?.orderBy || 'none'}`;
+  const depsKey = options?.dependencies ? JSON.stringify(options.dependencies) : 'nodeps';
+  const constraintsKey = options?.constraints ? `c${options.constraints.length}` : 'c0';
+  const cacheKey = `${path}_${options?.limit || 'all'}_${options?.orderBy || 'none'}_${constraintsKey}_${depsKey}`;
   const { handleError } = useGlobalError();
   const { user, loading: authLoading } = useAuth();
 

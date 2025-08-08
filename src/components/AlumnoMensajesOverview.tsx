@@ -1,4 +1,5 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { CourseCard } from "./CourseCard";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -26,7 +27,7 @@ export default function AlumnoMensajesOverview() {
     const { user } = useContext(AuthContext);
     const { data: messages } = useFirestoreCollection<Message>("messages");
     const { data: courses } = useFirestoreCollection<Course>("courses");
-    const { data: students } = useFirestoreCollection("students");
+   const { data: students } = useFirestoreCollection("students");
     const navigate = useNavigate();
 
     // Obtener información del estudiante

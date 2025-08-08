@@ -1,7 +1,9 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
+import { where } from "firebase/firestore";
 import { useContext, useState, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
+import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +46,11 @@ type Subject = {
   cursoId: string | string[]; // Array de cursos o string para compatibilidad
 };
 
+type Teacher = {
+  firestoreId: string;
+  cursoId?: string | string[];
+};
+
 type Attendance = {
   firestoreId: string;
   studentId: string;
@@ -55,7 +62,6 @@ type Attendance = {
 };
 
 export default function DetalleAsistencia() {
-  const { user } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("id");
   
@@ -66,10 +72,17 @@ export default function DetalleAsistencia() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // Obtener datos
-  const { data: courses, loading: loadingCourses } = useFirestoreCollection("courses");
+  const { user } = useContext(AuthContext);
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+  const { data: courses, loading: loadingCourses } = useFirestoreCollection("courses", {
+    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
+    dependencies: [user?.role, user?.teacherId]
+  });
   const { data: students, loading: loadingStudents } = useFirestoreCollection<Student>("students");
   const { data: subjects, loading: loadingSubjects } = useFirestoreCollection<Subject>("subjects");
   const { data: attendances, loading: loadingAttendances } = useFirestoreCollection<Attendance>("attendances");
+  const { data: teachers } = useFirestoreCollection<Teacher>("teachers");
 
   // Calcular semana actual (siempre se ejecuta)
   const today = new Date();
@@ -81,10 +94,24 @@ export default function DetalleAsistencia() {
   const course = useMemo(() => courses?.find(c => c.firestoreId === courseId), [courses, courseId]);
 
   // Filtrar estudiantes del curso
-  const courseStudents = useMemo(() => 
-    students?.filter(s => s.cursoId === courseId) || [], 
-    [students, courseId]
-  );
+  const courseStudents = useMemo(() => {
+    if (!students) return [] as Student[];
+    const direct = students.filter(s => s.cursoId === courseId);
+    if (direct.length > 0) return direct;
+    // Fallback para datos legacy: si el docente tiene un único cursoId legacy y no coincide con courseId, usarlo
+    const teacherInfo = teachers?.find(t => t.firestoreId === course?.teacherId);
+    const legacyIds = new Set<string>();
+    const raw = teacherInfo?.cursoId;
+    if (Array.isArray(raw)) raw.forEach(id => { if (typeof id === 'string') legacyIds.add(id.trim()); });
+    else if (typeof raw === 'string') legacyIds.add(raw.trim());
+    if (legacyIds.size === 1) {
+      const [onlyLegacy] = Array.from(legacyIds);
+      if (onlyLegacy && onlyLegacy !== courseId) {
+        return students.filter(s => s.cursoId === onlyLegacy);
+      }
+    }
+    return direct;
+  }, [students, courseId, teachers, course?.teacherId]);
   
   // Filtrar materias del curso (usando función utilitaria)
   const courseSubjects = useMemo(() => 

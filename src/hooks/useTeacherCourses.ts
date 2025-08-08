@@ -14,29 +14,33 @@ export function useTeacherCourses(teacherId?: string) {
   const { data: subjects } = useFirestoreCollection<Subject>("subjects");
 
   const teacherCourses = useMemo(() => {
-    if (!teacherId || !courses || !subjects) return [];
+    if (!teacherId || !courses) return [];
 
-    // 1. Obtener materias del docente
-    const teacherSubjects = subjects.filter(s => s.teacherId === teacherId);
-    
-    if (teacherSubjects.length === 0) return [];
+    // Cursos asignados por teacherId directamente
+    const coursesByTeacherId = courses.filter(course => course.teacherId === teacherId);
 
-    // 2. Obtener IDs de cursos donde enseña
-    const teacherCourseIds = new Set<string>();
+    // Cursos inferidos por materias (subjects) del docente
+    const teacherSubjects = (subjects || []).filter(s => s.teacherId === teacherId);
+    const subjectCourseIds = new Set<string>();
     teacherSubjects.forEach(subject => {
-      if (Array.isArray(subject.cursoId)) {
-        subject.cursoId.forEach(courseId => {
-          if (courseId) teacherCourseIds.add(courseId);
+      if (Array.isArray((subject as any).cursoId)) {
+        (subject as any).cursoId.forEach((courseId: string) => {
+          const id = typeof courseId === 'string' ? courseId.trim() : courseId;
+          if (id) subjectCourseIds.add(id);
         });
-      } else if (subject.cursoId) {
-        teacherCourseIds.add(subject.cursoId);
+      } else if ((subject as any).cursoId) {
+        const id = typeof (subject as any).cursoId === 'string' ? (subject as any).cursoId.trim() : (subject as any).cursoId;
+        if (id) subjectCourseIds.add(id as string);
       }
     });
+    const coursesBySubjects = courses.filter(course => course.firestoreId && subjectCourseIds.has(course.firestoreId));
 
-    // 3. Filtrar cursos
-    return courses.filter(course => 
-      course.firestoreId && teacherCourseIds.has(course.firestoreId)
-    );
+    // Unión única por firestoreId
+    const uniqueById = new Map<string, Course>();
+    [...coursesByTeacherId, ...coursesBySubjects].forEach(c => {
+      if (c.firestoreId) uniqueById.set(c.firestoreId, c);
+    });
+    return Array.from(uniqueById.values());
   }, [teacherId, courses, subjects]);
 
   const teacherSubjects = useMemo(() => {
@@ -57,15 +61,26 @@ export function useTeacherCourses(teacherId?: string) {
 export function useTeacherStudents(teacherId?: string) {
   const { data: students } = useFirestoreCollection("students");
   const { teacherCourses } = useTeacherCourses(teacherId);
+  const { data: teachers } = useFirestoreCollection("teachers");
 
   const teacherStudents = useMemo(() => {
-    if (!students || !teacherCourses.length) return [];
+    if (!students) return [];
 
-    const courseIds = teacherCourses.map(c => c.firestoreId);
-    return students.filter(student => 
-      student.cursoId && courseIds.includes(student.cursoId)
-    );
-  }, [students, teacherCourses]);
+    const courseIdSet = new Set<string>();
+    teacherCourses.forEach(c => { if (c.firestoreId) courseIdSet.add(c.firestoreId); });
+
+    // Incluir cursoId(s) legacy del teacher si existen
+    const teacherDoc = teachers?.find((t: any) => t.firestoreId === teacherId);
+    const raw = teacherDoc?.cursoId;
+    if (Array.isArray(raw)) raw.forEach((id: string) => { if (typeof id === 'string' && id.trim()) courseIdSet.add(id.trim()); });
+    else if (typeof raw === 'string' && raw.trim()) courseIdSet.add(raw.trim());
+
+    if (courseIdSet.size === 0) return [];
+    return students.filter((student: any) => {
+      const cid = (student.cursoId || student.courseId || '').toString().trim();
+      return cid && courseIdSet.has(cid);
+    });
+  }, [students, teacherCourses, teachers, teacherId]);
 
   return {
     teacherStudents,

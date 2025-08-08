@@ -1,6 +1,7 @@
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { where } from "firebase/firestore";
 import { Card, CardTitle, CardHeader, CardContent } from "./ui/card";
 import { 
   BookOpen, 
@@ -39,8 +40,14 @@ export default function AlumnoBoletinesOverview() {
   const studentId = user?.studentId;
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const { data: boletines, loading: boletinesLoading } = useFirestoreCollection("boletines");
-  const { data: asistencias } = useFirestoreCollection("attendances");
+  const { data: boletines, loading: boletinesLoading } = useFirestoreCollection("boletines", {
+    constraints: user?.role === 'alumno' ? [where('alumnoId','==', user?.studentId || '')] : [],
+    dependencies: [user?.role, user?.studentId]
+  });
+  const { data: asistencias } = useFirestoreCollection("attendances", {
+    constraints: user?.role === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
+    dependencies: [user?.role, user?.studentId]
+  });
   const { data: students } = useFirestoreCollection("students");
   const { data: courses } = useFirestoreCollection("courses");
   const { data: calificaciones } = useFirestoreCollection("calificaciones");
@@ -89,8 +96,8 @@ export default function AlumnoBoletinesOverview() {
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
     
     const observacionAutomatica = studentId ? generarObservacionAutomaticaBoletin(
-      calificacionesAlumno as unknown,
-      asistenciasAlumno as unknown,
+      calificacionesAlumno as any,
+      asistenciasAlumno as any,
       studentId,
       periodoActual || getPeriodoActual(),
       periodoAnterior
