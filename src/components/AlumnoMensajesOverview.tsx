@@ -1,9 +1,7 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { where } from "firebase/firestore";
 import { CourseCard } from "./CourseCard";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
 import { 
   MessageSquare, 
   Activity,
@@ -11,8 +9,6 @@ import {
   Clock,
   Star,
   BookOpen,
-  MessageCircle as MessageCircleIcon,
-  ArrowRight,
   GraduationCap,
   Bell,
   Eye
@@ -21,20 +17,40 @@ import { StatsCard } from "./StatCards";
 import { useMemo, useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import type { Message, Course } from "@/types";
-import { useNavigate } from "react-router-dom";
 
 export default function AlumnoMensajesOverview() {
     const { user } = useContext(AuthContext);
     const { data: messages } = useFirestoreCollection<Message>("messages");
     const { data: courses } = useFirestoreCollection<Course>("courses");
-   const { data: students } = useFirestoreCollection("students");
-    const navigate = useNavigate();
+    const { data: students } = useFirestoreCollection("students");
 
-    // Obtener información del estudiante
+    // Obtener información del estudiante y normalizar sus curso(s)
     const student = students?.find(s => s.firestoreId === user?.studentId);
-    const studentCourses = courses?.filter(course => 
-        student?.cursos?.includes(course.firestoreId)
-    ) || [];
+    const courseIdSet = (() => {
+        const set = new Set<string>();
+        const rawCursos = (student as any)?.cursos; // posible array legacy
+        const rawCursoId = (student as any)?.cursoId; // puede ser string o array
+        const rawCourseId = (student as any)?.courseId; // alias posible
+
+        if (Array.isArray(rawCursos)) {
+            rawCursos.forEach((id: any) => {
+                if (typeof id === 'string' && id.trim()) set.add(id.trim());
+            });
+        }
+        if (Array.isArray(rawCursoId)) {
+            rawCursoId.forEach((id: any) => {
+                if (typeof id === 'string' && id.trim()) set.add(id.trim());
+            });
+        } else if (typeof rawCursoId === 'string' && rawCursoId.trim()) {
+            set.add(rawCursoId.trim());
+        }
+        if (typeof rawCourseId === 'string' && rawCourseId.trim()) {
+            set.add(rawCourseId.trim());
+        }
+        return set;
+    })();
+
+    const studentCourses = (courses || []).filter(c => c.firestoreId && courseIdSet.has(c.firestoreId));
 
     // Calcular estadísticas del estudiante
     const stats = useMemo(() => {
@@ -87,25 +103,28 @@ export default function AlumnoMensajesOverview() {
         };
     }, [studentCourses, messages, user?.studentId]);
 
-    // Obtener cursos del estudiante con actividad
-    const coursesWithActivity = useMemo(() => {
-        if (!studentCourses || !messages) return [];
+    // Cursos del estudiante con métricas de actividad
+    const studentCoursesWithMetrics = useMemo(() => {
+        if (!studentCourses || !messages) return [] as Array<Course & { messageCount: number; recentMessages: number; lastActivity: Date | null }>;
 
         return studentCourses.map(course => {
             const courseMessages = messages.filter(m => m.courseId === course.firestoreId && m.status === 'active');
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
             const recentMessages = courseMessages.filter(m => {
-                const oneWeekAgo = new Date();
-                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                return new Date(m.createdAt) > oneWeekAgo;
+                const created = (m as any).createdAt?.toDate ? (m as any).createdAt.toDate() : new Date(m.createdAt);
+                return created > oneWeekAgo;
             });
+
+            const lastActivityTs = courseMessages
+                .map(m => (m as any).createdAt?.toDate ? (m as any).createdAt.toDate().getTime() : new Date(m.createdAt).getTime())
+                .filter(n => !Number.isNaN(n));
 
             return {
                 ...course,
                 messageCount: courseMessages.length,
                 recentMessages: recentMessages.length,
-                lastActivity: courseMessages.length > 0 && courseMessages.some(m => m.createdAt)
-                    ? new Date(Math.max(...courseMessages.map(m => new Date(m.createdAt).getTime() || 0)))
-                    : null
+                lastActivity: lastActivityTs.length > 0 ? new Date(Math.max(...lastActivityTs)) : null
             };
         }).sort((a, b) => b.messageCount - a.messageCount);
     }, [studentCourses, messages]);
@@ -293,7 +312,7 @@ export default function AlumnoMensajesOverview() {
                     </p>
                 </div>
 
-                {coursesWithActivity.length === 0 ? (
+                {studentCourses.length === 0 ? (
                     <Card>
                         <CardContent className="text-center py-12">
                             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -303,7 +322,7 @@ export default function AlumnoMensajesOverview() {
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {coursesWithActivity.map((course) => (
+                        {studentCoursesWithMetrics.map((course) => (
                             <div key={course.firestoreId} className="relative">
                                 <CourseCard
                                     course={{
@@ -312,21 +331,9 @@ export default function AlumnoMensajesOverview() {
                                         division: course.division,
                                         firestoreId: course.firestoreId || '',
                                     }}
-                                    descripcion={`${course.messageCount} mensajes • ${course.recentMessages} recientes`}
+                                    descripcion={`${(course as any).messageCount || 0} mensajes • ${(course as any).recentMessages || 0} recientes`}
                                     link={`/mensajes?tab=wall&id=${course.firestoreId}`}
                                 />
-                                <div className="absolute top-3 right-3">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => navigate(`/mensajes?tab=wall&id=${course.firestoreId}`)}
-                                        className="flex items-center gap-1 bg-white/90 backdrop-blur-sm hover:bg-white"
-                                    >
-                                        <MessageCircleIcon className="h-3 w-3" />
-                                        Ver Muro
-                                        <ArrowRight className="h-3 w-3" />
-                                    </Button>
-                                </div>
                             </div>
                         ))}
                     </div>
