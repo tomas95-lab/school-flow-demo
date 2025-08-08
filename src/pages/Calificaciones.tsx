@@ -23,6 +23,7 @@ import GradesCalendar from "@/components/GradesCalendar";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 // Charts import no utilizado en esta vista
 import { usePermission } from "@/hooks/usePermission";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -37,13 +38,26 @@ interface TabItem {
 export default function Calificaciones() {
   const { user, loading: userLoading } = useContext(AuthContext);
   const roleScope = user?.role;
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
   const { loading: coursesLoading } = useFirestoreCollection("courses", {
-    constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+    constraints: roleScope === 'alumno'
+      ? [where('alumnos', 'array-contains', user?.studentId || '')]
+      : roleScope === 'docente' && user?.teacherId
+        ? [where('teacherId', '==', user.teacherId)]
+        : [],
+    dependencies: [roleScope, user?.studentId, user?.teacherId]
   });
   // Datos mínimos para estado vacío en overview (solo alumno)
   const { data: calificaciones } = useFirestoreCollection("calificaciones", {
-    constraints: roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [],
-    enableCache: true
+    constraints: roleScope === 'alumno'
+      ? [where('studentId', '==', user?.studentId || '')]
+      : roleScope === 'docente' && teacherCourseIds.length > 0
+        ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))]
+        : [],
+    enableCache: true,
+    dependencies: [roleScope, user?.studentId, teacherCourseIds.join(',')]
   });
   const [activeView, setActiveView] = useState("overview");
 

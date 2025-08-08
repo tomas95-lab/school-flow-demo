@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Megaphone, Bell, Calendar, Settings, GitBranch, AlertTriangle, Users, FileText, Star } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
-import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp, where } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { AuthContext } from "@/context/AuthContext";
 import ReutilizableDialog from "@/components/DialogReutlizable";
@@ -24,12 +24,16 @@ export default function AnnouncementsView() {
   const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
 
   useEffect(() => {
-    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+    let q: any = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+    // Filtrar por rol del usuario
+    if (user?.role && user.role !== 'admin') {
+      q = query(collection(db, "announcements"), where('targetRole', 'in', ['all', user.role]), orderBy("createdAt", "desc"));
+    }
     const unsub = onSnapshot(q as any, (snap: any) => {
       setAnnouncements((snap.docs as any[]).map((d: any) => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
-  }, []);
+  }, [user?.role]);
 
   const handleCreate = async () => {
     if (!user || !title.trim() || !content.trim()) return;

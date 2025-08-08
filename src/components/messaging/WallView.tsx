@@ -2,6 +2,7 @@ import { useState, useContext, } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { addDoc, collection, serverTimestamp, updateDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -120,10 +121,19 @@ export default function WallView() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Datos
-  const { data: courses, loading: coursesLoading, error: coursesError } = useFirestoreCollection<Course>("courses");
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
+  const { data: courses, loading: coursesLoading, error: coursesError } = useFirestoreCollection<Course>("courses", {
+    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId', '==', user.teacherId)] : [],
+    dependencies: [user?.role, user?.teacherId]
+  });
+
   const { data: messages, loading: messagesLoading, error: messagesError, refetch: refetchMessages } = useFirestoreCollection<Message>("messages", {
     orderBy: "createdAt",
-    enableCache: false
+    enableCache: false,
+    constraints: user?.role === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))] : [],
+    dependencies: [user?.role, teacherCourseIds.join(',')]
   });
   const { data: students, loading: studentsLoading } = useFirestoreCollection("students");
   const { data: teachers, loading: teachersLoading } = useFirestoreCollection("teachers");

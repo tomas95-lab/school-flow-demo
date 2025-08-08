@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from "react";
+import { where } from "firebase/firestore";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Skeleton } from "../ui/skeleton";
@@ -26,8 +28,17 @@ import type { Message, Course, Subject } from "@/types";
 
 export default function OverviewDashboard() {
   const { user } = useContext(AuthContext);
-  const { data: messages, loading: messagesLoading, error: messagesError, refetch: refetchMessages } = useFirestoreCollection<Message>("messages");
-  const { data: courses, loading: coursesLoading, error: coursesError } = useFirestoreCollection<Course>("courses");
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
+  const { data: messages, loading: messagesLoading, error: messagesError, refetch: refetchMessages } = useFirestoreCollection<Message>("messages", {
+    constraints: user?.role === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))] : [],
+    dependencies: [user?.role, teacherCourseIds.join(',')]
+  });
+  const { data: courses, loading: coursesLoading, error: coursesError } = useFirestoreCollection<Course>("courses", {
+    constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId', '==', user.teacherId)] : [],
+    dependencies: [user?.role, user?.teacherId]
+  });
   const { data: subjects, loading: subjectsLoading, error: subjectsError } = useFirestoreCollection<Subject>("subjects");
   
   const [stats, setStats] = useState({

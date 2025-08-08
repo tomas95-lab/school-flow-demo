@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 import { where } from "firebase/firestore"
-import { useTeacherStudents } from "@/hooks/useTeacherCourses"
+import { useTeacherStudents, useTeacherCourses } from "@/hooks/useTeacherCourses"
 import { 
   generarAlertasAutomaticas, 
   type DatosAlumno
@@ -266,13 +266,16 @@ export default function Dashboard() {
 
   // Usar hooks optimizados con cache
   const roleScope = user?.role
-  const { data: students } = useFirestoreCollection("students", { enableCache: true, constraints: roleScope === 'docente' ? [where('docenteId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : [] });
-  const { data: courses } = useFirestoreCollection("courses", { enableCache: true, constraints: roleScope === 'docente' ? [where('docenteId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : [] });
-  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true, constraints: roleScope === 'docente' ? [where('firestoreId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [] : [] });
-  const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [] });
-  const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [] });
-  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true, constraints: roleScope === 'docente' ? [where('docenteId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [] : [] });
-  const { data: alerts } = useFirestoreCollection("alerts", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [] });
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
+  const { data: students } = useFirestoreCollection("students", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('cursoId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : [], dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId] });
+  const { data: courses } = useFirestoreCollection("courses", { enableCache: true, constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId', '==', user.teacherId)] : roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : [], dependencies: [roleScope, user?.teacherId, user?.studentId] });
+  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true, constraints: roleScope === 'docente' ? [where('firestoreId', '==', user?.teacherId || '')] : [], dependencies: [roleScope, user?.teacherId] });
+  const { data: calificaciones } = useFirestoreCollection("calificaciones", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [], dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId] });
+  const { data: asistencias } = useFirestoreCollection("attendances", { enableCache: true, constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId', 'in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [], dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId] });
+  const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : [], dependencies: [roleScope, user?.teacherId] });
+  const { data: alerts } = useFirestoreCollection("alerts", { enableCache: true, constraints: roleScope === 'docente' ? [where('teacherId', '==', user?.teacherId || '')] : roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : [], dependencies: [roleScope, user?.teacherId, user?.studentId] });
 
   // Hook para obtener estudiantes del docente
   const { teacherStudents } = useTeacherStudents(user?.teacherId);

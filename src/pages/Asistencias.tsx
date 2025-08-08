@@ -1,4 +1,5 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
@@ -39,17 +40,44 @@ interface TabItem {
 export default function Asistencias() {
   const { user, loading: userLoading } = useContext(AuthContext);
   const roleScope = user?.role;
+  const { teacherCourses } = useTeacherCourses(user?.teacherId);
+
+  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+
   const { loading: coursesLoading } = useFirestoreCollection("courses", {
-    constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+    constraints: roleScope === 'alumno'
+      ? [where('alumnos', 'array-contains', user?.studentId || '')]
+      : roleScope === 'docente' && user?.teacherId
+        ? [where('teacherId', '==', user.teacherId)]
+        : [],
+    dependencies: [roleScope, user?.studentId, user?.teacherId]
   });
+
   const { data: asistencias } = useFirestoreCollection("attendances", {
-    constraints: roleScope === 'alumno' ? [where('studentId', '==', user?.studentId || '')] : []
+    constraints: roleScope === 'alumno'
+      ? [where('studentId', '==', user?.studentId || '')]
+      : roleScope === 'docente' && teacherCourseIds.length > 0
+        ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))]
+        : [],
+    dependencies: [roleScope, user?.studentId, teacherCourseIds.join(',')]
   });
+
   const { data: students } = useFirestoreCollection("students", {
-    constraints: roleScope === 'alumno' ? [where('firestoreId', '==', user?.studentId || '')] : []
+    constraints: roleScope === 'alumno'
+      ? [where('firestoreId', '==', user?.studentId || '')]
+      : roleScope === 'docente' && teacherCourseIds.length > 0
+        ? [where('cursoId', 'in', teacherCourseIds.slice(0, 10))]
+        : [],
+    dependencies: [roleScope, user?.studentId, teacherCourseIds.join(',')]
   });
+
   const { data: courses } = useFirestoreCollection("courses", {
-    constraints: roleScope === 'alumno' ? [where('alumnos', 'array-contains', user?.studentId || '')] : []
+    constraints: roleScope === 'alumno'
+      ? [where('alumnos', 'array-contains', user?.studentId || '')]
+      : roleScope === 'docente' && user?.teacherId
+        ? [where('teacherId', '==', user.teacherId)]
+        : [],
+    dependencies: [roleScope, user?.studentId, user?.teacherId]
   });
   const { data: subjects } = useFirestoreCollection("subjects");
   const [activeView, setActiveView] = useState("overview");
