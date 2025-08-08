@@ -8,11 +8,14 @@ import { collection, onSnapshot, query, where, type DocumentData } from "firebas
 import { db } from "@/firebaseConfig";
 import { AuthContext } from "@/context/AuthContext";
 import NewConversationModal from "./NewConversationModal";
+import ConversationDetail from "./ConversationDetail";
 
 export default function ConversationsView() {
   const { user } = useContext(AuthContext);
   const [conversations, setConversations] = useState<DocumentData[]>([]);
   const [openNew, setOpenNew] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [activeTitle, setActiveTitle] = useState<string>("");
 
   useEffect(() => {
     if (!user) return;
@@ -26,6 +29,16 @@ export default function ConversationsView() {
     });
     return () => unsub();
   }, [user?.uid]);
+
+  if (activeConvId) {
+    return (
+      <ConversationDetail
+        conversationId={activeConvId}
+        title={activeTitle}
+        onBack={() => setActiveConvId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -64,7 +77,7 @@ export default function ConversationsView() {
                     <p className="font-medium text-gray-900">{c.title || "Sin asunto"}</p>
                     <p className="text-xs text-gray-500">Miembros: {Array.isArray(c.members) ? c.members.length : 0}</p>
                   </div>
-                  <Button variant="outline" size="sm">Abrir</Button>
+                  <Button variant="outline" size="sm" onClick={() => { setActiveConvId(c.id as string); setActiveTitle(c.title as string); }}>Abrir</Button>
                 </div>
               ))}
             </div>

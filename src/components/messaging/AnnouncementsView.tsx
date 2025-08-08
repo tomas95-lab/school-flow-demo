@@ -10,6 +10,7 @@ import { AuthContext } from "@/context/AuthContext";
 import ReutilizableDialog from "@/components/DialogReutlizable";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "../ui/textarea";
+import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 
 export default function AnnouncementsView() {
   const { user } = useContext(AuthContext);
@@ -17,6 +18,9 @@ export default function AnnouncementsView() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [targetRole, setTargetRole] = useState<'all' | 'admin' | 'docente' | 'alumno'>("all");
+  const [targetCourseId, setTargetCourseId] = useState<string>("");
+  const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
 
   useEffect(() => {
     const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
@@ -33,6 +37,8 @@ export default function AnnouncementsView() {
       content: content.trim(),
       createdAt: serverTimestamp(),
       createdBy: user.uid,
+      targetRole,
+      targetCourseId: targetCourseId || null,
     });
     setTitle("");
     setContent("");
@@ -254,6 +260,26 @@ export default function AnnouncementsView() {
             <div>
               <label className="text-sm text-gray-700">Contenido</label>
               <Textarea value={content} onChange={(e) => setContent(e.target.value)} />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="text-sm text-gray-700">Audiencia</label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm" value={targetRole} onChange={(e) => setTargetRole(e.target.value as any)}>
+                  <option value="all">Todos</option>
+                  <option value="admin">Administradores</option>
+                  <option value="docente">Docentes</option>
+                  <option value="alumno">Estudiantes</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-sm text-gray-700">Curso (opcional)</label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm" value={targetCourseId} onChange={(e) => setTargetCourseId(e.target.value)}>
+                  <option value="">Todos</option>
+                  {(courses || []).map((c: any) => (
+                    <option key={c.firestoreId} value={c.firestoreId}>{c.nombre} - {c.division}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         }

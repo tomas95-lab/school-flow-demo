@@ -42,3 +42,6 @@ src/scripts/
 .env.local
 .env.production
 .env.development
+
+# Documentación Interna
+.README_INTERNO.md
