@@ -4,12 +4,15 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AuthContext } from '../context/AuthContext';
-import { setDoc, doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc, updateDoc, collection, query, where, getDocs, arrayUnion } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
 import { db, auth } from '../firebaseConfig';
 import { toast } from 'sonner';
 import { UserPlus, Edit, Loader2 } from 'lucide-react';
 import ReutilizableDialog from './DialogReutlizable';
+import { useFirestoreCollection } from '@/hooks/useFireStoreCollection';
+import type { Course } from '@/types';
 
 interface UserModalProps {
   mode: 'create' | 'edit';
@@ -31,6 +34,7 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -53,6 +57,9 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
       });
     }
   }, [mode, user]);
+
+  // Traer cursos para asignación de alumnos
+  const { data: courses } = useFirestoreCollection<Course>('courses');
 
   const roleOptions = [
     { value: 'admin', label: 'Administrador' },
@@ -95,6 +102,10 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Las contraseñas no coinciden';
       }
+
+      if (formData.role === 'alumno' && !selectedCourseId) {
+        newErrors.course = 'Debes seleccionar un curso para el alumno';
+      }
     }
     
     setErrors(newErrors);
@@ -105,6 +116,11 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    if (field === 'role') {
+      // Resetear selección de curso al cambiar de rol
+      setSelectedCourseId('');
+      setErrors(prev => ({ ...prev, course: '' }));
     }
   };
 
@@ -118,14 +134,18 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
     setLoading(true);
     try {
       if (mode === 'create') {
-        // Crear usuario en Firebase Auth primero
+        // Crear usuario usando una instancia secundaria para no afectar la sesión actual
+        const secondaryApp = initializeApp(auth.app.options, `secondary-${Date.now()}`);
+        const secondaryAuth = getAuth(secondaryApp);
         const userCredential = await createUserWithEmailAndPassword(
-          auth,
+          secondaryAuth,
           formData.email,
           formData.password
         );
 
         const firebaseUser = userCredential.user;
+        const [firstName, ...restNames] = formData.name.trim().split(/\s+/);
+        const lastName = restNames.join(' ');
         
         // Guardar datos del usuario en Firestore usando el UID de Firebase Auth
         await setDoc(doc(db, "users", firebaseUser.uid), {
@@ -141,10 +161,42 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
           studentId: formData.role === 'alumno' ? firebaseUser.uid : ''
         });
 
+        // Crear documento auxiliar según rol
+        if (formData.role === 'docente') {
+          await setDoc(doc(db, 'teachers', firebaseUser.uid), {
+            nombre: firstName || formData.name,
+            apellido: lastName || '',
+            email: formData.email,
+            status: formData.status,
+            createdAt: new Date().toISOString()
+          });
+        } else if (formData.role === 'alumno') {
+          await setDoc(doc(db, 'students', firebaseUser.uid), {
+            nombre: firstName || formData.name,
+            apellido: lastName || '',
+            email: formData.email,
+            status: formData.status,
+            cursoId: selectedCourseId || '',
+            createdAt: new Date().toISOString()
+          });
+
+          // Vincular alumno al curso seleccionado
+          if (selectedCourseId) {
+            await updateDoc(doc(db, 'courses', selectedCourseId), {
+              alumnos: arrayUnion(firebaseUser.uid)
+            });
+          }
+        }
+
         onUserCreated?.();
         toast.success('Usuario creado exitosamente', {
           description: 'El usuario ha sido creado y puede iniciar sesión.'
         });
+        // Cerrar sesión y destruir la app secundaria para liberar recursos
+        await Promise.all([
+          signOut(secondaryAuth).catch(() => {}),
+          deleteApp(secondaryApp).catch(() => {})
+        ]);
       } else {
         // Actualizar usuario existente
         if (user?.id) {
@@ -335,6 +387,31 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
             </Select>
           </div>
         </div>
+
+        {/* Selección de curso solo para alumnos */}
+        {formData.role === 'alumno' && (
+          <div className="space-y-2 w-full">
+            <Label htmlFor="course" className="text-sm font-medium text-gray-700">
+              Curso asignado {mode === 'create' ? '*' : ''}
+            </Label>
+            <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+              <SelectTrigger className={`focus:border-blue-500 transition-colors h-12 px-4 text-base w-full ${errors.course ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Selecciona un curso" />
+              </SelectTrigger>
+              <SelectContent>
+                {(courses || []).map((c) => (
+                  <SelectItem key={c.firestoreId} value={c.firestoreId}>
+                    {c.nombre} {c.division ? `- ${c.division}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.course && <p className="text-red-500 text-xs flex items-center gap-1">
+              <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+              {errors.course}
+            </p>}
+          </div>
+        )}
       </div>
 
       {/* Contraseña solo para crear */}

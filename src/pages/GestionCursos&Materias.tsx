@@ -5,6 +5,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import ImportCoursesModal from "@/components/ImportCoursesModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -707,6 +708,7 @@ export default function GestionCursosMaterias() {
                       <Building className="h-5 w-5 text-orange-600" />
                       Gestión de Cursos
                     </CardTitle>
+                    <div className="flex items-center gap-2">
                     <Button 
                       onClick={() => setIsAddingCourse(true)}
                       className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
@@ -715,6 +717,8 @@ export default function GestionCursosMaterias() {
               <Plus className="h-4 w-4 mr-2" />
               Agregar Curso
             </Button>
+            <ImportCoursesModal showTrigger />
+            </div>
           </div>
         </CardHeader>
         <CardContent>

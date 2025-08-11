@@ -18,6 +18,7 @@ import { UserModal } from "@/components/UserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 import ImportStudentsModal from "@/components/ImportStudentsModal";
+import ImportTeachersModal from "@/components/ImportTeachersModal";
 import { usePermission } from "@/hooks/usePermission";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/EmptyState";
@@ -59,6 +60,7 @@ export default function Usuarios() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportTeachersModal, setShowImportTeachersModal] = useState(false);
   const { handleError } = useGlobalError();
 
   // Configuración de pestañas
@@ -296,6 +298,21 @@ export default function Usuarios() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Importar usuarios desde CSV</TooltipContent>
+                </Tooltip>
+              )}
+              {canImportUsuarios && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowImportTeachersModal(true)}
+                      className="hover:bg-gray-50"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Importar Docentes
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Importar docentes (usuarios + teachers) desde CSV</TooltipContent>
                 </Tooltip>
               )}
             </div>
@@ -556,6 +573,13 @@ export default function Usuarios() {
           <ImportStudentsModal 
             open={showImportModal}
             onOpenChange={setShowImportModal}
+            showTrigger={false}
+          />
+        )}
+        {showImportTeachersModal && (
+          <ImportTeachersModal
+            open={showImportTeachersModal}
+            onOpenChange={setShowImportTeachersModal}
             showTrigger={false}
           />
         )}
