@@ -83,6 +83,34 @@ export default function GlobalCommandPalette() {
         onSelect: () => navigate('/app/usuarios'),
       },
       {
+        title: "Exportar tabla (abrir diálogo)",
+        group: "Acciones rápidas",
+        onSelect: () => {
+          window.dispatchEvent(new CustomEvent('datatable:open-export'))
+        }
+      },
+      {
+        title: "Exportar tabla CSV",
+        group: "Acciones rápidas",
+        onSelect: () => {
+          window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'csv' } }))
+        }
+      },
+      {
+        title: "Exportar tabla XLSX",
+        group: "Acciones rápidas",
+        onSelect: () => {
+          window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'xlsx' } }))
+        }
+      },
+      {
+        title: "Exportar tabla PDF",
+        group: "Acciones rápidas",
+        onSelect: () => {
+          window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'pdf' } }))
+        }
+      },
+      {
         title: "Documentación: Manual de Usuario",
         icon: HelpCircle,
         group: "Ayuda",

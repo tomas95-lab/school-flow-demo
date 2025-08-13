@@ -32,6 +32,7 @@ import {
 import { cn } from "@/lib/utils"
 import * as XLSX from "xlsx"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import ReutilizableDialog from "@/components/DialogReutlizable"
 
 
 interface ColumnFilter<TData> {
@@ -111,6 +112,9 @@ export function DataTable<TData, TValue>({
   }
 
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [selectedColumnIds, setSelectedColumnIds] = useState<string[]>([])
+  const visibleExportableColumns = () => table.getVisibleLeafColumns().filter(c => c.id !== 'select' && c.id !== 'actions')
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -125,8 +129,30 @@ export function DataTable<TData, TValue>({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  useEffect(() => {
+    setSelectedColumnIds(visibleExportableColumns().map(c => c.id))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns])
+
+  useEffect(() => {
+    const openHandler = () => setExportDialogOpen(true)
+    const exportHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { format?: 'csv' | 'xlsx' | 'pdf' }
+      if (!detail?.format) return
+      if (detail.format === 'csv') handleExportCsv()
+      if (detail.format === 'xlsx') handleExportXlsx()
+      if (detail.format === 'pdf') handleExportPdf()
+    }
+    window.addEventListener('datatable:open-export', openHandler as EventListener)
+    window.addEventListener('datatable:export', exportHandler as EventListener)
+    return () => {
+      window.removeEventListener('datatable:open-export', openHandler as EventListener)
+      window.removeEventListener('datatable:export', exportHandler as EventListener)
+    }
+  }, [])
+
   const handleExportCsv = () => {
-    const columns = table.getVisibleLeafColumns().filter(col => col.id !== "select" && col.id !== "actions")
+    const columns = visibleExportableColumns().filter(col => selectedColumnIds.includes(col.id))
     const headers = columns.map(col => {
       const header = col.columnDef.header
       return typeof header === 'string' ? header : col.id
@@ -150,7 +176,7 @@ export function DataTable<TData, TValue>({
   }
 
   const handleExportXlsx = () => {
-    const columns = table.getVisibleLeafColumns().filter(col => col.id !== "select" && col.id !== "actions")
+    const columns = visibleExportableColumns().filter(col => selectedColumnIds.includes(col.id))
     const headers = columns.map(col => {
       const header = col.columnDef.header
       return typeof header === 'string' ? header : col.id
@@ -172,6 +198,35 @@ export function DataTable<TData, TValue>({
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  const handleExportPdf = async () => {
+    const columns = visibleExportableColumns().filter(col => selectedColumnIds.includes(col.id))
+    const headers = columns.map(col => {
+      const header = col.columnDef.header
+      return typeof header === 'string' ? header : col.id
+    })
+    const dataRows = table.getRowModel().rows.map(row => columns.map(col => {
+      const value = row.getValue(col.id)
+      return value == null ? '' : String(value)
+    }))
+    const [{ default: jsPDF }, autoTableModule] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ])
+    const autoTable = (autoTableModule as any).default || autoTableModule
+    const doc = new jsPDF()
+    doc.setFontSize(14)
+    doc.text(String(title || 'Exportación'), 14, 18)
+    autoTable(doc as any, {
+      head: [headers],
+      body: dataRows,
+      startY: 24,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] },
+    })
+    const fileName = `${title || 'export'}_${new Date().toISOString().slice(0,10)}.pdf`
+    doc.save(fileName)
   }
 
   return (
@@ -207,16 +262,10 @@ export function DataTable<TData, TValue>({
 
             <div className="flex items-center gap-2">
               {exportable && (
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleExportCsv}>
-                    <Download className="h-4 w-4 mr-1" />
-                    CSV
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportXlsx}>
-                    <Download className="h-4 w-4 mr-1" />
-                    XLSX
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Exportar
+                </Button>
               )}
               {hasActiveFilters && (
                 <Button
@@ -461,6 +510,49 @@ export function DataTable<TData, TValue>({
           </div>
         </div>
       </div>
+      {exportable && (
+        <ReutilizableDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          small={false}
+          title={<span>Exportar datos</span>}
+          description={`Se exportará la vista actual con filtros y orden aplicado.`}
+          content={
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-700 mb-2">Columnas a incluir</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {visibleExportableColumns().map(col => {
+                    const label = typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
+                    const checked = selectedColumnIds.includes(col.id)
+                    return (
+                      <label key={col.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setSelectedColumnIds(prev => e.target.checked ? [...prev, col.id] : prev.filter(id => id !== col.id))
+                          }}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedColumnIds(visibleExportableColumns().map(c => c.id))}>Seleccionar todo</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedColumnIds([])}>Quitar todo</Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2 border-t">
+                <Button size="sm" onClick={handleExportCsv}>Exportar CSV</Button>
+                <Button size="sm" onClick={handleExportXlsx}>Exportar XLSX</Button>
+                <Button size="sm" onClick={handleExportPdf}>Exportar PDF</Button>
+              </div>
+            </div>
+          }
+        />
+      )}
     </div>
   )
 }
