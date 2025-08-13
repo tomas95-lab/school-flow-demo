@@ -16,8 +16,7 @@ import {
   Layers3,
   Bot,
   LineChart,
-  Settings2,
-  Lock
+  Settings2
 } from "lucide-react"
 
 import {
@@ -84,14 +83,6 @@ const data = {
         { title: "Bot IA", url: "/app/bot", isActive: false },
         { title: "Intervenciones", url: "/app/intervenciones", isActive: false },
         { title: "Panel 360", url: "/app/360", isActive: false },
-      ],
-    },
-    {
-      title: "Configuración",
-      url: "/app/configuracion",
-      isActive: false,
-      items: [
-        { title: "General", url: "/app/general", isActive: false },
       ],
     },
   ],
@@ -171,31 +162,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   const Icon = iconMap[menuItem.title] || LayoutDashboard
                   return (
                     <SidebarMenuItem key={menuItem.title}>
-                      {menuItem.title === "General" ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <SidebarMenuButton isActive={false} aria-label={menuItem.title} disabled aria-disabled className="opacity-70 cursor-not-allowed">
-                              <div className="flex items-center gap-2">
-                                <Lock className="h-4 w-4" />
-                                <span>{menuItem.title}</span>
-                              </div>
-                            </SidebarMenuButton>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">En desarrollo</TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <SidebarMenuButton asChild isActive={isActive} aria-label={menuItem.title}>
-                              <NavLink to={menuItem.url} className="flex items-center gap-2">
-                                <Icon className="h-4 w-4" />
-                                <span>{menuItem.title}</span>
-                              </NavLink>
-                            </SidebarMenuButton>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">{menuItem.title}</TooltipContent>
-                        </Tooltip>
-                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton asChild isActive={isActive} aria-label={menuItem.title}>
+                            <NavLink to={menuItem.url} className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              <span>{menuItem.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">{menuItem.title}</TooltipContent>
+                      </Tooltip>
                     </SidebarMenuItem>
                   )
                 })}

@@ -36,7 +36,6 @@ const validRoutes = [
   "/app/ia",
   "/app/reportes",
   "/app/explicacion-boletin",
-  "/app/general",
   "/app/bot",
   "/app/configuracion"
 ];
