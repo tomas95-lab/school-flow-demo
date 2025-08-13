@@ -4,6 +4,7 @@ import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatsCard } from "@/components/StatCards";
 import { Button } from "@/components/ui/button";
 import ImportCoursesModal from "@/components/ImportCoursesModal";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Pie, PieChart, Cell } from 
 import { addDoc, collection, serverTimestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { toast } from "sonner";
+import { logAudit } from "@/services/audit";
 import { 
   Plus, 
   Edit, 
@@ -351,6 +353,7 @@ export default function GestionCursosMaterias() {
         createdBy: user?.uid,
         updatedBy: user?.uid
       });
+      void logAudit('create', 'course', undefined, { nombre: newCourse.nombre, division: newCourse.division, nivel: newCourse.nivel })
       
       toast.success("Curso agregado exitosamente");
       setNewCourse({ 
@@ -400,6 +403,7 @@ export default function GestionCursosMaterias() {
 
     try {
       await deleteDoc(doc(db, "courses", courseId));
+      void logAudit('delete', 'course', courseId, { reason: 'user_action' })
       toast.success("Curso eliminado exitosamente");
     } catch (error) {
       console.error("Error al eliminar curso:", error);
@@ -412,6 +416,7 @@ export default function GestionCursosMaterias() {
 
     try {
       await deleteDoc(doc(db, "subjects", subjectId));
+      void logAudit('delete', 'subject', subjectId, { reason: 'user_action' })
       toast.success("Materia eliminada exitosamente");
     } catch (error) {
       console.error("Error al eliminar materia:", error);
@@ -450,6 +455,7 @@ export default function GestionCursosMaterias() {
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       });
+      void logAudit('update', 'course', editingCourse.firestoreId, { nombre: newCourse.nombre, division: newCourse.division })
       
       toast.success("Curso actualizado exitosamente");
       setEditingCourse(null);
@@ -494,6 +500,7 @@ export default function GestionCursosMaterias() {
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       });
+      void logAudit('update', 'subject', editingSubject.firestoreId, { nombre: newSubject.nombre, cursoId: newSubject.cursoId })
       
       toast.success("Materia actualizada exitosamente");
       setEditingSubject(null);
@@ -514,6 +521,7 @@ export default function GestionCursosMaterias() {
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       });
+      void logAudit('toggle_status', 'course', courseId, { status: newStatus })
       
       toast.success(`Curso ${newStatus === "active" ? "activado" : "desactivado"} exitosamente`);
     } catch (error) {
@@ -621,54 +629,12 @@ export default function GestionCursosMaterias() {
         <div className="space-y-6 animate-in fade-in-50 duration-500">
           {activeView === "overview" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
-      {/* Estadísticas */}
+              {/* Estadísticas (StatsCard) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card className="bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-                      <div className="p-3 bg-orange-100 rounded-lg">
-                        <Building className="h-6 w-6 text-orange-600" />
+                <StatsCard icon={Building} label="Total Cursos" value={allCourses?.length || 0} color="orange" />
+                <StatsCard icon={BookOpen} label="Total Materias" value={allSubjects?.length || 0} color="indigo" />
+                <StatsCard icon={Users} label={user?.role === "docente" ? "Mis Cursos" : "Docentes"} value={user?.role === "docente" ? teacherCourses.length : (allTeachers?.length || 0)} color={user?.role === "docente" ? "green" : "purple"} />
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Cursos</p>
-                <p className="text-2xl font-bold text-gray-900">{allCourses?.length || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-                <Card className="bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-                      <div className="p-3 bg-amber-100 rounded-lg">
-                        <BookOpen className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Materias</p>
-                <p className="text-2xl font-bold text-gray-900">{allSubjects?.length || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-                <Card className="bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-                      <div className="p-3 bg-yellow-100 rounded-lg">
-                        <Users className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div>
-                        <p className="text-sm text-gray-600">
-                          {user?.role === "docente" ? "Mis Cursos" : "Docentes"}
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {user?.role === "docente" ? teacherCourses.length : allTeachers?.length || 0}
-                        </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
               {/* Vista de resumen adicional */}
               <Card className="bg-white/80 backdrop-blur-sm">
@@ -1209,63 +1175,12 @@ export default function GestionCursosMaterias() {
           {activeView === "statistics" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-6">
-                {/* Tarjetas de métricas principales */}
+                {/* Tarjetas de métricas principales (StatsCard) */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-orange-100 rounded-lg">
-                          <Building className="h-6 w-6 text-orange-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Total Cursos</p>
-                          <p className="text-2xl font-bold text-gray-900">{allCourses?.length || 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-green-100 rounded-lg">
-                          <UserCheck className="h-6 w-6 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Cursos Activos</p>
-                          <p className="text-2xl font-bold text-gray-900">{allCourses?.filter(c => c.status === 'active').length || 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 rounded-lg">
-                          <BookOpen className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Total Materias</p>
-                          <p className="text-2xl font-bold text-gray-900">{allSubjects?.length || 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                          <Users className="h-6 w-6 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Docentes</p>
-                          <p className="text-2xl font-bold text-gray-900">{allTeachers?.length || 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <StatsCard icon={Building} label="Total Cursos" value={allCourses?.length || 0} color="orange" />
+                  <StatsCard icon={UserCheck} label="Cursos Activos" value={allCourses?.filter(c => c.status === 'active').length || 0} color="green" />
+                  <StatsCard icon={BookOpen} label="Total Materias" value={allSubjects?.length || 0} color="blue" />
+                  <StatsCard icon={Users} label="Docentes" value={allTeachers?.length || 0} color="purple" />
                 </div>
 
                 {/* Gráficos interactivos reales */}

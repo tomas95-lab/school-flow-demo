@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { type Auth, signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword } from "firebase/auth";
+import { type Auth, signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 
@@ -77,6 +77,21 @@ export default function Login() {
     }
   };
 
+  const handleGoogle = async () => {
+    setLoading(true)
+    try {
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth as Auth, provider)
+      toast.success('Inicio de sesión con Google exitoso')
+      navigate('/app/dashboard')
+    } catch (err) {
+      handleError(err, 'Login Google')
+      toast.error('No se pudo iniciar sesión con Google')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (user) {
       navigate("/app/dashboard");
@@ -112,6 +127,10 @@ export default function Login() {
               <a href="/register" className="text-blue-500 hover:underline">
                 Regístrate
               </a>
+              <span className="mx-2">·</span>
+              <button type="button" onClick={handleGoogle} className="text-blue-600 hover:underline" disabled={loading}>
+                Ingresar con Google
+              </button>
             </p>
           }
         >

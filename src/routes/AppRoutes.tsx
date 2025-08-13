@@ -25,6 +25,7 @@ const BotOverview = lazy(() => import("@/components/BotOverview"));
   const Panel360 = lazy(() => import("@/pages/Panel360"));
   const Finanzas = lazy(() => import("@/pages/Finanzas"));
   const PagoSimulado = lazy(() => import("@/pages/PagoSimulado"));
+  const Auditoria = lazy(() => import("@/pages/Auditoria"));
 import { PrivateRoute } from "./PrivateRoute";
 import { PermissionRoute } from "./PermissionRoute";
 
@@ -90,6 +91,7 @@ export function AppRoutes() {
             <Route path="/app/360" element={<Panel360 />} />
             <Route path="/app/finanzas" element={<Finanzas />} />
             <Route path="/app/pago/:id" element={<PagoSimulado />} />
+            <Route path="/app/auditoria" element={<Auditoria />} />
             <Route path="/app/intervenciones" element={<IntervencionesOverview />} />
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />

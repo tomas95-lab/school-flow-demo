@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { db } from "@/firebaseConfig"
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore"
 import * as XLSX from "xlsx"
+import { logAudit } from "@/services/audit"
 
 type Student = { firestoreId: string; nombre: string; apellido: string }
 type Invoice = { id?: string; alumnoId?: string; alumnoNombre?: string; total: number; currency: string; status: 'pending'|'paid'|'failed'; description?: string; createdAt?: any; dueDate?: string }
@@ -125,6 +126,7 @@ export default function Finanzas() {
       const payload: any = { alumnoId: form.alumnoId, alumnoNombre: student ? `${student.nombre} ${student.apellido}` : '', total: Number(form.total), currency: form.currency || 'ARS', status: 'pending', description: form.description || '', dueDate: form.dueDate || '', createdAt: serverTimestamp() }
       const ref = await addDoc(collection(db, 'invoices'), payload)
       await updateDoc(doc(db, 'invoices', ref.id), { id: ref.id })
+      void logAudit('create', 'invoice', ref.id, { alumnoId: form.alumnoId, total: form.total, description: form.description, dueDate: form.dueDate })
       setForm({ total: 0, currency: 'ARS', status: 'pending' })
     } finally { setCreating(false) }
   }

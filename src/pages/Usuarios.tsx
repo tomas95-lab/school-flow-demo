@@ -23,6 +23,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/EmptyState";
 import { trackEvent } from "@/services/analytics";
+import { logAudit } from "@/services/audit";
 
 // Tipos para las pestañas
 interface TabItem {
@@ -148,6 +149,7 @@ export default function Usuarios() {
   // Función para manejar la edición de usuarios
   const handleEditUser = (user: { id: string; name: string; email: string; role: string }) => {
     trackEvent("user_edit_click", { user_role: user.role });
+    void logAudit('open_edit', 'user', user.id, { name: user.name, email: user.email, role: user.role })
     setSelectedUser({
       id: user.id,
       firestoreId: user.id,
@@ -163,6 +165,7 @@ export default function Usuarios() {
   // Función para manejar la eliminación de usuarios
   const handleDeleteUser = (user: { id: string; name: string; email: string; role: string }) => {
     trackEvent("user_delete_click", { user_role: user.role });
+    void logAudit('open_delete', 'user', user.id, { name: user.name, email: user.email, role: user.role })
     setSelectedUser({
       id: user.id,
       firestoreId: user.id,

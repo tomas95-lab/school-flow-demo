@@ -83,6 +83,7 @@ const data = {
         { title: "Bot IA", url: "/app/bot", isActive: false },
         { title: "Intervenciones", url: "/app/intervenciones", isActive: false },
         { title: "Panel 360", url: "/app/360", isActive: false },
+        { title: "Auditoría", url: "/app/auditoria", isActive: false },
       ],
     },
   ],

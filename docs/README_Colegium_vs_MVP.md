@@ -19,7 +19,7 @@ Referencia externa: [Colegium](https://www.colegium.com.ar/)
 | Importaciones (CSV) | Sí | Sí (import alumnos/docentes/cursos) | OK | — |
 | Gestión cursos/materias | Sí | Sí (`src/pages/GestionCursos&Materias.tsx`) | OK | — |
 | Inscripciones/Matrículas online | Sí | Parcial (`src/components/InscripcionesOverview.tsx`) | Falta flujo end-to-end y pagos | P1 |
-| Finanzas (facturación/cobranzas/pagos) | Sí (e-invoice, pasarelas, contable) | No | Módulo financiero completo | P0 |
+| Finanzas (facturación/cobranzas/pagos) | Sí (e-invoice, pasarelas, contable) | Parcial (MVP simulado: `src/pages/Finanzas.tsx`, `src/pages/PagoSimulado.tsx`) | Falta pasarela de pago real, conciliación y exportes contables | P0 |
 | Integraciones (pagos/contable/SSO) | Amplias | Básicas (Firebase) | Pasarelas/contable/SSO | P0 |
 | Apps móviles (iOS/Android) | Sí | No (web responsive) | PWA + push o apps nativas | P1 |
 | Notificaciones push | Sí | Parcial (in-app/email) | Push móviles/web confiables | P1 |
@@ -38,6 +38,7 @@ Leyenda: Sí = completo; Parcial = básico/incompleto; No = ausente. Prioridad: 
 
 #### P0 — Crítico
 - [ ] Finanzas: facturación, cobranzas, conciliación; integración con pasarela (ej. Mercado Pago) y exportes contables
+  - Estado actual: MVP simulado disponible (emisión de facturas, simulación de pago, export XLSX)
 - [ ] Integraciones: SSO (Google/Microsoft), endpoints API, conectores contables
 - [ ] Seguridad: bitácoras/auditoría por entidad, retención y backups, hardening permisos/roles, export de datos
 

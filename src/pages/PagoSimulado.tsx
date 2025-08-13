@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, ArrowLeft, CreditCard } from "lucide-react"
+import { logAudit } from "@/services/audit"
 
 type Invoice = {
   id: string
@@ -43,6 +44,7 @@ export default function PagoSimulado() {
         updatedAt: serverTimestamp(),
         ...(status === 'paid' ? { paidAt: serverTimestamp(), method: 'simulado' } : {})
       })
+      void logAudit('update_status', 'invoice', id, { status, method: status === 'paid' ? 'simulado' : undefined })
       navigate('/app/finanzas')
     } finally { setSaving(null) }
   }
