@@ -115,6 +115,13 @@ export function DataTable<TData, TValue>({
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [selectedColumnIds, setSelectedColumnIds] = useState<string[]>([])
   const visibleExportableColumns = () => table.getVisibleLeafColumns().filter(c => c.id !== 'select' && c.id !== 'actions')
+  const getExportColumns = () => {
+    const visible = visibleExportableColumns()
+    if (!selectedColumnIds || selectedColumnIds.length === 0) return visible
+    const byId = new Set(selectedColumnIds)
+    const filtered = visible.filter(col => byId.has(col.id))
+    return filtered.length > 0 ? filtered : visible
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -152,7 +159,7 @@ export function DataTable<TData, TValue>({
   }, [])
 
   const handleExportCsv = () => {
-    const columns = visibleExportableColumns().filter(col => selectedColumnIds.includes(col.id))
+    const columns = getExportColumns()
     const headers = columns.map(col => {
       const header = col.columnDef.header
       return typeof header === 'string' ? header : col.id
@@ -176,7 +183,7 @@ export function DataTable<TData, TValue>({
   }
 
   const handleExportXlsx = () => {
-    const columns = visibleExportableColumns().filter(col => selectedColumnIds.includes(col.id))
+    const columns = getExportColumns()
     const headers = columns.map(col => {
       const header = col.columnDef.header
       return typeof header === 'string' ? header : col.id
@@ -201,7 +208,7 @@ export function DataTable<TData, TValue>({
   }
 
   const handleExportPdf = async () => {
-    const columns = visibleExportableColumns().filter(col => selectedColumnIds.includes(col.id))
+    const columns = getExportColumns()
     const headers = columns.map(col => {
       const header = col.columnDef.header
       return typeof header === 'string' ? header : col.id
