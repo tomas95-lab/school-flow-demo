@@ -22,6 +22,12 @@ export default function AnnouncementsView() {
   const [targetRole, setTargetRole] = useState<'all' | 'admin' | 'docente' | 'alumno'>("all");
   const [targetCourseId, setTargetCourseId] = useState<string>("");
   const { data: courses } = useFirestoreCollection("courses", { enableCache: true });
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const templates = [
+    { id: 'bienvenida', title: 'Bienvenida', content: 'Bienvenidos al nuevo período. Les deseamos un gran comienzo.' },
+    { id: 'recordatorio-asistencia', title: 'Recordatorio de asistencia', content: 'Recordamos la importancia de asistir a clases regularmente.' },
+    { id: 'evento', title: 'Evento escolar', content: 'Invitamos a todos al evento de la próxima semana. ¡Los esperamos!' },
+  ]
 
   useEffect(() => {
     let q: any = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
@@ -270,6 +276,18 @@ export default function AnnouncementsView() {
             <div>
               <label className="text-sm text-gray-700">Contenido</label>
               <Textarea value={content} onChange={(e) => setContent(e.target.value)} />
+              <div className="mt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setTemplatesOpen(v => !v)}>Plantillas</Button>
+                {templatesOpen && (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {templates.map(t => (
+                      <Button key={t.id} type="button" variant="outline" size="sm" onClick={() => { setTitle(t.title); setContent(t.content) }}>
+                        {t.title}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
