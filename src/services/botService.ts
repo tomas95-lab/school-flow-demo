@@ -29,7 +29,6 @@ export interface BotAnalysis {
 
 export class BotService {
   private static instance: BotService;
-  private dataCache: Map<string, any> = new Map();
 
   static getInstance(): BotService {
     if (!BotService.instance) {

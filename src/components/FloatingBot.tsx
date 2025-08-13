@@ -15,10 +15,10 @@ import {
   Users,
   BarChart3,
   Zap,
-  Minimize2,
-  Maximize2,
+  // Minimize2,
+  // Maximize2,
   Trash2,
-  MessageCircle,
+  // MessageCircle,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -423,7 +423,7 @@ const FloatingBot: React.FC = () => {
       return '❌ No tengo suficientes datos de estudiantes y calificaciones para realizar el análisis.';
     }
 
-    const totalStudents = students.length;
+    // const totalStudents = students.length;
     const totalGrades = calificaciones.length;
     const averageGrade = calificaciones.reduce((sum, g) => sum + g.valor, 0) / totalGrades;
     
@@ -666,7 +666,7 @@ const FloatingBot: React.FC = () => {
     return analysis;
   };
 
-  const generateAdvancedSystemStats = (details: any): string => {
+  const generateAdvancedSystemStats = (_details: any): string => {
     let analysis = `📈 **Estadísticas Avanzadas del Sistema**\n\n`;
 
     // Basic stats

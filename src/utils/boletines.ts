@@ -285,7 +285,18 @@ export function generarObservacionAutomaticaBoletin(
 }
 
 // Función para generar y descargar el PDF del boletín
-export async function generarPDFBoletin(row: unknown) {
+type BoletinRow = {
+  periodo?: string;
+  Nombre?: string;
+  promediototal?: number;
+  estado?: string;
+  alertas?: number;
+  asistencia?: { porcentaje?: number; presentes?: number; total?: number };
+  materias?: Array<{ nombre?: string; t1?: number; T1?: number; t2?: number; T2?: number; t3?: number; T3?: number; promedio?: number }>;
+  comentario?: string;
+};
+
+export async function generarPDFBoletin(row: BoletinRow) {
   try {
     // Verificar que row tenga datos válidos
     if (!row) {
@@ -402,7 +413,7 @@ export async function generarPDFBoletin(row: unknown) {
   doc.text('CALIFICACIONES POR MATERIA', 20, 195);
 
   // Preparar datos para la tabla
-      const tableData = materias.map((materia: unknown) => {
+      const tableData = materias.map((materia: { nombre?: string; t1?: number; T1?: number; t2?: number; T2?: number; t3?: number; T3?: number; promedio?: number }) => {
         // Manejar tanto T1/T2/T3 como t1/t2/t3
         const t1 = materia.t1 || materia.T1 || 0;
         const t2 = materia.t2 || materia.T2 || 0;
@@ -445,7 +456,7 @@ export async function generarPDFBoletin(row: unknown) {
 
   // Comentario general si existe
   if (row.comentario) {
-        const finalY = (doc as unknown).lastAutoTable?.finalY || 250;
+        const finalY = (doc as any).lastAutoTable?.finalY || 250;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
         doc.text('COMENTARIO GENERAL', 20, finalY + 10);
@@ -455,7 +466,7 @@ export async function generarPDFBoletin(row: unknown) {
     
     // Dividir el comentario en líneas si es muy largo
     const maxWidth = 170;
-    const lines = doc.splitTextToSize(row.comentario, maxWidth);
+    const lines = doc.splitTextToSize(String(row.comentario), maxWidth);
         doc.text(lines, 20, finalY + 20);
       }
     } else {
@@ -483,5 +494,179 @@ export async function generarPDFBoletin(row: unknown) {
   } catch (error) {
     console.error('Error al generar PDF:', error);
     throw new Error('Error al generar el PDF. Verifica que los datos del boletín sean válidos.');
+  }
+}
+
+// Genera el PDF con el mismo diseño pero lo devuelve como Blob para poder abrir e imprimir
+export async function generarPDFBoletinBlob(row: BoletinRow): Promise<{ blob: Blob; fileName: string }> {
+  try {
+    if (!row) {
+      throw new Error('No hay datos del boletín para generar el PDF');
+    }
+
+    let jsPDF, autoTable;
+    try {
+      const jsPDFModule = await import('jspdf');
+      jsPDF = jsPDFModule.default || jsPDFModule;
+    } catch (error) {
+      console.error('Error al importar jsPDF:', error);
+      throw new Error('Error al cargar la librería de PDF. Inténtalo de nuevo.');
+    }
+
+    try {
+      const autoTableModule = await import('jspdf-autotable');
+      autoTable = autoTableModule.default || autoTableModule;
+    } catch (error) {
+      console.error('Error al importar jspdf-autotable:', error);
+      throw new Error('Error al cargar la librería de tablas PDF. Inténtalo de nuevo.');
+    }
+
+    if (typeof jsPDF === 'undefined') {
+      throw new Error('La librería jsPDF no está disponible');
+    }
+    if (typeof autoTable === 'undefined') {
+      throw new Error('La librería autoTable no está disponible');
+    }
+
+    const doc = new jsPDF();
+    const primaryColor: [number, number, number] = [75, 85, 99];
+    const secondaryColor: [number, number, number] = [156, 163, 175];
+
+    doc.setFontSize(24);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BOLETÍN DE CALIFICACIONES', 105, 25, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Período: ${row.periodo || 'Académico'}`, 105, 35, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INFORMACIÓN DEL ESTUDIANTE', 20, 55);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Nombre: ${row.Nombre || 'N/A'}`, 20, 65);
+    doc.text(`Promedio General: ${(row.promediototal || 0).toFixed(1)}`, 20, 75);
+    doc.text(`Estado: ${row.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}`, 20, 85);
+    doc.text(`Alertas: ${row.alertas || 0}`, 20, 95);
+
+    if (row.asistencia && row.asistencia.porcentaje !== undefined) {
+      doc.text(`Asistencia: ${row.asistencia.porcentaje}%`, 20, 105);
+      doc.text(`Clases: ${row.asistencia.presentes || 0}/${row.asistencia.total || 0}`, 20, 115);
+    }
+
+    const materias = row.materias || [];
+    const stats = {
+      totalMaterias: materias.length,
+      materiasAprobadas: materias.filter((m: any) => {
+        const t1 = m.t1 || m.T1 || 0;
+        const t2 = m.t2 || m.T2 || 0;
+        const t3 = m.t3 || m.T3 || 0;
+        const promedio = m.promedio || (t1 + t2 + t3) / 3;
+        return promedio >= 7.0;
+      }).length,
+      materiasDestacadas: materias.filter((m: any) => {
+        const t1 = m.t1 || m.T1 || 0;
+        const t2 = m.t2 || m.T2 || 0;
+        const t3 = m.t3 || m.T3 || 0;
+        const promedio = m.promedio || (t1 + t2 + t3) / 3;
+        return promedio >= 9.0;
+      }).length,
+      materiasEnRiesgo: materias.filter((m: any) => {
+        const t1 = m.t1 || m.T1 || 0;
+        const t2 = m.t2 || m.T2 || 0;
+        const t3 = m.t3 || m.T3 || 0;
+        const promedio = m.promedio || (t1 + t2 + t3) / 3;
+        return promedio < 7.0;
+      }).length,
+    };
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ESTADÍSTICAS GENERALES', 20, 135);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Materias: ${stats.totalMaterias}`, 20, 145);
+    doc.text(`Aprobadas: ${stats.materiasAprobadas}`, 20, 155);
+    doc.text(`Destacadas: ${stats.materiasDestacadas}`, 20, 165);
+    doc.text(`En Riesgo: ${stats.materiasEnRiesgo}`, 20, 175);
+
+    if (materias.length > 0) {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CALIFICACIONES POR MATERIA', 20, 195);
+
+      const tableData = materias.map((materia: any) => {
+        const t1 = materia.t1 || materia.T1 || 0;
+        const t2 = materia.t2 || materia.T2 || 0;
+        const t3 = materia.t3 || materia.T3 || 0;
+        const promedio = materia.promedio || (t1 + t2 + t3) / 3;
+        return [
+          materia.nombre || 'N/A',
+          t1.toFixed(1),
+          t2.toFixed(1),
+          t3.toFixed(1),
+          promedio.toFixed(1),
+          promedio >= 7.0 ? 'Aprobada' : 'Reprobada',
+        ];
+      });
+
+      autoTable(doc, {
+        head: [['Materia', 'T1', 'T2', 'T3', 'Promedio', 'Estado']],
+        body: tableData,
+        startY: 205,
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+        },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { halign: 'center', cellWidth: 20 },
+          2: { halign: 'center', cellWidth: 20 },
+          3: { halign: 'center', cellWidth: 20 },
+          4: { halign: 'center', cellWidth: 25 },
+          5: { halign: 'center', cellWidth: 30 },
+        },
+      });
+
+      if (row.comentario) {
+        const finalY = (doc as any).lastAutoTable?.finalY || 250;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COMENTARIO GENERAL', 20, finalY + 10);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const maxWidth = 170;
+        const lines = doc.splitTextToSize(String(row.comentario), maxWidth);
+        doc.text(lines, 20, finalY + 20);
+      }
+    } else {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CALIFICACIONES POR MATERIA', 20, 195);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('No hay calificaciones disponibles para este período.', 20, 205);
+    }
+
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(8);
+    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Documento generado automáticamente - Sistema de Gestión Escolar', 105, pageHeight - 20, { align: 'center' });
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, 105, pageHeight - 15, { align: 'center' });
+
+    const fileName = `Boletin_${(row.Nombre || 'Estudiante').replace(/\s+/g, '_')}_${row.periodo || 'Academico'}.pdf`;
+    const blob = doc.output('blob') as Blob;
+    return { blob, fileName };
+  } catch (error) {
+    console.error('Error al generar PDF (blob):', error);
+    throw new Error('Error al generar el PDF para imprimir.');
   }
 }

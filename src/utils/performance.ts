@@ -79,7 +79,7 @@ class PerformanceMonitor {
 
 // Decorator for measuring function performance
 export function measurePerformance(label?: string) {
-  return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (target: { constructor?: { name?: string } }, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value;
     const timerLabel = label || `${target.constructor?.name || 'Unknown'}.${propertyName}`;
 

@@ -139,21 +139,21 @@ export function generarObservacionAutomatica(datos: DatosAlumno): ObservacionGen
     switch (nombreRegla) {
       case 'RENDIMIENTO_INSUFICIENTE':
       case 'EXCELENTE_DESEMPEÑO':
-        seCumple = (regla.condicion as unknown)(datos, promedioActual, promedioAnterior);
+        seCumple = (regla.condicion as unknown as (...args: unknown[]) => boolean)(datos, promedioActual, promedioAnterior);
         break;
       case 'MEJORA_SIGNIFICATIVA':
-        seCumple = (regla.condicion as unknown)(datos, promedioActual, promedioAnterior);
+        seCumple = (regla.condicion as unknown as (...args: unknown[]) => boolean)(datos, promedioActual, promedioAnterior);
         break;
       case 'DESCENSO_RENDIMIENTO':
-        seCumple = (regla.condicion as unknown)(promedioActual, promedioAnterior);
+        seCumple = (regla.condicion as unknown as (...args: unknown[]) => boolean)(promedioActual, promedioAnterior);
         break;
       case 'AUSENCIAS_REITERADAS':
       case 'AUSENCIAS_CRITICAS':
-        seCumple = (regla.condicion as unknown)(ausencias);
+        seCumple = (regla.condicion as unknown as (...args: unknown[]) => boolean)(ausencias);
         break;
       case 'ASISTENCIA_PERFECTA':
       case 'MEJORA_ASISTENCIA':
-        seCumple = (regla.condicion as unknown)(datos, ausencias);
+        seCumple = (regla.condicion as unknown as (...args: unknown[]) => boolean)(datos, ausencias);
         break;
     }
     
@@ -403,14 +403,14 @@ export function validarDatosAlumno(datos: unknown): datos is DatosAlumno {
     datos &&
     typeof datos === 'object' &&
     datos !== null &&
-    'studentId' in datos &&
-    typeof (datos as unknown).studentId === 'string' &&
-    'calificaciones' in datos &&
-    Array.isArray((datos as unknown).calificaciones) &&
-    'asistencias' in datos &&
-    Array.isArray((datos as unknown).asistencias) &&
-    'periodoActual' in datos &&
-    typeof (datos as unknown).periodoActual === 'string'
+    'studentId' in (datos as Record<string, unknown>) &&
+    typeof (datos as Record<string, unknown>).studentId === 'string' &&
+    'calificaciones' in (datos as Record<string, unknown>) &&
+    Array.isArray((datos as Record<string, unknown>).calificaciones) &&
+    'asistencias' in (datos as Record<string, unknown>) &&
+    Array.isArray((datos as Record<string, unknown>).asistencias) &&
+    'periodoActual' in (datos as Record<string, unknown>) &&
+    typeof (datos as Record<string, unknown>).periodoActual === 'string'
   );
 }
 

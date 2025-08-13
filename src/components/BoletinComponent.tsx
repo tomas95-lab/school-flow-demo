@@ -11,7 +11,7 @@ import {
   Calendar,
   UserCheck,
 } from 'lucide-react';
-import { generarPDFBoletin } from '@/utils/boletines';
+import { generarPDFBoletin, generarPDFBoletinBlob } from '@/utils/boletines';
 import { Button } from './ui/button';
 
 interface BoletinRow {
@@ -31,7 +31,7 @@ interface BoletinRow {
   comentario?: string;
   fechaGeneracion?: string;
   abierto?: boolean;
-  alertas?: unknown[];
+  alertas?: number | unknown[];
   observacionAutomatica?: string;
   Nombre?: string;
   promediototal?: number;
@@ -52,13 +52,60 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
     try {
-      await generarPDFBoletin(row);
+      await generarPDFBoletin({
+        periodo: row.periodo,
+        Nombre: row.Nombre,
+        promediototal: row.promediototal,
+        estado: row.estado,
+        alertas: Array.isArray(row.alertas) ? row.alertas.length : row.alertas,
+        asistencia: row.asistencia,
+        materias: row.materias?.map(m => ({ nombre: m.nombre, t1: m.t1, t2: m.t2, t3: m.t3 })),
+        comentario: row.comentario,
+      });
     } catch (error) {
       console.error('Error al generar PDF:', error);
     } finally {
       setIsDownloading(false);
     }
   };
+
+  // Imprimir usando el PDF con el mismo diseño del export
+  const handlePrintPDF = async () => {
+    try {
+      const data = {
+        periodo: row.periodo,
+        Nombre: row.Nombre,
+        promediototal: row.promediototal,
+        estado: row.estado,
+        alertas: Array.isArray(row.alertas) ? (row.alertas as any[]).length : (row.alertas as number | undefined),
+        asistencia: row.asistencia,
+        materias: row.materias?.map(m => ({ nombre: m.nombre, t1: m.t1, t2: m.t2, t3: m.t3 })),
+        comentario: row.comentario,
+      }
+      const { blob } = await generarPDFBoletinBlob(data)
+      const url = URL.createObjectURL(blob)
+      const printWindow = window.open(url)
+      if (printWindow) {
+        // Algunos navegadores necesitan esperar que cargue el PDF
+        const onLoad = () => {
+          printWindow.focus()
+          printWindow.print()
+        }
+        // Intentar imprimir cuando cargue
+        try {
+          printWindow.addEventListener('load', onLoad)
+        } catch {
+          // fallback simple si no permite addEventListener
+          setTimeout(() => {
+            try { printWindow.print() } catch {}
+          }, 600)
+        }
+      }
+    } catch (e) {
+      // Si falla, fallback a print de la vista HTML
+      window.print()
+    }
+  }
 
   // Función para obtener el color de la calificación
   const getGradeColor = (grade: number) => {
@@ -126,7 +173,7 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
   };
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white print-container">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 md:py-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -149,6 +196,13 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
             <Download className={`w-4 h-4 ${isDownloading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isDownloading ? 'Generando...' : 'Descargar'}</span>
             <span className="sm:hidden">{isDownloading ? '...' : 'PDF'}</span>
+          </Button>
+          <Button
+            onClick={handlePrintPDF}
+            variant="outline"
+            className="px-3 md:px-4 py-2 rounded-lg text-sm font-medium transition-colors no-print"
+          >
+            Imprimir
           </Button>
         </div>
       </div>

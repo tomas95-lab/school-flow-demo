@@ -2,7 +2,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { where } from "firebase/firestore";
 import { useContext, useState, useMemo } from "react";
 import { AuthContext } from "@/context/AuthContext";
-import { useTeacherCourses } from "@/hooks/useTeacherCourses";
+// import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { SchoolSpinner } from "@/components/SchoolSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,8 +73,7 @@ export default function DetalleAsistencia() {
 
   // Obtener datos
   const { user } = useContext(AuthContext);
-  const { teacherCourses } = useTeacherCourses(user?.teacherId);
-  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+  // const { teacherCourses } = useTeacherCourses(user?.teacherId);
   const { data: courses, loading: loadingCourses } = useFirestoreCollection("courses", {
     constraints: user?.role === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
     dependencies: [user?.role, user?.teacherId]

@@ -172,7 +172,7 @@ export default function AlumnoAttendanceOverview(){
                     id:           student.firestoreId!,
                     Nombre:       `${student.nombre} ${student.apellido}`,
                     present:      Boolean(rec.present),
-                    fecha:        rec.date,
+                    fecha:        rec.fecha,
                     idAsistencia: rec.firestoreId ?? ""
                   }));
                 })

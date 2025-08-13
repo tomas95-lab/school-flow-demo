@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 // Componente simple para testing
-const SimpleComponent = ({ title, children }: { title: string; children: React.ReactNode }) => {
+const SimpleComponent = ({ title, children }: { title: string; children?: React.ReactNode }) => {
   return (
     <div data-testid="simple-component">
       <h1>{title}</h1>

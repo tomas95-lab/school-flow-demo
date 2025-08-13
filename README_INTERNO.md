@@ -1,3 +1,30 @@
+## Esquema y relaciones (Firestore)
+
+- Colecciones principales:
+  - `courses` (Course): curso con `firestoreId`, `nombre`, `division`, `año:number`, `nivel?`, `teacherId?`, `modalidad?`, `turno?`.
+  - `subjects` (Subject): materia con `cursoId:string` (normalizado), `teacherId?`.
+  - `students` (Student): estudiante con `cursoId:string`.
+  - `attendances` (Attendance): `studentId`, `courseId`, `subject` o `subjectId`, `fecha`, `present:boolean`.
+  - `calificaciones` (Grade): `studentId`, `subjectId`, `valor`, `fecha`.
+
+- Relaciones explícitas documentadas en `src/types/schema.ts` (no forzadas por Firestore):
+  - `subjects.cursoId -> courses.firestoreId`
+  - `subjects.teacherId -> teachers.firestoreId`
+  - `students.cursoId -> courses.firestoreId`
+  - `attendances.(studentId|courseId|subjectId)` apuntan a sus colecciones.
+
+## Migraciones
+
+- Script: `node scripts/migrate_subjects_cursoId.js`
+  - Normaliza `subjects.cursoId` a string (primer id válido si viene como array).
+
+## Limpieza y seed desde cero (excepto users)
+
+- Listar colecciones: `npm run list-collections`
+- Limpiar TODAS las colecciones excepto `users`: `npm run clean-collections`
+- Seed mínimo de relaciones robustas: `node scripts/seed-core.js`
+  - Crea `teachers`, `courses`, `subjects`, `students`, `attendances`, `calificaciones` con relaciones explícitas.
+
 ## SchoolFlow MVP — Documento Técnico Interno
 
 ### 1. Visión general del proyecto

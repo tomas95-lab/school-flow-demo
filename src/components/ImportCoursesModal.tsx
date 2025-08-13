@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Upload, FileText, CheckCircle, XCircle, AlertTriangle, Download, Building2 } from "lucide-react";
 import ReutilizableDialog from "@/components/DialogReutlizable";
 import { db } from "@/firebaseConfig";
-import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, serverTimestamp, where } from "firebase/firestore";
 
 type ImportCoursesModalProps = {
   open?: boolean;

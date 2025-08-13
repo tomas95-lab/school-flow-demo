@@ -12,8 +12,8 @@ import { ReutilizableCard } from "@/components/ReutilizableCard";
 import { StatsCard } from "@/components/StatCards";
 import { DataTable } from "@/components/data-table";
 import { useColumnsUsuarios } from "../app/usuarios/columns";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { where } from "firebase/firestore";
+import { getCollection } from "@/services/repository";
 import { UserModal } from "@/components/UserModal";
 import { DeleteUserModal } from "@/components/DeleteUserModal";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
@@ -120,22 +120,17 @@ export default function Usuarios() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const colRef = collection(db, "users");
-      // Para no admins, limitar vista a roles no administrativos
-      const qRef = user?.role === 'admin' ? colRef : query(colRef, where('role', 'in', ['docente', 'alumno']));
-      const usersSnapshot = await getDocs(qRef);
-      const usersData = usersSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || "",
-          email: data.email || "",
-          role: data.role || "alumno",
-          status: data.status || "active",
-          lastLogin: data.lastLogin,
-          createdAt: data.createdAt
-        };
-      });
+      const constraints = user?.role === 'admin' ? [] : [where('role', 'in', ['docente', 'alumno'])];
+      const docs = await getCollection('users', constraints);
+      const usersData = docs.map((d) => ({
+        id: d.firestoreId,
+        name: (d as any).name || "",
+        email: (d as any).email || "",
+        role: (d as any).role || "alumno",
+        status: (d as any).status || "active",
+        lastLogin: (d as any).lastLogin,
+        createdAt: (d as any).createdAt,
+      }));
       setUsers(usersData);
     } catch (error) {
       console.error("Error fetching users:", error);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import useFirestoreCollection from '@/hooks/useFireStoreCollection'
+import { useFirestoreCollection } from '@/hooks/useFireStoreCollection'
 
 describe('useFirestoreCollection Hook', () => {
   it('should have working test environment', () => {

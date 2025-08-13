@@ -19,7 +19,16 @@ export interface Course {
   firestoreId: string;
   nombre: string;
   division: string;
-  año: string;
+  año: number;
+  nivel?: string;
+  teacherId?: string;
+  modalidad?: string;
+  turno?: string;
+  maxStudents?: number;
+  description?: string;
+  aula?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
   creadoEn?: string;
   status?: 'active' | 'inactive';
 }
@@ -27,7 +36,7 @@ export interface Course {
 export interface Subject {
   firestoreId: string;
   nombre: string;
-  cursoId: string;
+  cursoId: string | string[];
   teacherId?: string;
   creadoEn?: string;
   status?: 'active' | 'inactive';
@@ -57,11 +66,16 @@ export interface Teacher {
 export interface Attendance {
   firestoreId: string;
   studentId: string;
-  subjectId: string;
+  courseId: string;
+  subject?: string;
+  subjectId?: string;
   fecha: string;
-  presente: boolean;
+  present: boolean;
+  presente?: boolean;
   justificada?: boolean;
   comentario?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
   creadoEn?: string;
   creadoPor?: string;
 }

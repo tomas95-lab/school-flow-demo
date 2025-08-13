@@ -59,7 +59,7 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   RENDIMIENTO_BAJO: {
-    condicion: (promedioActual: number) => promedioActual >= 5.0 && promedioActual < 6.0,
+    condicion: ((promedioActual: number) => promedioActual >= 5.0 && promedioActual < 6.0) as (...args: unknown[]) => boolean,
     titulo: "Rendimiento Bajo",
     descripcion: "El estudiante presenta un rendimiento académico bajo que necesita atención.",
     tipo: 'rendimiento_critico',
@@ -67,8 +67,8 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   ASISTENCIA_CRITICA: {
-    condicion: (ausencias: number, porcentajeAsistencia: number) => 
-      porcentajeAsistencia < 70 || ausencias > 5,
+    condicion: ((ausencias: number, porcentajeAsistencia: number) => 
+      porcentajeAsistencia < 70 || ausencias > 5) as (...args: unknown[]) => boolean,
     titulo: "Asistencia Crítica",
     descripcion: "El estudiante presenta problemas graves de asistencia que afectan su aprendizaje.",
     tipo: 'asistencia_critica',
@@ -76,8 +76,8 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   ASISTENCIA_BAJA: {
-    condicion: (ausencias: number, porcentajeAsistencia: number) => 
-      (porcentajeAsistencia >= 70 && porcentajeAsistencia < 80) || (ausencias > 3 && ausencias <= 5),
+    condicion: ((ausencias: number, porcentajeAsistencia: number) => 
+      (porcentajeAsistencia >= 70 && porcentajeAsistencia < 80) || (ausencias > 3 && ausencias <= 5)) as (...args: unknown[]) => boolean,
     titulo: "Asistencia Baja",
     descripcion: "El estudiante presenta una asistencia baja que puede afectar su rendimiento.",
     tipo: 'asistencia_critica',
@@ -85,10 +85,10 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   TENDENCIA_NEGATIVA: {
-    condicion: (promedioActual: number, promedioAnterior?: number) => {
+    condicion: ((promedioActual: number, promedioAnterior?: number) => {
       if (!promedioAnterior) return false;
       return (promedioActual - promedioAnterior) < -1.0;
-    },
+    }) as (...args: unknown[]) => boolean,
     titulo: "Tendencia Negativa Detectada",
     descripcion: "El estudiante muestra una tendencia negativa en su rendimiento académico.",
     tipo: 'tendencia_negativa',
@@ -96,8 +96,8 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   MATERIAS_EN_RIESGO: {
-    condicion: (materiasEnRiesgo: string[]) => 
-      materiasEnRiesgo.length >= 2,
+    condicion: ((materiasEnRiesgo: string[]) => 
+      materiasEnRiesgo.length >= 2) as (...args: unknown[]) => boolean,
     titulo: "Múltiples Materias en Riesgo",
     descripcion: "El estudiante tiene múltiples materias con rendimiento bajo.",
     tipo: 'materia_riesgo',
@@ -105,10 +105,10 @@ const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
   },
   
   MEJORA_SIGNIFICATIVA: {
-    condicion: (promedioActual: number, promedioAnterior?: number) => {
+    condicion: ((promedioActual: number, promedioAnterior?: number) => {
       if (!promedioAnterior) return false;
       return (promedioActual - promedioAnterior) > 1.0;
-    },
+    }) as (...args: unknown[]) => boolean,
     titulo: "Mejora Significativa",
     descripcion: "¡Excelente! El estudiante muestra una mejora significativa en su rendimiento.",
     tipo: 'mejora_significativa',

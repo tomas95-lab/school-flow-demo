@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { MessageSquare, Clock, Users, Settings, GitBranch, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
-import { collection, onSnapshot, query, where, type DocumentData } from "firebase/firestore";
+import { onSnapshot, query, where, type DocumentData, collection } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { AuthContext } from "@/context/AuthContext";
 import NewConversationModal from "./NewConversationModal";

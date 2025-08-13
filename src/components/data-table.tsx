@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { ColumnDef, Table, SortingState, ColumnFiltersState, PaginationState } from "@tanstack/react-table"
 import {
   flexRender,
@@ -30,6 +30,7 @@ import {
   Download,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import * as XLSX from "xlsx"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 
@@ -71,6 +72,7 @@ export function DataTable<TData, TValue>({
   emptyMessage = "No se encontraron resultados.",
   className
 }: DataTableProps<TData, TValue>) {
+  // Si el dataset es grande, sugerir paginación mayor o virtualización futura
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -108,6 +110,70 @@ export function DataTable<TData, TValue>({
     table.resetSorting()
   }
 
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const active = document.activeElement as HTMLElement | null
+      const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.getAttribute('contenteditable') === 'true')
+      if (!isTyping && e.key === '/') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const handleExportCsv = () => {
+    const columns = table.getVisibleLeafColumns().filter(col => col.id !== "select" && col.id !== "actions")
+    const headers = columns.map(col => {
+      const header = col.columnDef.header
+      return typeof header === 'string' ? header : col.id
+    })
+    const dataRows = table.getRowModel().rows.map(row => columns.map(col => {
+      const value = row.getValue(col.id)
+      const str = value == null ? '' : String(value)
+      const escaped = '"' + str.replace(/"/g, '""') + '"'
+      return escaped
+    }).join(','))
+    const csv = [headers.join(','), ...dataRows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${title || 'export'}_${new Date().toISOString().slice(0,10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportXlsx = () => {
+    const columns = table.getVisibleLeafColumns().filter(col => col.id !== "select" && col.id !== "actions")
+    const headers = columns.map(col => {
+      const header = col.columnDef.header
+      return typeof header === 'string' ? header : col.id
+    })
+    const dataRows = table.getRowModel().rows.map(row => columns.map(col => {
+      const value = row.getValue(col.id)
+      return value == null ? '' : value
+    }))
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataRows])
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos')
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${title || 'export'}_${new Date().toISOString().slice(0,10)}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className={cn("space-y-4", className)}>
       {(title || description) && (
@@ -135,15 +201,22 @@ export function DataTable<TData, TValue>({
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 className="pl-9"
+                ref={searchInputRef}
               />
             </div>
 
             <div className="flex items-center gap-2">
               {exportable && (
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-1" />
-                  Exportar
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExportCsv}>
+                    <Download className="h-4 w-4 mr-1" />
+                    CSV
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportXlsx}>
+                    <Download className="h-4 w-4 mr-1" />
+                    XLSX
+                  </Button>
+                </div>
               )}
               {hasActiveFilters && (
                 <Button
@@ -205,28 +278,6 @@ export function DataTable<TData, TValue>({
                     </Badge>
                   )
                 }
-                if (filter.type === "select" && filter.columnId && filter.options) {
-                    const col = table.getColumn(filter.columnId)
-                    return (
-                      <div key={i} className="max-w-xs">
-                        <Select
-                          value={(col?.getFilterValue() as string) ?? ""}
-                          onValueChange={v => col?.setFilterValue(v)}
-                        >
-                          <SelectTrigger size="sm" className="w-full">
-                            <SelectValue placeholder={filter.placeholder || filter.label} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {filter.options.map(o => (
-                              <SelectItem key={o.value} value={String(o.value)}>
-                                {o.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )
-                  }
                 if (filter.type === "select" && filter.columnId && filter.options) {
                     const col = table.getColumn(filter.columnId)
                     return (

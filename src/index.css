@@ -20,3 +20,13 @@ h1, h2, h3 {
   animation: spin 1.5s linear infinite;
 }
 
+/* Print-friendly styles for Boletín */
+@media print {
+  @page { margin: 12mm; }
+  body { background: white !important; }
+  header, nav, aside, .no-print { display: none !important; }
+  .print-container { padding: 0 !important; box-shadow: none !important; border: none !important; }
+  .print-break { page-break-before: always; }
+  .print-hide { display: none !important; }
+}
+

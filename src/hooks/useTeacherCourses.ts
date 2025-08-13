@@ -22,15 +22,16 @@ export function useTeacherCourses(teacherId?: string) {
     // Cursos inferidos por materias (subjects) del docente
     const teacherSubjects = (subjects || []).filter(s => s.teacherId === teacherId);
     const subjectCourseIds = new Set<string>();
-    teacherSubjects.forEach(subject => {
-      if (Array.isArray((subject as any).cursoId)) {
-        (subject as any).cursoId.forEach((courseId: string) => {
-          const id = typeof courseId === 'string' ? courseId.trim() : courseId;
+    teacherSubjects.forEach((subject) => {
+      const raw = subject.cursoId;
+      if (Array.isArray(raw)) {
+        raw.forEach((courseId) => {
+          const id = typeof courseId === "string" ? courseId.trim() : "";
           if (id) subjectCourseIds.add(id);
         });
-      } else if ((subject as any).cursoId) {
-        const id = typeof (subject as any).cursoId === 'string' ? (subject as any).cursoId.trim() : (subject as any).cursoId;
-        if (id) subjectCourseIds.add(id as string);
+      } else if (typeof raw === "string") {
+        const id = raw.trim();
+        if (id) subjectCourseIds.add(id);
       }
     });
     const coursesBySubjects = courses.filter(course => course.firestoreId && subjectCourseIds.has(course.firestoreId));
@@ -70,7 +71,7 @@ export function useTeacherStudents(teacherId?: string) {
     teacherCourses.forEach(c => { if (c.firestoreId) courseIdSet.add(c.firestoreId); });
 
     // Incluir cursoId(s) legacy del teacher si existen
-    const teacherDoc = teachers?.find((t: any) => t.firestoreId === teacherId);
+    const teacherDoc = teachers?.find((t: { firestoreId?: string }) => t.firestoreId === teacherId) as { cursoId?: string | string[] } | undefined;
     const raw = teacherDoc?.cursoId;
     if (Array.isArray(raw)) raw.forEach((id: string) => { if (typeof id === 'string' && id.trim()) courseIdSet.add(id.trim()); });
     else if (typeof raw === 'string' && raw.trim()) courseIdSet.add(raw.trim());
