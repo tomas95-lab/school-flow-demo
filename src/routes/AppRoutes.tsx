@@ -22,6 +22,10 @@ const ReportesInteligentesOverview = lazy(() => import("@/components/ReportesInt
 const ExplicacionBoletinOverview = lazy(() => import("@/components/ExplicacionBoletinOverview"));
 const BotOverview = lazy(() => import("@/components/BotOverview"));
   const IntervencionesOverview = lazy(() => import("@/components/IntervencionesOverview"));
+  const Panel360 = lazy(() => import("@/pages/Panel360"));
+  const Finanzas = lazy(() => import("@/pages/Finanzas"));
+  const PagoSimulado = lazy(() => import("@/pages/PagoSimulado"));
+  const General = lazy(() => import("@/pages/General"));
 import { PrivateRoute } from "./PrivateRoute";
 import { PermissionRoute } from "./PermissionRoute";
 
@@ -84,7 +88,11 @@ export function AppRoutes() {
             <Route path="/app/reportes" element={<ReportesInteligentesOverview />} />
             <Route path="/app/explicacion-boletin" element={<ExplicacionBoletinOverview />} />
             <Route path="/app/bot" element={<BotOverview />} />
+            <Route path="/app/360" element={<Panel360 />} />
+            <Route path="/app/finanzas" element={<Finanzas />} />
+            <Route path="/app/pago/:id" element={<PagoSimulado />} />
             <Route path="/app/intervenciones" element={<IntervencionesOverview />} />
+            <Route path="/app/general" element={<General />} />
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" />} />

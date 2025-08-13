@@ -16,7 +16,8 @@ import {
   Layers3,
   Bot,
   LineChart,
-  Settings2
+  Settings2,
+  Lock
 } from "lucide-react"
 
 import {
@@ -70,6 +71,7 @@ const data = {
         { title: "Usuarios", url: "/app/usuarios", isActive: false },
         { title: "Cursos y Materias", url: "/app/gestion-cursos-materias", isActive: false },
         { title: "Inscripciones", url: "/app/inscripciones", isActive: false },
+        { title: "Finanzas (MVP)", url: "/app/finanzas", isActive: false },
       ],
     },
     {
@@ -81,6 +83,7 @@ const data = {
         { title: "Explicación Boletín", url: "/app/explicacion-boletin", isActive: false },
         { title: "Bot IA", url: "/app/bot", isActive: false },
         { title: "Intervenciones", url: "/app/intervenciones", isActive: false },
+        { title: "Panel 360", url: "/app/360", isActive: false },
       ],
     },
     {
@@ -117,6 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "Explicación Boletín": FileText,
     "Bot IA": Bot,
     "Intervenciones": LineChart,
+    "Panel 360": LineChart,
     "General": Settings2,
   }
 
@@ -167,17 +171,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   const Icon = iconMap[menuItem.title] || LayoutDashboard
                   return (
                     <SidebarMenuItem key={menuItem.title}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton asChild isActive={isActive} aria-label={menuItem.title}>
-                            <NavLink to={menuItem.url} className="flex items-center gap-2">
-                              <Icon className="h-4 w-4" />
-                              <span>{menuItem.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">{menuItem.title}</TooltipContent>
-                      </Tooltip>
+                      {menuItem.title === "General" ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton isActive={false} aria-label={menuItem.title} disabled aria-disabled className="opacity-70 cursor-not-allowed">
+                              <div className="flex items-center gap-2">
+                                <Lock className="h-4 w-4" />
+                                <span>{menuItem.title}</span>
+                              </div>
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">En desarrollo</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton asChild isActive={isActive} aria-label={menuItem.title}>
+                              <NavLink to={menuItem.url} className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" />
+                                <span>{menuItem.title}</span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">{menuItem.title}</TooltipContent>
+                        </Tooltip>
+                      )}
                     </SidebarMenuItem>
                   )
                 })}
