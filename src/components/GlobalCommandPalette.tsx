@@ -83,31 +83,36 @@ export default function GlobalCommandPalette() {
         onSelect: () => navigate('/app/usuarios'),
       },
       {
-        title: "Exportar tabla (abrir diálogo)",
-        group: "Acciones rápidas",
-        onSelect: () => {
-          window.dispatchEvent(new CustomEvent('datatable:open-export'))
-        }
-      },
-      {
         title: "Exportar tabla CSV",
         group: "Acciones rápidas",
         onSelect: () => {
-          window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'csv' } }))
+          if ((window as any).__datatableExport) {
+            (window as any).__datatableExport('csv')
+          } else {
+            window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'csv' } }))
+          }
         }
       },
       {
         title: "Exportar tabla XLSX",
         group: "Acciones rápidas",
         onSelect: () => {
-          window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'xlsx' } }))
+          if ((window as any).__datatableExport) {
+            (window as any).__datatableExport('xlsx')
+          } else {
+            window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'xlsx' } }))
+          }
         }
       },
       {
         title: "Exportar tabla PDF",
         group: "Acciones rápidas",
         onSelect: () => {
-          window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'pdf' } }))
+          if ((window as any).__datatableExport) {
+            (window as any).__datatableExport('pdf')
+          } else {
+            window.dispatchEvent(new CustomEvent('datatable:export', { detail: { format: 'pdf' } }))
+          }
         }
       },
       {

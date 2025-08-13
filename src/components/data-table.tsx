@@ -152,9 +152,18 @@ export function DataTable<TData, TValue>({
     }
     window.addEventListener('datatable:open-export', openHandler as EventListener)
     window.addEventListener('datatable:export', exportHandler as EventListener)
+    // Registrar funciones globales para apertura rápida desde Command Palette
+    ;(window as any).__datatableOpenExport = () => setExportDialogOpen(true)
+    ;(window as any).__datatableExport = (format: 'csv'|'xlsx'|'pdf') => {
+      if (format === 'csv') handleExportCsv()
+      if (format === 'xlsx') handleExportXlsx()
+      if (format === 'pdf') handleExportPdf()
+    }
     return () => {
       window.removeEventListener('datatable:open-export', openHandler as EventListener)
       window.removeEventListener('datatable:export', exportHandler as EventListener)
+      if ((window as any).__datatableOpenExport) delete (window as any).__datatableOpenExport
+      if ((window as any).__datatableExport) delete (window as any).__datatableExport
     }
   }, [])
 
