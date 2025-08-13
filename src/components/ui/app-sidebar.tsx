@@ -80,6 +80,7 @@ const data = {
         { title: "Reportes Inteligentes", url: "/app/reportes", isActive: false },
         { title: "Explicación Boletín", url: "/app/explicacion-boletin", isActive: false },
         { title: "Bot IA", url: "/app/bot", isActive: false },
+        { title: "Intervenciones", url: "/app/intervenciones", isActive: false },
       ],
     },
     {
@@ -115,6 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "Reportes Inteligentes": LineChart,
     "Explicación Boletín": FileText,
     "Bot IA": Bot,
+    "Intervenciones": LineChart,
     "General": Settings2,
   }
 

@@ -27,9 +27,17 @@ import {
 
 interface CreateAlertModalProps {
   onAlertCreated?: () => void;
+  trigger?: React.ReactNode;
+  studentId?: string;
+  studentName?: string;
+  courseId?: string;
+  courseName?: string;
+  suggestedPriority?: 'low' | 'medium' | 'high';
+  suggestedTitle?: string;
+  suggestedDescription?: string;
 }
 
-export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
+export function CreateAlertModal({ onAlertCreated, trigger, studentId, studentName, courseId, courseName, suggestedPriority, suggestedTitle, suggestedDescription }: CreateAlertModalProps) {
   const { user } = useContext(AuthContext);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -191,6 +199,22 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
     }
   };
 
+  // Prefill when opening from a specific student
+  React.useEffect(() => {
+    if (open && studentId) {
+      setFormData(prev => ({
+        ...prev,
+        recipients: Array.from(new Set([...(prev.recipients || []), 'specific_students'])),
+        selectedStudents: Array.from(new Set([...(prev.selectedStudents || []), studentId])),
+        courseId: courseId || prev.courseId,
+        courseName: courseName || prev.courseName,
+        priority: suggestedPriority || prev.priority,
+        title: prev.title || suggestedTitle || prev.title,
+        description: prev.description || suggestedDescription || prev.description,
+      }))
+    }
+  }, [open, studentId, courseId, courseName, suggestedPriority, suggestedTitle, suggestedDescription])
+
   // Check if specific course is selected
   const showCourseSelect = formData.recipients.includes('specific_course');
   const showStudentSelect = formData.recipients.includes('specific_students');
@@ -200,10 +224,14 @@ export function CreateAlertModal({ onAlertCreated }: CreateAlertModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Bell className="h-4 w-4 mr-2" />
-          Crear Alerta
-        </Button>
+        {React.isValidElement(trigger) ? (
+          trigger
+        ) : (
+          <Button>
+            <Bell className="h-4 w-4 mr-2" />
+            Crear Alerta
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-6">

@@ -21,6 +21,7 @@ const InscripcionesOverview = lazy(() => import("@/components/InscripcionesOverv
 const ReportesInteligentesOverview = lazy(() => import("@/components/ReportesInteligentesOverview"));
 const ExplicacionBoletinOverview = lazy(() => import("@/components/ExplicacionBoletinOverview"));
 const BotOverview = lazy(() => import("@/components/BotOverview"));
+  const IntervencionesOverview = lazy(() => import("@/components/IntervencionesOverview"));
 import { PrivateRoute } from "./PrivateRoute";
 import { PermissionRoute } from "./PermissionRoute";
 
@@ -83,6 +84,7 @@ export function AppRoutes() {
             <Route path="/app/reportes" element={<ReportesInteligentesOverview />} />
             <Route path="/app/explicacion-boletin" element={<ExplicacionBoletinOverview />} />
             <Route path="/app/bot" element={<BotOverview />} />
+            <Route path="/app/intervenciones" element={<IntervencionesOverview />} />
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" />} />
