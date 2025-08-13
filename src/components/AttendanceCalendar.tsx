@@ -14,6 +14,9 @@ import {
   CheckCircle, 
   XCircle,
 } from "lucide-react";
+import * as XLSX from "xlsx";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   format, 
   startOfMonth, 
@@ -219,9 +222,51 @@ export default function AttendanceCalendar() {
               Calendario de Asistencias
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday}>
-                Hoy
-              </Button>
+              <Button variant="outline" size="sm" onClick={goToToday}>Hoy</Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const dayStr = format(new Date(), 'yyyy-MM-dd')
+                const exportCourseIds = selectedCourse === 'all' ? availableCourses.map(c => c.firestoreId) : [selectedCourse]
+                const dayRows = (attendances || []).filter(a => exportCourseIds.includes(a.courseId) && a.date === dayStr)
+                const headers = ["Alumno","Curso","Materia","Fecha","Presente"]
+                const rows = dayRows.map(a => {
+                  const st = students?.find(s => s.firestoreId === a.studentId)
+                  const cr = courses?.find(c => c.firestoreId === a.courseId)
+                  return [
+                    st ? `${st.nombre} ${st.apellido}` : a.studentId,
+                    cr ? `${cr.nombre} - ${cr.division}` : a.courseId,
+                    a.subject,
+                    a.date,
+                    a.present ? 'Sí' : 'No'
+                  ]
+                })
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+                const wb = XLSX.utils.book_new()
+                XLSX.utils.book_append_sheet(wb, ws, 'Diario')
+                XLSX.writeFile(wb, `Asistencias_${dayStr}.xlsx`)
+              }}>Exportar XLSX (hoy)</Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const dayStr = format(new Date(), 'yyyy-MM-dd')
+                const exportCourseIds = selectedCourse === 'all' ? availableCourses.map(c => c.firestoreId) : [selectedCourse]
+                const dayRows = (attendances || []).filter(a => exportCourseIds.includes(a.courseId) && a.date === dayStr)
+                const headers = ["Alumno","Curso","Materia","Fecha","Presente"] as const
+                const body = dayRows.map(a => {
+                  const st = students?.find(s => s.firestoreId === a.studentId)
+                  const cr = courses?.find(c => c.firestoreId === a.courseId)
+                  return [
+                    st ? `${st.nombre} ${st.apellido}` : a.studentId,
+                    cr ? `${cr.nombre} - ${cr.division}` : a.courseId,
+                    a.subject,
+                    a.date,
+                    a.present ? 'Sí' : 'No'
+                  ]
+                })
+                const doc = new jsPDF()
+                doc.setFontSize(14)
+                doc.text(`Asistencias ${dayStr}`, 14, 18)
+                // @ts-ignore
+                autoTable(doc, { head: [headers as unknown as string[]], body, startY: 24 })
+                doc.save(`Asistencias_${dayStr}.pdf`)
+              }}>Exportar PDF (hoy)</Button>
             </div>
           </div>
         </CardHeader>

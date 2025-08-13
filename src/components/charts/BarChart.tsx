@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts"
 
 interface BarChartProps {
   data: any[]
@@ -56,21 +56,21 @@ export function BarChartComponent({
       )}
       <div className="w-full h-80 sm:h-96">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+          <BarChart data={data} margin={{ top: 16, right: 24, left: 8, bottom: 32 }}>
+            <CartesianGrid strokeDasharray="4 8" stroke="#e5e7eb" />
             <XAxis 
               dataKey={xKey} 
-              stroke="#888888"
-              fontSize={12}
+              stroke="#9ca3af"
+              fontSize={11}
               tickLine={false}
               axisLine={false}
               angle={-45}
               textAnchor="end"
-              height={80}
+              height={64}
             />
             <YAxis
-              stroke="#888888"
-              fontSize={12}
+              stroke="#9ca3af"
+              fontSize={11}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => `${value}`}
@@ -79,7 +79,7 @@ export function BarChartComponent({
               content={({ active, payload, label }) => {
                 if (active && payload && payload.length) {
                   return (
-                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                    <div className="rounded-md border bg-white p-3 shadow-lg">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col">
                           <span className="text-[0.70rem] uppercase text-muted-foreground">
@@ -106,10 +106,11 @@ export function BarChartComponent({
             />
             <Bar 
               dataKey={yKey} 
-              fill="currentColor" 
-              radius={[4, 4, 0, 0]} 
-              className="fill-primary"
+              fill="#2563eb" 
+              radius={[6, 6, 0, 0]} 
+              maxBarSize={48}
             />
+            <ReferenceLine y={7} stroke="#10b981" strokeDasharray="3 3" ifOverflow="extendDomain" />
           </BarChart>
         </ResponsiveContainer>
       </div>

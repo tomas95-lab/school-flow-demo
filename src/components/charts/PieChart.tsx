@@ -21,6 +21,19 @@ export function PieChartComponent({
   className = "",
   colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
 }: PieChartProps) {
+  // Etiqueta interna solo con porcentaje para evitar desbordes
+  const RADIAN = Math.PI / 180
+  const renderPercentLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+    const value = `${(percent * 100).toFixed(0)}%`
+    return (
+      <text x={x} y={y} fill="#111827" textAnchor="middle" dominantBaseline="central" fontSize={12}>
+        {value}
+      </text>
+    )
+  }
   // Verificar si hay datos válidos
   const hasValidData = data && data.length > 0 && data.some(item => item[dataKey] > 0);
 
@@ -59,27 +72,28 @@ export function PieChartComponent({
       )}
       <div className="w-full h-80 sm:h-96">
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsPieChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <RechartsPieChart margin={{ top: 16, right: 24, left: 24, bottom: 16 }}>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
-              fill="#8884d8"
+              label={renderPercentLabel}
+              outerRadius={86}
+              innerRadius={52}
+              paddingAngle={2}
               dataKey={dataKey}
               nameKey={nameKey}
             >
               {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="#fff" strokeWidth={1} />
               ))}
             </Pie>
             <Tooltip 
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   return (
-                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                    <div className="rounded-md border bg-white p-3 shadow-lg">
                       <div className="flex flex-col gap-1">
                         <span className="text-[0.70rem] uppercase text-muted-foreground">
                           {nameKey}
@@ -100,7 +114,7 @@ export function PieChartComponent({
                 return null
               }}
             />
-            <Legend />
+            <Legend verticalAlign="bottom" height={24} />
           </RechartsPieChart>
         </ResponsiveContainer>
       </div>

@@ -727,7 +727,7 @@ export default function Dashboard() {
         {calculatedStats?.chartData ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8">
             {/* Chart de Rendimiento por Curso */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 overflow-hidden">
               <BarChartComponent
                 data={calculatedStats.chartData.performanceByCourse}
                 xKey="curso"
@@ -739,7 +739,7 @@ export default function Dashboard() {
             </div>
 
             {/* Chart de Asistencia Mensual */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 ">
               <LineChartComponent
                 data={calculatedStats.chartData.attendanceByMonth}
                 xKey="mes"
@@ -751,7 +751,7 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Chart de Distribución de Calificaciones */}
+            {/* Chart de Distribución de Calificaciones (Pie con más alto para leyenda) */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
               <PieChartComponent
                 data={calculatedStats.chartData.gradeDistribution}
@@ -759,12 +759,12 @@ export default function Dashboard() {
                 nameKey="rango"
                 title="Distribución de Calificaciones"
                 description="Distribución de calificaciones por rango"
-                className="h-80"
+                className="h-[26rem]"
               />
             </div>
 
             {/* Chart de Rendimiento por Materia */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 overflow-hidden">
               <BarChartComponent
                 data={calculatedStats.chartData.performanceBySubject}
                 xKey="materia"
@@ -775,7 +775,7 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Chart de Distribución de Asistencias */}
+            {/* Chart de Distribución de Asistencias (Pie con más alto para leyenda) */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
               <PieChartComponent
                 data={calculatedStats.chartData.attendanceDistribution}
@@ -783,13 +783,13 @@ export default function Dashboard() {
                 nameKey="estado"
                 title="Distribución de Asistencias"
                 description="Estado de asistencia general"
-                className="h-80"
+                className="h-[26rem]"
                 colors={["#10b981", "#ef4444"]}
               />
             </div>
 
             {/* Chart de Estadísticas por Rol */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden">
               <div className="h-80 flex items-center justify-center">
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Estadísticas por Rol</h3>

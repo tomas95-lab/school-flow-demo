@@ -2,7 +2,9 @@ import { useMemo } from "react";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { StatsCard } from "./StatCards";
 import { CourseCard } from "./CourseCard";
-import { Percent, TriangleAlert } from "lucide-react";
+import { Percent, TriangleAlert, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 export default function AdminCalificacionesOverview() {
   const { data: courses } = useFirestoreCollection("courses");
@@ -85,10 +87,28 @@ export default function AdminCalificacionesOverview() {
                 <h2 className="text-2xl font-bold text-gray-900">
                     Todos los Cursos ({courses.length})
                 </h2>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                    <span>Todos los cursos activos</span>
-                </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => {
+                const headers = ["Curso", "% Aprobados", "% Reprobados", "Promedio"]
+                const rows = courses.map(c => {
+                  const notas = calificaciones.filter(x => x.courseId === c.firestoreId).map(x => x.valor || 0)
+                  const prom = notas.length ? (notas.reduce((s, n) => s + n, 0) / notas.length) : 0
+                  const aprob = notas.length ? Math.round((notas.filter(n => n >= 7).length / notas.length) * 100) : 0
+                  const reprob = notas.length ? (100 - aprob) : 0
+                  return [c.nombre, `${aprob}%`, `${reprob}%`, prom.toFixed(2)]
+                })
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+                const wb = XLSX.utils.book_new()
+                XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
+                XLSX.writeFile(wb, `Resumen_Calificaciones_${new Date().toISOString().slice(0,10)}.xlsx`)
+              }}>
+                <Download className="h-4 w-4 mr-2" /> Exportar resumen
+              </Button>
+              <div className="text-sm text-gray-600 hidden sm:flex items-center gap-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span>Todos los cursos activos</span>
+              </div>
+            </div>
             </div>
             <p className="text-gray-600 mt-1">
             Administra cursos, revisa calificaciones y gestiona información académica
