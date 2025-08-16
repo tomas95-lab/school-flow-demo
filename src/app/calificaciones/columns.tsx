@@ -19,7 +19,6 @@ export interface CalificacionesRow {
   Materia: string;
   fecha: string;
 }
-import { Button } from "@/components/ui/button";
 
 // Función para obtener el color y icono según la calificación
 const getGradeStyle = (grade: number) => {
