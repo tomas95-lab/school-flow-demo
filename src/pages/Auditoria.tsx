@@ -24,11 +24,10 @@ type AuditLog = {
 
 export default function Auditoria() {
   const { user } = useContext(AuthContext)
-  void usePermission()
-  const canView = user && (user.role === 'admin')
-  if (!canView) {
-    return <AccessDenied message="No tienes permisos para acceder al módulo de auditoría." />
-  }
+  // No llamar hooks condicionalmente: hacemos la verificación de permisos con un render temprano
+  const { can } = usePermission()
+  const canView = !!user && can('canViewAll' as any)
+  if (!canView) return <AccessDenied message="No tienes permisos para acceder al módulo de auditoría." />
 
   const { data: logs } = useFirestoreCollection<AuditLog>('auditLogs', { enableCache: true })
 

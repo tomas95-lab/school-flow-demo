@@ -170,9 +170,9 @@ export default function AlumnoAttendanceOverview(){
                   // 3) Si tiene registros, devolvemos UNA fila por cada fecha
                   return recs.map(rec => ({
                     id:           student.firestoreId!,
-                    Nombre:       `${student.nombre} ${student.apellido}`,
+                    Nombre:       (`${student.nombre ?? ''} ${(student as any).apellido ?? ''}`.trim()) || (student as any).name || '',
                     present:      Boolean(rec.present),
-                    fecha:        rec.fecha,
+                    fecha:        (rec as any).fecha ?? (rec as any).date ?? '',
                     idAsistencia: rec.firestoreId ?? ""
                   }));
                 })

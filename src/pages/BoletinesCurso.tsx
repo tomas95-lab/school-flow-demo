@@ -33,19 +33,32 @@ export default function BoletinesCurso() {
 
 	const rows: BoletinceRow[] = boletinesCurso.map((b) => {
 	const fechaGeneracion = b.fechaGeneracion ? new Date(b.fechaGeneracion).toLocaleDateString('es-ES') : 'N/A';	
-	const materias = b.materias.map((m: { T1: number; T2: number; T3: number; nombre: string }) => {
-		const promedio = (m.T1 + m.T2 + m.T3) / 3 || 0;
+	const materias = b.materias.map((m: { T1?: number; T2?: number; T3?: number; t1?: number; t2?: number; t3?: number; nombre: string }) => {
+		const v1 = typeof m.T1 === 'number' ? m.T1 : (typeof m.t1 === 'number' ? m.t1 : undefined);
+		const v2 = typeof m.T2 === 'number' ? m.T2 : (typeof m.t2 === 'number' ? m.t2 : undefined);
+		const v3 = typeof m.T3 === 'number' ? m.T3 : (typeof m.t3 === 'number' ? m.t3 : undefined);
+		const tri = parseInt(periodoActual.replace(/.*T(\d)/, '$1'));
+		const considerarT1 = tri > 1;
+		const considerarT2 = tri > 2;
+		const considerarT3 = tri > 3; // no calcular T3 si aún no terminó
+
+		const valores: number[] = [];
+		if (considerarT1 && typeof v1 === 'number') valores.push(v1);
+		if (considerarT2 && typeof v2 === 'number') valores.push(v2);
+		if (considerarT3 && typeof v3 === 'number') valores.push(v3);
+
+		const promedio = valores.length > 0 ? valores.reduce((a, b) => a + b, 0) / valores.length : 0;
 		return {
 			nombre: m.nombre,
-			t1: m.T1,
-			t2: m.T2,
-			t3: m.T3,
+			t1: v1 ?? 0,
+			t2: v2 ?? 0,
+			t3: v3 ?? 0,
 			promedio,
 			observacion: observacionPorPromedio(promedio), // Observación por materia
 		};
 	});
 
-	const promedioTotal = getPromedioTotal(b.materias);
+	const promedioTotal = getPromedioTotal(b.materias, { incluirTrimestreEnCurso: false });
 
 	// Calcular datos de asistencia del alumno
 	const asistenciasAlumno = asistencias.filter((a) => 
@@ -123,11 +136,8 @@ export default function BoletinesCurso() {
 				<StatsCard
 					label="Promedio General"
 					value={
-						boletinesCurso.length
-							? (
-									boletinesCurso.reduce((acc: number, b) => acc + (b.promedioTotal ?? 0), 0) /
-									boletinesCurso.length
-								).toFixed(2)
+						rows.length
+							? (rows.reduce((acc, r) => acc + (r.promediototal ?? 0), 0) / rows.length).toFixed(2)
 							: "-"
 					}
 					icon={Book}
@@ -136,7 +146,7 @@ export default function BoletinesCurso() {
 				/>
 				<StatsCard
 					label="Alumnos con Bajo Rendimiento"
-					value={boletinesCurso.filter((b) => b.promedioTotal <= 6).length}
+					value={rows.filter((r) => (r.promediototal ?? 0) <= 6).length}
 					icon={Book}
 					color="orange"
 					subtitle="Cantidad de alumnos con promedio menor a seis."
@@ -144,10 +154,8 @@ export default function BoletinesCurso() {
 				<StatsCard
 					label="Top Alumno"
 					value={
-						boletinesCurso.length
-							? boletinesCurso.reduce((max, b) =>
-									b.promedioTotal > (max.promedioTotal ?? -1) ? b : max,
-								{}).alumnoNombre || "-"
+						rows.length
+							? (rows.reduce((max, r) => (r.promediototal ?? -1) > (max.promediototal ?? -1) ? r : max, rows[0]).Nombre || "-")
 							: "-"
 					}
 					icon={Book}

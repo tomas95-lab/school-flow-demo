@@ -19,6 +19,7 @@ export interface CalificacionesRow {
   Materia: string;
   fecha: string;
 }
+import { Button } from "@/components/ui/button";
 
 // Función para obtener el color y icono según la calificación
 const getGradeStyle = (grade: number) => {
@@ -32,7 +33,7 @@ const getGradeStyle = (grade: number) => {
     };
   } else if (grade >= 8) {
     return {
-      color: "text-green-600",
+      color: "text-black-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
       icon: <CheckCircle className="h-3 w-3 text-green-600" />,
@@ -152,7 +153,7 @@ function EditGradeCell({ row }: { row: { original: CalificacionesRow } }) {
         onOpenChange={setOpen}
         title={
           <div className="flex items-center gap-2">
-            <Edit className="h-6 w-6 text-blue-600" />
+            <Edit className="text-blue-600" />
             Editar Calificación
           </div>
         }             
@@ -178,13 +179,7 @@ function EditGradeCell({ row }: { row: { original: CalificacionesRow } }) {
           </>
         }
         triger={
-          <button
-            onClick={() => setOpen(true)}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-200"
-          >
             <Pencil className="h-4 w-4" />
-            <span className="sr-only">Editar</span>
-          </button>
         }
       />
     </div>

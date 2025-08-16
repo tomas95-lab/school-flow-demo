@@ -141,18 +141,6 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
                   <p className="text-sm text-gray-700 font-medium">{status.description}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500">
-                  {row.fechaGeneracion && 
-                    `Generado: ${new Date(row.fechaGeneracion).toLocaleDateString('es-ES')}`
-                  }
-                </p>
-                {row.fechaLectura && (
-                  <p className="text-xs text-gray-500">
-                    Leído: {new Date(row.fechaLectura).toLocaleDateString('es-ES')}
-                  </p>
-                )}
-              </div>
             </div>
           </div>
           

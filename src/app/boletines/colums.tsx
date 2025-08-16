@@ -69,8 +69,8 @@ export function useColumnsDetalle(): ColumnDef<BoletinceRow>[] {
 			cell: ({ row }) => {
 				return (
 					<div className="flex items-center space-x-2">
-						<Users className={`w-4 h-4 ${row.getValue<number>("alertas") > 0 ? 'text-red-500' : 'text-green-500'}`} />
-						<span className={row.getValue<number>("alertas") > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
+						<Users className="w-4 h-4" />
+						<span className="font-medium">
 							{row.getValue("Nombre")}
 						</span>
 					</div>

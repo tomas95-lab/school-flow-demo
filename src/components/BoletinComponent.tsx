@@ -11,7 +11,8 @@ import {
   Calendar,
   UserCheck,
 } from 'lucide-react';
-import { generarPDFBoletin, generarPDFBoletinBlob } from '@/utils/boletines';
+import { generarPDFBoletin, generarPDFBoletinBlob, getTrimestreActualNumero } from '@/utils/boletines';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
 
 interface BoletinRow {
@@ -47,6 +48,13 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
   const [showComments, setShowComments] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'name'>('name');
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Normaliza calificaciones provenientes de datos incompletos
+  const normalizeGrade = (value: unknown, fallback: number = 0): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const coerced = Number(value);
+    return Number.isFinite(coerced) ? coerced : fallback;
+  };
 
   // Función para manejar la descarga del PDF
   const handleDownloadPDF = async () => {
@@ -108,7 +116,8 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
   }
 
   // Función para obtener el color de la calificación
-  const getGradeColor = (grade: number) => {
+  const getGradeColor = (gradeInput: number | unknown) => {
+    const grade = normalizeGrade(gradeInput, 0);
     if (grade >= 9.0) return 'text-emerald-600';
     if (grade >= 8.0) return 'text-blue-600';
     if (grade >= 7.0) return 'text-amber-600';
@@ -132,14 +141,14 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
     switch (sortOrder) {
       case 'asc':
         return sorted.sort((a, b) => {
-          const avgA = (a.t1 + a.t2 + a.t3) / 3;
-          const avgB = (b.t1 + b.t2 + b.t3) / 3;
+          const avgA = (normalizeGrade(a.t1) + normalizeGrade(a.t2) + normalizeGrade(a.t3)) / 3;
+          const avgB = (normalizeGrade(b.t1) + normalizeGrade(b.t2) + normalizeGrade(b.t3)) / 3;
           return avgA - avgB;
         });
       case 'desc':
         return sorted.sort((a, b) => {
-          const avgA = (a.t1 + a.t2 + a.t3) / 3;
-          const avgB = (b.t1 + b.t2 + b.t3) / 3;
+          const avgA = (normalizeGrade(a.t1) + normalizeGrade(a.t2) + normalizeGrade(a.t3)) / 3;
+          const avgB = (normalizeGrade(b.t1) + normalizeGrade(b.t2) + normalizeGrade(b.t3)) / 3;
           return avgB - avgA;
         });
       case 'name':
@@ -156,18 +165,32 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
     t3: number;
   };
 
+  const trimestreActual = getTrimestreActualNumero();
+
   const stats = {
     totalMaterias: (row.materias as Materia[] | undefined)?.length || 0,
     materiasAprobadas: (row.materias as Materia[] | undefined)?.filter((m: Materia) => {
-      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      const vals: number[] = [];
+      if (trimestreActual > 1) vals.push(normalizeGrade(m.t1));
+      if (trimestreActual > 2) vals.push(normalizeGrade(m.t2));
+      if (trimestreActual > 3) vals.push(normalizeGrade(m.t3));
+      const promedio = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
       return promedio >= 7.0;
     }).length || 0,
     materiasDestacadas: (row.materias as Materia[] | undefined)?.filter((m: Materia) => {
-      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      const vals: number[] = [];
+      if (trimestreActual > 1) vals.push(normalizeGrade(m.t1));
+      if (trimestreActual > 2) vals.push(normalizeGrade(m.t2));
+      if (trimestreActual > 3) vals.push(normalizeGrade(m.t3));
+      const promedio = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
       return promedio >= 9.0;
     }).length || 0,
     materiasEnRiesgo: (row.materias as Materia[] | undefined)?.filter((m: Materia) => {
-      const promedio = (m.t1 + m.t2 + m.t3) / 3;
+      const vals: number[] = [];
+      if (trimestreActual > 1) vals.push(normalizeGrade(m.t1));
+      if (trimestreActual > 2) vals.push(normalizeGrade(m.t2));
+      if (trimestreActual > 3) vals.push(normalizeGrade(m.t3));
+      const promedio = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
       return promedio < 7.0;
     }).length || 0
   };
@@ -222,8 +245,8 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
             <TrendingUp className="w-5 h-5 text-gray-500" />
             <div>
               <p className="text-sm text-gray-600">Promedio</p>
-              <p className={`font-bold ${getGradeColor(row.promediototal || 0)}`}>
-                {(row.promediototal || 0).toFixed(1)}
+              <p className={`font-bold ${getGradeColor(row.promediototal ?? 0)}`}>
+                {normalizeGrade(row.promediototal ?? 0, 0).toFixed(1)}
               </p>
             </div>
           </div>
@@ -327,7 +350,11 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
             </thead>
             <tbody>
               {getSortedMaterias().map((materia, index) => {
-                const promedioGeneral = (materia.t1 + materia.t2 + materia.t3) / 3;
+                const vals: number[] = [];
+                if (trimestreActual > 1) vals.push(normalizeGrade(materia.t1));
+                if (trimestreActual > 2) vals.push(normalizeGrade(materia.t2));
+                if (trimestreActual > 3) vals.push(normalizeGrade(materia.t3));
+                const promedioGeneral = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
                 return (
                   <tr 
                     key={`${materia.nombre}-${index}`}
@@ -337,19 +364,46 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
                       <div className="font-medium text-gray-900 text-sm md:text-base">{materia.nombre}</div>
                     </td>
                     <td className="text-center px-2 md:px-4 py-3 md:py-4">
-                      <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${getGradeColor(materia.t1)}`}>
-                        {materia.t1.toFixed(1)}
-                      </span>
+                      {trimestreActual > 1 ? (
+                        <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${getGradeColor(materia.t1)}`}>
+                          {normalizeGrade(materia.t1, 0).toFixed(1)}
+                        </span>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-xs md:text-sm text-gray-400 cursor-help">—</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Trimestre en curso</TooltipContent>
+                        </Tooltip>
+                      )}
                     </td>
                     <td className="text-center px-2 md:px-4 py-3 md:py-4">
-                      <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${getGradeColor(materia.t2)}`}>
-                        {materia.t2.toFixed(1)}
-                      </span>
+                      {trimestreActual > 2 ? (
+                        <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${getGradeColor(materia.t2)}`}>
+                          {normalizeGrade(materia.t2, 0).toFixed(1)}
+                        </span>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-xs md:text-sm text-gray-400 cursor-help">—</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Trimestre en curso</TooltipContent>
+                        </Tooltip>
+                      )}
                     </td>
                     <td className="text-center px-2 md:px-4 py-3 md:py-4">
-                      <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${getGradeColor(materia.t3)}`}>
-                        {materia.t3.toFixed(1)}
-                      </span>
+                      {trimestreActual > 3 ? (
+                        <span className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${getGradeColor(materia.t3)}`}>
+                          {normalizeGrade(materia.t3, 0).toFixed(1)}
+                        </span>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-xs md:text-sm text-gray-400 cursor-help">—</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Trimestre en curso</TooltipContent>
+                        </Tooltip>
+                      )}
                     </td>
                     {showComments && (
                       <td className="px-3 md:px-6 py-3 md:py-4">

@@ -429,19 +429,6 @@ export default function ReportesInteligentesOverview() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
-                      <BarChart3 className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">IA Activa</p>
-                      <p className="font-bold text-gray-900">Análisis en Tiempo Real</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
               <Button 
                 onClick={() => handleExportReport("completo")}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"

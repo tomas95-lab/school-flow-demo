@@ -68,14 +68,36 @@ export function useColumnsDetalle(user: AppUser | null): ColumnDef<AttendanceRow
       accessorKey: "fecha",
       header: "Fecha",
       cell: ({ row }) => {
-        const date = row.getValue<string>("fecha");
+        const raw = row.getValue<unknown>("fecha");
+        // Soporta Firestore Timestamp, ISO string, epoch ms/seconds
+        let d: Date | null = null;
+        try {
+          if (raw && typeof raw === 'object' && 'seconds' in (raw as any)) {
+            const ts = raw as { seconds: number; nanoseconds?: number };
+            d = new Date(ts.seconds * 1000);
+          } else if (typeof raw === 'number') {
+            d = new Date(raw > 1e12 ? raw : raw * 1000);
+          } else if (typeof raw === 'string') {
+            const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) {
+              const [, y, mo, da] = m;
+              d = new Date(Number(y), Number(mo) - 1, Number(da));
+            } else {
+              const parsed = new Date(raw);
+              d = isNaN(parsed.getTime()) ? null : parsed;
+            }
+          }
+        } catch {
+          d = null;
+        }
+
+        const label = d
+          ? d.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+          : 'N/A';
+
         return (
           <span className="text-sm text-gray-600">
-            {new Date(date).toLocaleDateString('es-ES', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}
+            {label}
           </span>
         );
       },

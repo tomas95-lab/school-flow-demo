@@ -1,15 +1,11 @@
-import { useContext, useMemo, useState } from "react"
-import { AuthContext } from "@/context/AuthContext"
+import { useMemo, useState } from "react"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
-import { where } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts"
+import { BarChartComponent, PieChartComponent } from "@/components/charts"
 import { CreateAlertModal } from "@/components/CreateAlertModal"
-import { Download, Search, User, Users, Award, TrendingUp, Bell } from "lucide-react"
+import { Download, Search, User, Users, Bell } from "lucide-react"
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -22,7 +18,6 @@ type Alert = { createdAt?: string; priority?: string; title?: string; descriptio
 type Announcement = { createdAt?: string; title?: string; content?: string }
 
 export default function Panel360() {
-	const { user } = useContext(AuthContext)
 	const [query, setQuery] = useState("")
 	const [mode, setMode] = useState<'alumno' | 'curso'>('alumno')
 	const [selectedId, setSelectedId] = useState<string>("")

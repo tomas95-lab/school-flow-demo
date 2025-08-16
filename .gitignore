@@ -12,6 +12,35 @@ dist
 dist-ssr
 *.local
 
+# Env files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.crt
+*.der
+*.pfx
+*.cer
+*.jks
+*.keystore
+*.bak
+*.backup
+*.tmp
+*.temp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+*.sqlite
+*.sqlite3
+*.db
+*.tgz
+*.zip
+*.7z
+*.rar
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -37,12 +66,26 @@ firestore.rules
 # Scripts directory
 src/scripts/
 
+# Firebase service accounts / credentials
+*firebase-adminsdk*.json
+serviceAccount*.json
+*.serviceAccount.json
+**/service-account.json
+GOOGLE_APPLICATION_CREDENTIALS
+
 # Vercel
 .vercel
 .env.local
 .env.production
 .env.development
 
+# Build artifacts / coverage
+coverage/
+.nyc_output/
+.parcel-cache/
+.turbo/
+.cache/
+.eslintcache
+
 # Documentación Interna
 .README_INTERNO.md
-.docs/Readme_Colegium_vs_MVP.md

@@ -8,6 +8,7 @@ import { Link } from "react-router-dom"
 // import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 import { where } from "firebase/firestore"
 import { useTeacherStudents, useTeacherCourses } from "@/hooks/useTeacherCourses"
@@ -15,7 +16,7 @@ import {
   generarAlertasAutomaticas, 
   type DatosAlumno
 } from "@/utils/alertasAutomaticas";
-import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts"
+import { BarChartComponent, PieChartComponent } from "@/components/charts"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -692,7 +693,7 @@ export default function Dashboard() {
   // (Eliminadas funciones no utilizadas getRoleIcon/getRoleMessage)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <WelcomeMessage user={user} />
         
@@ -712,7 +713,7 @@ export default function Dashboard() {
                       {stats[kpiKey as keyof typeof stats] || 0}
                     </div>
                     <div className="text-xs text-green-600 font-medium">
-                      ↗ +12% vs mes anterior
+                      +12% vs mes anterior
                     </div>
                   </div>
                 </div>
@@ -725,103 +726,50 @@ export default function Dashboard() {
 
         {/* Sección de Charts */}
         {calculatedStats?.chartData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
             {/* Chart de Rendimiento por Curso */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden h-[30rem]">
               <BarChartComponent
                 data={calculatedStats.chartData.performanceByCourse}
                 xKey="curso"
                 yKey="promedio"
                 title="Rendimiento por Curso"
                 description="Promedio de calificaciones por curso"
-                className="h-80"
-              />
-            </div>
-
-            {/* Chart de Asistencia Mensual */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 ">
-              <LineChartComponent
-                data={calculatedStats.chartData.attendanceByMonth}
-                xKey="mes"
-                yKey="asistencia"
-                title="Tendencia de Asistencia"
-                description="Porcentaje de asistencia por mes"
-                className="h-80"
-                color="#10b981"
               />
             </div>
 
             {/* Chart de Distribución de Calificaciones (Pie con más alto para leyenda) */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden h-[30rem]">
               <PieChartComponent
                 data={calculatedStats.chartData.gradeDistribution}
                 dataKey="cantidad"
                 nameKey="rango"
                 title="Distribución de Calificaciones"
                 description="Distribución de calificaciones por rango"
-                className="h-[26rem]"
               />
             </div>
 
             {/* Chart de Rendimiento por Materia */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden h-[30rem]">
               <BarChartComponent
                 data={calculatedStats.chartData.performanceBySubject}
                 xKey="materia"
                 yKey="promedio"
                 title="Rendimiento por Materia"
                 description="Promedio de calificaciones por materia"
-                className="h-80"
               />
             </div>
 
             {/* Chart de Distribución de Asistencias (Pie con más alto para leyenda) */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden h-[30rem]">
               <PieChartComponent
                 data={calculatedStats.chartData.attendanceDistribution}
                 dataKey="cantidad"
                 nameKey="estado"
                 title="Distribución de Asistencias"
                 description="Estado de asistencia general"
-                className="h-[26rem]"
                 colors={["#10b981", "#ef4444"]}
               />
-            </div>
-
-            {/* Chart de Estadísticas por Rol */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden">
-              <div className="h-80 flex items-center justify-center">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Estadísticas por Rol</h3>
-                  <p className="text-sm text-gray-600 mb-4">Datos específicos según tu rol</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {stats.totalStudents || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Estudiantes</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {stats.totalTeachers || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Docentes</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {stats.totalCourses || 0}
-                      </div>
-                      <div className="text-sm text-gray-600">Cursos</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">
-                        {stats.avgAttendance || "0%"}
-                      </div>
-                      <div className="text-sm text-gray-600">Asistencia</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         ) : (
@@ -844,8 +792,8 @@ export default function Dashboard() {
         {/* Sección principal modernizada */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Acceso Rápido Modernizado */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
+          <div className="lg:col-span-2 h-full">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-2 h-full">
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
@@ -922,6 +870,31 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        <Separator className="my-12" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Centro de Ayuda
+            </h3>
+            <p className="text-gray-600 mb-4">
+              ¿Necesitas ayuda con el panel? Consulta nuestros recursos.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" size="sm">Guía del dashboard</Button>
+              <Button variant="outline" size="sm">Soporte</Button>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Última actualización
+            </h3>
+            <p className="text-gray-600">
+              Los datos se sincronizan automáticamente cada 5 minutos.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -961,7 +934,7 @@ function WelcomeMessage({ user }: { user: { name: string | null; role: string } 
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
       <div className="p-6">
         <div className="flex items-center gap-4">
           <div className={`p-3 bg-gradient-to-br ${gradientClass} rounded-lg`}>
@@ -971,10 +944,14 @@ function WelcomeMessage({ user }: { user: { name: string | null; role: string } 
             <h1 className="text-2xl font-bold text-gray-900 mb-1">
               {greeting}, {user?.name || "Usuario"}!
             </h1>
-            <p className="text-sm text-gray-600">
-              Bienvenido al panel de <span className="font-semibold text-blue-600">{getRoleDisplayName(user?.role)}</span>. 
-              Aquí tienes un resumen de la actividad de tu institución educativa.
-            </p>
+            <div className="flex items-center gap-3 mb-1">
+              <Badge variant="secondary" className="text-xs px-3 py-1">
+                {getRoleDisplayName(user?.role)}
+              </Badge>
+              <div className="h-1 w-1 bg-gray-400 rounded-full" />
+              <span className="text-xs text-gray-500">EduNova</span>
+            </div>
+            <p className="text-sm text-gray-600">Resumen de actividad general</p>
           </div>
         </div>
       </div>

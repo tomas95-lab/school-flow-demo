@@ -358,8 +358,8 @@ export default function Asistencias() {
           {activeView === "charts" && (chartData ? (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-                                 {/* Chart de Asistencia por Día de la Semana */}
-                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+            {/* Chart de Asistencia por Día de la Semana */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
                    <LineChartComponent
                      data={chartData.attendanceByDayOfWeek}
                      xKey="dia"

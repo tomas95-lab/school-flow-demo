@@ -42,7 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Registrar último acceso
           try {
             await updateDoc(doc(db, "users", firebaseUser.uid), {
-              lastLogin: new Date().toISOString()
+              // Normalizamos a serverTimestamp para reglas y consistencia
+              lastLogin: (await import('firebase/firestore')).serverTimestamp()
             });
           } catch (error) {
             console.error("Error updating last login:", error);

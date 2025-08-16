@@ -7,6 +7,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
 
 import {
   SidebarInset,
@@ -18,6 +19,9 @@ import React from "react"
 import { Badge } from "@/components/ui/badge"
 import { useContext} from "react"
 import { AuthContext } from "@/context/AuthContext"
+import { signOut } from "firebase/auth"
+import { auth } from "@/firebaseConfig"
+import { LogOut } from "lucide-react"
 
 // Lista de rutas válidas reales extraídas del sidebar
 const validRoutes = [
@@ -112,14 +116,32 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            <Badge className="ml-4">
+            <div className="flex items-center gap-3 ml-4">
+              <Badge>
                 {user?.role === 'admin'? 'Administrador'
                   : user?.role === 'docente'
                   ? 'Docente'
                   : user?.role === 'alumno'
                   ? 'Alumno'
                   : 'Invitado'}
-            </Badge>  
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await signOut(auth)
+                  } finally {
+                    navigate('/login')
+                  }
+                }}
+                className="gap-2"
+                aria-label="Cerrar sesión"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-4">

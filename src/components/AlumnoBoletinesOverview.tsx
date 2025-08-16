@@ -73,33 +73,43 @@ export default function AlumnoBoletinesOverview() {
 
   // Procesar boletines para mostrar
   const boletinesProcesados = boletinesAlumno.map((b) => {
-    const materias = b.materias?.map((m: { T1: number; T2: number; T3: number; nombre: string }) => {
-      const promedio = (m.T1 + m.T2 + m.T3) / 3 || 0;
+    const periodoActual = b.periodo || getPeriodoActual();
+    const tri = parseInt(periodoActual.replace(/.*T(\d)/, '$1'));
+    const considerarT1 = tri > 1;
+    const considerarT2 = tri > 2;
+    const considerarT3 = tri > 3;
+
+    const materias = b.materias?.map((m: { T1?: number; T2?: number; T3?: number; nombre: string }) => {
+      const valores: number[] = [];
+      if (considerarT1 && typeof m.T1 === 'number') valores.push(m.T1);
+      if (considerarT2 && typeof m.T2 === 'number') valores.push(m.T2);
+      if (considerarT3 && typeof m.T3 === 'number') valores.push(m.T3);
+      const promedio = valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0;
       return {
         nombre: m.nombre,
-        t1: m.T1,
-        t2: m.T2,
-        t3: m.T3,
+        t1: considerarT1 ? (m.T1 ?? 0) : 0,
+        t2: considerarT2 ? (m.T2 ?? 0) : 0,
+        t3: considerarT3 ? (m.T3 ?? 0) : 0,
         promedio,
         observacion: observacionPorPromedio(promedio),
       };
     }) || [];
 
-    const promedioTotal = getPromedioTotal(b.materias || []);
+    const promedioTotal = getPromedioTotal(b.materias || [], { incluirTrimestreEnCurso: false });
 
     // Generar observación automática
-      const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === studentId);
-  const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === studentId);
-    const periodoActual = b.periodo || getPeriodoActual();
+    const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === studentId);
+    const asistenciasAlumno2 = asistencias.filter((asist) => asist.studentId === studentId);
+    const periodoActualCalc = b.periodo || getPeriodoActual();
     
     // Obtener período anterior (simplificado)
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
     
     const observacionAutomatica = studentId ? generarObservacionAutomaticaBoletin(
       calificacionesAlumno as any,
-      asistenciasAlumno as any,
+      asistenciasAlumno2 as any,
       studentId,
-      periodoActual || getPeriodoActual(),
+      periodoActualCalc || getPeriodoActual(),
       periodoAnterior
     ) : null;
 

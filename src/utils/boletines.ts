@@ -46,6 +46,15 @@ export function getPeriodoActual(fecha = new Date()) {
   return `${year}-T${trimestre}`;
 }
 
+// Número de trimestre actual (0 si fuera del calendario académico definido)
+export function getTrimestreActualNumero(fecha = new Date()) {
+  const mes = fecha.getMonth();
+  if (mes >= 3 && mes < 6) return 1;
+  if (mes >= 6 && mes < 9) return 2;
+  if (mes >= 9 && mes < 12) return 3;
+  return 0; // Ene-Feb-Mar: fuera del rango definido para el ciclo actual
+}
+
 // Devuelve el inicio del trimestre actual
 export function getInicioTrimestre(fecha = new Date()) {
   const mes = fecha.getMonth();
@@ -218,26 +227,44 @@ export function observacionPorPromedio(prom: number): string {
 }
 
 // Calcula el promedio total de un boletín (de un array de promedios por materia)
-export function getPromedioTotal(materias: Array<{ T1?: number; T2?: number; T3?: number; promedio?: number }>) {
-  let totalNotas = 0;
-  let cantidadNotas = 0;
+export function getPromedioTotal(
+  materias: Array<{ T1?: number; T2?: number; T3?: number; t1?: number; t2?: number; t3?: number; promedio?: number }>,
+  opciones?: { incluirTrimestreEnCurso?: boolean }
+) {
+  const incluirTrimestreEnCurso = opciones?.incluirTrimestreEnCurso ?? false;
+  const triActual = getTrimestreActualNumero();
+  let sumaPromediosMateria = 0;
+  let cantidadMaterias = 0;
 
-  materias.forEach((m) => {
-    if (typeof m.T1 === "number") {
-      totalNotas += m.T1;
-      cantidadNotas++;
+  for (const m of materias || []) {
+    // Si ya viene el promedio de la materia, úsalo
+    if (typeof m.promedio === 'number' && Number.isFinite(m.promedio)) {
+      sumaPromediosMateria += m.promedio;
+      cantidadMaterias += 1;
+      continue;
     }
-    if (typeof m.T2 === "number") {
-      totalNotas += m.T2;
-      cantidadNotas++;
-    }
-    if (typeof m.T3 === "number") {
-      totalNotas += m.T3;
-      cantidadNotas++;
-    }
-  });
 
-  return cantidadNotas > 0 ? Number((totalNotas / cantidadNotas).toFixed(2)) : 0;
+    // Caso contrario, promediar los trimestres presentes (soporta T1/T2/T3 y t1/t2/t3)
+    let v1 = typeof m.T1 === 'number' ? m.T1 : typeof m.t1 === 'number' ? m.t1 : undefined;
+    let v2 = typeof m.T2 === 'number' ? m.T2 : typeof m.t2 === 'number' ? m.t2 : undefined;
+    let v3 = typeof m.T3 === 'number' ? m.T3 : typeof m.t3 === 'number' ? m.t3 : undefined;
+
+    // Excluir trimestres que aún no han terminado (solo considerar trimestres ya finalizados)
+    if (!incluirTrimestreEnCurso) {
+      if (triActual <= 1) { v1 = undefined; v2 = undefined; v3 = undefined; }
+      else if (triActual === 2) { v2 = undefined; v3 = undefined; }
+      else if (triActual === 3) { v3 = undefined; }
+    }
+
+    const vals = [v1, v2, v3].filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+    if (vals.length > 0) {
+      const promMateria = vals.reduce((a, b) => a + b, 0) / vals.length;
+      sumaPromediosMateria += promMateria;
+      cantidadMaterias += 1;
+    }
+  }
+
+  return cantidadMaterias > 0 ? Number((sumaPromediosMateria / cantidadMaterias).toFixed(2)) : 0;
 }
 
 // Función para generar observación automática para un boletín

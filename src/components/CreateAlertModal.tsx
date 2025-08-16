@@ -209,11 +209,11 @@ export function CreateAlertModal({ onAlertCreated, trigger, studentId, studentNa
         courseId: courseId || prev.courseId,
         courseName: courseName || prev.courseName,
         priority: suggestedPriority || prev.priority,
-        title: prev.title || suggestedTitle || prev.title,
-        description: prev.description || suggestedDescription || prev.description,
+        title: prev.title || suggestedTitle || (studentName ? `Intervención para ${studentName}` : prev.title),
+        description: prev.description || suggestedDescription || (studentName ? `Alerta relacionada con ${studentName}.` : prev.description),
       }))
     }
-  }, [open, studentId, courseId, courseName, suggestedPriority, suggestedTitle, suggestedDescription])
+  }, [open, studentId, studentName, courseId, courseName, suggestedPriority, suggestedTitle, suggestedDescription])
 
   // Check if specific course is selected
   const showCourseSelect = formData.recipients.includes('specific_course');

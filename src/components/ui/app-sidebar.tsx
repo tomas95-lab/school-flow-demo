@@ -70,7 +70,7 @@ const data = {
         { title: "Usuarios", url: "/app/usuarios", isActive: false },
         { title: "Cursos y Materias", url: "/app/gestion-cursos-materias", isActive: false },
         { title: "Inscripciones", url: "/app/inscripciones", isActive: false },
-        { title: "Finanzas (MVP)", url: "/app/finanzas", isActive: false },
+        { title: "Finanzas", url: "/app/finanzas", isActive: false },
       ],
     },
     {
@@ -116,6 +116,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "General": Settings2,
   }
 
+  const { user } = useContext(AuthContext)
+  const isAlumno = user?.role === 'alumno'
+
   // Filtrar elementos del menú según el rol del usuario
   const filteredNavMain = useMemo(() => data.navMain.map(group => {
     // Si es el grupo "Gestión", filtrar elementos según el rol
@@ -144,9 +147,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       }
     }
     
-    // Para otros grupos, mostrar todos los elementos
-    return group
-  }).filter(Boolean), [can]) // Remover grupos vacíos
+    // Para otros grupos, aplicar filtros adicionales para alumno
+    let items = group.items
+    if (isAlumno) {
+      items = items.filter(item => ![
+        'Intervenciones',
+        'Bot IA',
+        'Auditoría',
+        'Reportes Inteligentes',
+      ].includes(item.title))
+    }
+
+    return { ...group, items }
+  }).filter(Boolean), [can, isAlumno]) // Remover grupos vacíos
 
   return (
     <Sidebar {...props}>

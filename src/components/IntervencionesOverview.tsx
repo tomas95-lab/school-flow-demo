@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { TrendingDown, AlertTriangle, FileWarning, LineChart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { CreateAlertModal } from "@/components/CreateAlertModal";
 
 type Student = {
