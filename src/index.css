@@ -53,12 +53,16 @@ h1, h2, h3 {
   }
 
   .btn-primary {
-    @apply btn-modern bg-blue-600 text-white hover:bg-blue-700;
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+    @apply bg-blue-600 text-white hover:bg-blue-700;
     @apply focus:ring-4 focus:ring-blue-200;
   }
 
   .btn-secondary {
-    @apply btn-modern bg-gray-100 text-gray-700 hover:bg-gray-200;
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
     @apply focus:ring-4 focus:ring-gray-100;
   }
 

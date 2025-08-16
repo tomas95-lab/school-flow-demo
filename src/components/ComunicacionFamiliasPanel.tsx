@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,6 @@ import {
   getDoc, 
   setDoc, 
   collection,
-  addDoc,
   getDocs,
   query,
   orderBy,
@@ -34,7 +33,7 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
-import { useFirestoreCollection } from '@/hooks/useFireStoreCollection';
+// import { useFirestoreCollection } from '@/hooks/useFireStoreCollection';
 import { UITranslations } from '@/config/translations';
 
 interface ConfiguracionComunicacion {
@@ -105,7 +104,7 @@ export default function ComunicacionFamiliasPanel() {
   const [activeTab, setActiveTab] = useState<'configuracion' | 'historial' | 'plantillas'>('configuracion');
 
   // Datos de estudiantes para notificaciones
-  const { data: students } = useFirestoreCollection('students');
+  // const { data: students } = useFirestoreCollection('students');
 
   // Cargar configuración y notificaciones
   useEffect(() => {
@@ -283,7 +282,7 @@ export default function ComunicacionFamiliasPanel() {
                   </div>
                   <Switch
                     checked={configuracion.emailNotificaciones}
-                    onCheckedChange={(value) => handleConfigChange('emailNotificaciones', value)}
+                    onCheckedChange={(value: boolean) => handleConfigChange('emailNotificaciones', value)}
                   />
                 </div>
 
@@ -297,7 +296,7 @@ export default function ComunicacionFamiliasPanel() {
                   </div>
                   <Switch
                     checked={configuracion.smsNotificaciones}
-                    onCheckedChange={(value) => handleConfigChange('smsNotificaciones', value)}
+                    onCheckedChange={(value: boolean) => handleConfigChange('smsNotificaciones', value)}
                   />
                 </div>
               </div>
@@ -321,7 +320,7 @@ export default function ComunicacionFamiliasPanel() {
                   <Label>Alertas Académicas</Label>
                   <Switch
                     checked={configuracion.notificacionesAlertas}
-                    onCheckedChange={(value) => handleConfigChange('notificacionesAlertas', value)}
+                    onCheckedChange={(value: boolean) => handleConfigChange('notificacionesAlertas', value)}
                   />
                 </div>
 
@@ -329,7 +328,7 @@ export default function ComunicacionFamiliasPanel() {
                   <Label>Boletines Generados</Label>
                   <Switch
                     checked={configuracion.notificacionesBoletines}
-                    onCheckedChange={(value) => handleConfigChange('notificacionesBoletines', value)}
+                    onCheckedChange={(value: boolean) => handleConfigChange('notificacionesBoletines', value)}
                   />
                 </div>
 
@@ -337,7 +336,7 @@ export default function ComunicacionFamiliasPanel() {
                   <Label>Problemas de Asistencia</Label>
                   <Switch
                     checked={configuracion.notificacionesAsistencia}
-                    onCheckedChange={(value) => handleConfigChange('notificacionesAsistencia', value)}
+                    onCheckedChange={(value: boolean) => handleConfigChange('notificacionesAsistencia', value)}
                   />
                 </div>
               </div>

@@ -2,9 +2,12 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Eye, CheckCircle, Clock, FileText, AlertCircle } from "lucide-react";
 import { BoletinComponent } from "./BoletinComponent";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/firebaseConfig";
 import { updateDoc, doc } from "firebase/firestore";
+import { getSignaturePolicy, getSignaturesFor, addSignature, markBoletinSignedStatus, type SignaturePolicy } from '@/services/signatureService';
+import { useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext';
 
 interface BoletinViewProps {
   row: {
@@ -71,6 +74,9 @@ const getBoletinStatus = (estado: string) => {
 export function BoletinView({ row, trigger, showDownloadButton = false, onDownload }: BoletinViewProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(row.estado || 'pendiente');
+  const { user } = useContext(AuthContext);
+  const [policy, setPolicy] = useState<SignaturePolicy | null>(null);
+  const [signatures, setSignatures] = useState<Array<{ signerName: string; role: string; signedAt: string }>>([]);
 
   // Marcar como leído cuando se abre el boletín
   const handleOpen = async () => {
@@ -101,6 +107,44 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
 
   const status = getBoletinStatus(currentStatus);
   const Icon = status.icon;
+
+  const boletinId = row.id || row.firestoreId || `${row.alumnoId}_${row.periodo}`;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      const p = await getSignaturePolicy();
+      setPolicy(p);
+      const sigs = await getSignaturesFor(boletinId);
+      setSignatures(sigs.map(s => ({ signerName: s.signerName, role: s.role, signedAt: s.signedAt })));
+    })();
+  }, [isOpen, boletinId]);
+
+  const canSign = !!user && policy?.enabled && (
+    (user.role === 'admin' && policy.requiredRoles.includes('director')) ||
+    (user.role === 'docente') ||
+    (user.role === 'alumno' && policy.allowParentSignature) ||
+    (user.role === 'familiar' && policy.allowParentSignature)
+  );
+
+  const handleSign = async () => {
+    if (!user) return;
+    try {
+      await addSignature({
+        boletinId,
+        signerUserId: user.uid,
+        signerName: user.name || 'Usuario',
+        role: user.role === 'admin' ? 'director' : user.role === 'docente' ? 'vicedirector' : 'tutor',
+      });
+      const sigs = await getSignaturesFor(boletinId);
+      setSignatures(sigs.map(s => ({ signerName: s.signerName, role: s.role, signedAt: s.signedAt })));
+      const required = policy?.requiredRoles || [];
+      const hasAll = required.every(r => sigs.some(s => s.role === r));
+      await markBoletinSignedStatus(boletinId, hasAll);
+    } catch (e) {
+      console.error('Error firmando boletín', e);
+    }
+  };
 
   const defaultTrigger = (
     <div className="inline-flex items-center justify-center p-2 hover:bg-slate-100 rounded-lg transition-colors duration-200 cursor-pointer group">
@@ -141,6 +185,16 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
                   <p className="text-sm text-gray-700 font-medium">{status.description}</p>
                 </div>
               </div>
+              {policy?.enabled && (
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-gray-600">
+                    Firmas: {signatures.length}{policy.requiredRoles?.length ? ` / ${policy.requiredRoles.length}` : ''}
+                  </div>
+                  {canSign && (
+                    <Button size="sm" onClick={handleSign}>Firmar</Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           

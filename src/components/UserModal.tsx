@@ -5,7 +5,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AuthContext } from '../context/AuthContext';
 import { setDoc, doc, updateDoc, collection, query, where, getDocs, arrayUnion } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { db, auth } from '../firebaseConfig';
 import { toast } from 'sonner';
@@ -472,6 +472,24 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
       >
         Cancelar
       </Button>
+      {mode === 'edit' && formData.email && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={async () => {
+            try {
+              await sendPasswordResetEmail(auth, formData.email);
+              toast.success('Correo de restablecimiento enviado', { description: 'El usuario recibirá un email para restablecer su contraseña.' });
+            } catch (e) {
+              toast.error('No se pudo enviar el correo de restablecimiento');
+            }
+          }}
+          disabled={loading}
+          className="flex-1"
+        >
+          Enviar restablecimiento de contraseña
+        </Button>
+      )}
       <Button
         type="submit"
         form="user-form"

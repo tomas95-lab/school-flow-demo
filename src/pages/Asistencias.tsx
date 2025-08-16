@@ -26,6 +26,7 @@ import AttendanceAlert from "@/components/AttendanceAlert";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import ImportAttendanceCSV from "../components/ImportAttendanceCSV";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
+import AttendanceThresholdsCard from "@/components/AttendanceThresholdsCard";
 import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -352,6 +353,11 @@ export default function Asistencias() {
                 />
               ) : (
                 <>
+                  {(user?.role === 'admin' || user?.role === 'docente') && (
+                    <div className="mb-6">
+                      <AttendanceThresholdsCard />
+                    </div>
+                  )}
                   {user?.role === "admin" ? (
                     <AdminAttendanceOverview />
                   ) : user?.role === "docente" ? (

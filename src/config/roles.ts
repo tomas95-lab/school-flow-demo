@@ -7,7 +7,8 @@ export const rolePermissions = {
         canEditGrades: false,
         canEditAttendance: false,
         canSendMessages: false,
-        canViewAlerts: true
+        canViewAlerts: true,
+        canManageSettings: true
     },
     docente: {
         canManageUsers: false,
@@ -17,7 +18,8 @@ export const rolePermissions = {
         canEditGrades: true,
         canEditAttendance: true,
         canSendMessages: true,
-        canViewAlerts: true
+        canViewAlerts: true,
+        canManageSettings: false
     },
     alumno: {
         canManageUsers: false,
@@ -27,7 +29,8 @@ export const rolePermissions = {
         canEditGrades: false,
         canEditAttendance: false,
         canSendMessages: true,
-        canViewAlerts: true
+        canViewAlerts: true,
+        canManageSettings: false
     },
     familiar: {
         canManageUsers: false,
@@ -37,6 +40,7 @@ export const rolePermissions = {
         canEditGrades: false,
         canEditAttendance: false,
         canSendMessages: true,
-        canViewAlerts: true
+        canViewAlerts: true,
+        canManageSettings: false
     }
 };

@@ -98,7 +98,7 @@ export function AppRoutes() {
             <Route 
               path="/app/configuracion-ia" 
               element={
-                <PermissionRoute permission={"canManageSettings"}>
+                <PermissionRoute permission={"canManageSettings" as any}>
                   <ConfiguracionIAPanel />
                 </PermissionRoute>
               } 
@@ -106,7 +106,7 @@ export function AppRoutes() {
             <Route 
               path="/app/comunicacion-familias" 
               element={
-                <PermissionRoute permission={"canManageSettings"}>
+                <PermissionRoute permission={"canManageSettings" as any}>
                   <ComunicacionFamiliasPanel />
                 </PermissionRoute>
               } 

@@ -74,6 +74,7 @@ interface MessageReply {
   createdAt: unknown;
   isEdited: boolean;
   likes: string[];
+  attachments?: string[];
 }
 
 interface Course {
@@ -103,10 +104,12 @@ export default function WallView() {
   
   // Estados mejorados
   const [newMessage, setNewMessage] = useState("");
+  const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [messageType, setMessageType] = useState<"general" | "academic" | "announcement" | "reminder">("general");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  const [replyAttachmentUrl, setReplyAttachmentUrl] = useState("");
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -232,7 +235,7 @@ export default function WallView() {
         courseId,
         messageType,
         priority,
-        attachments: [],
+        attachments: newAttachmentUrl.trim() ? [newAttachmentUrl.trim()] : [],
         createdAt: serverTimestamp(),
         isPinned: false,
         isEdited: false,
@@ -242,6 +245,7 @@ export default function WallView() {
 
       await addDoc(collection(db, "messages"), messageData);
       setNewMessage("");
+      setNewAttachmentUrl("");
       setMessageType("general");
       setPriority("medium");
       toast.success("Mensaje publicado exitosamente");
@@ -308,7 +312,8 @@ export default function WallView() {
         authorRole: user.role as 'admin' | 'docente' | 'alumno',
         createdAt: new Date().toISOString(),
         isEdited: false,
-        likes: []
+        likes: [],
+        attachments: replyAttachmentUrl.trim() ? [replyAttachmentUrl.trim()] : []
       };
 
       const messageRef = doc(db, "messages", messageId);
@@ -328,6 +333,7 @@ export default function WallView() {
       });
 
       setReplyContent("");
+      setReplyAttachmentUrl("");
       setReplyingTo(null);
       toast.success("Respuesta publicada");
       
@@ -804,6 +810,12 @@ export default function WallView() {
               className="min-h-[100px]"
               disabled={isPublishing}
             />
+            <Input
+              placeholder="Pega un enlace (imagen/PDF/video) como adjunto opcional"
+              value={newAttachmentUrl}
+              onChange={(e) => setNewAttachmentUrl(e.target.value)}
+              disabled={isPublishing}
+            />
             
             <div className="flex flex-wrap gap-4">
               <Select
@@ -1054,6 +1066,12 @@ export default function WallView() {
                         onChange={(e) => setReplyContent(e.target.value)}
                         className="mb-3"
                       />
+                      <Input
+                        placeholder="Pega un enlace como adjunto (opcional)"
+                        value={replyAttachmentUrl}
+                        onChange={(e) => setReplyAttachmentUrl(e.target.value)}
+                        className="mb-3"
+                      />
                       <div className="flex gap-2">
                         <Button 
                           size="sm"
@@ -1068,6 +1086,7 @@ export default function WallView() {
                           onClick={() => {
                             setReplyingTo(null);
                             setReplyContent("");
+                            setReplyAttachmentUrl("");
                           }}
                         >
                           Cancelar
@@ -1099,6 +1118,15 @@ export default function WallView() {
                                 </span>
                                 {reply.isEdited && <span className="text-xs text-gray-500">• Editado</span>}
                               </div>
+                              {reply.attachments && reply.attachments.length > 0 && (
+                                <div className="mb-1 text-xs">
+                                  {reply.attachments.map((url, i) => (
+                                    <div key={i}>
+                                      <a href={url} target="_blank" rel="noreferrer" className="text-blue-600 underline">Ver adjunto</a>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                               <p className="text-sm text-gray-700">{reply.content}</p>
                             </div>
                           </div>

@@ -154,6 +154,43 @@ export class NotificationService {
   }
 
   /**
+   * Enviar notificación por generación de boletín
+   */
+  async notificarBoletinGenerado(boletin: {
+    alumnoId: string;
+    alumnoNombre: string;
+    periodo: string;
+  }): Promise<void> {
+    try {
+      const configuracion = await this.obtenerConfiguracion();
+      if (!configuracion.notificacionesBoletines) return;
+
+      const contacto = await this.obtenerContactoFamilia(boletin.alumnoId);
+      if (!contacto || !contacto.enabled) return;
+
+      const notificacion: Omit<NotificacionFamilia, 'id'> = {
+        studentId: boletin.alumnoId,
+        studentName: boletin.alumnoNombre,
+        parentEmail: contacto.parentEmail,
+        parentPhone: contacto.parentPhone,
+        tipo: 'boletin',
+        prioridad: 'media',
+        titulo: `Boletín generado - ${boletin.periodo}`,
+        mensaje: `El boletín académico de ${boletin.alumnoNombre} para el período ${boletin.periodo} ya está disponible en la plataforma.`,
+        canalEnvio: this.determinarCanalEnvio(contacto, configuracion),
+        fechaEnvio: new Date(),
+        estado: 'pendiente',
+        intentos: 0,
+      };
+
+      const docRef = await addDoc(collection(db, 'notificacionesFamilias'), notificacion);
+      await this.enviarNotificacion(docRef.id, notificacion);
+    } catch (error) {
+      console.error('Error notificando boletín generado:', error);
+    }
+  }
+
+  /**
    * Procesa notificaciones pendientes (para ejecución programada)
    */
   async procesarNotificacionesPendientes(): Promise<void> {
@@ -392,6 +429,58 @@ export class NotificationService {
     // Simular 95% de éxito
     if (Math.random() < 0.05) {
       throw new Error('Error simulado al enviar email');
+    }
+  }
+
+  /**
+   * Notificar cambio de estado de inscripción al solicitante
+   */
+  async notificarCambioEstadoInscripcion(params: {
+    studentId: string;
+    studentName: string;
+    parentEmail?: string;
+    parentPhone?: string;
+    cursoNombre: string;
+    estado: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada';
+    motivoRechazo?: string;
+  }): Promise<void> {
+    try {
+      const configuracion = await this.obtenerConfiguracion();
+      const contacto = params.parentEmail || params.parentPhone
+        ? {
+            studentId: params.studentId,
+            studentName: params.studentName,
+            parentEmail: params.parentEmail,
+            parentPhone: params.parentPhone,
+            enabled: true,
+          } as ContactoFamilia
+        : await this.obtenerContactoFamilia(params.studentId);
+
+      if (!contacto || !contacto.enabled) return;
+
+      const titulo = `Inscripción ${params.estado} - ${params.cursoNombre}`;
+      const motivo = params.motivoRechazo ? ` Motivo: ${params.motivoRechazo}` : '';
+      const mensaje = `Estimadas familias, la solicitud de inscripción para ${params.studentName} en ${params.cursoNombre} está ahora en estado: ${params.estado}.${motivo}`;
+
+      const notificacion: Omit<NotificacionFamilia, 'id'> = {
+        studentId: params.studentId,
+        studentName: params.studentName,
+        parentEmail: contacto.parentEmail,
+        parentPhone: contacto.parentPhone,
+        tipo: 'general',
+        prioridad: 'media',
+        titulo,
+        mensaje,
+        canalEnvio: this.determinarCanalEnvio(contacto, configuracion),
+        fechaEnvio: new Date(),
+        estado: 'pendiente',
+        intentos: 0,
+      };
+
+      const docRef = await addDoc(collection(db, 'notificacionesFamilias'), notificacion);
+      await this.enviarNotificacion(docRef.id, notificacion);
+    } catch (error) {
+      console.error('Error notificando cambio de estado de inscripción:', error);
     }
   }
 

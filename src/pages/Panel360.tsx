@@ -151,8 +151,7 @@ export default function Panel360() {
 		}
 		const head = [['Fecha','Tipo','Título','Descripción']]
 		const body = context.timeline.slice(0, 15).map(e => [String(e.date || ''), e.type, e.title, e.description])
-		// @ts-expect-error autoTable types are not fully compatible
-		autoTable(doc, { head, body, startY: 40, styles: { fontSize: 9 } })
+		autoTable(doc as any, { head, body, startY: 40, styles: { fontSize: 9 } })
 		doc.save('Informe_360.pdf')
 	}
 

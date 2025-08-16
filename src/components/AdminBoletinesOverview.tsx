@@ -9,6 +9,8 @@ import { Button } from "./ui/button";
 import { useContext, useMemo, useCallback, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { toast } from "sonner";
+import BoletinTemplateModal from "@/components/BoletinTemplateModal";
+import { notificationService } from '@/services/notificationService';
 import {
   getPeriodoActual,
   filtrarCalificacionesTrimestre,
@@ -158,7 +160,13 @@ export default function AdminBoletinesOverview() {
         }
         
         const boletinRef = doc(db, "boletines", `${boletin.alumnoId}_${boletin.periodo}`);
-        return setDoc(boletinRef, boletinLimpio, { merge: true });
+        return setDoc(boletinRef, boletinLimpio, { merge: true }).then(() =>
+          notificationService.notificarBoletinGenerado({
+            alumnoId: boletin.alumnoId || '',
+            alumnoNombre: boletin.alumnoNombre || 'Estudiante',
+            periodo: boletin.periodo || 'Período',
+          })
+        );
       });
       
       await Promise.all(uploadPromises);
@@ -270,13 +278,15 @@ export default function AdminBoletinesOverview() {
       </div>
 
       {user?.role === "admin" && (
-        <Button 
-          onClick={subirBoletines} 
-          disabled={isGenerating}
-          className="mb-6"
-        >
-          {isGenerating ? 'Generando...' : 'Generar Boletines'}
-        </Button>
+        <div className="flex items-center gap-2 mb-6">
+          <Button 
+            onClick={subirBoletines} 
+            disabled={isGenerating}
+          >
+            {isGenerating ? 'Generando...' : 'Generar Boletines'}
+          </Button>
+          <BoletinTemplateModal />
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

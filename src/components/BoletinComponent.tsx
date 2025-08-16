@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   GraduationCap, 
   User, 
@@ -14,6 +14,7 @@ import {
 import { generarPDFBoletin, generarPDFBoletinBlob, getTrimestreActualNumero } from '@/utils/boletines';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from './ui/button';
+import { applySubjectsOrder, getBoletinTemplate, type BoletinTemplate } from '@/services/boletinService';
 
 interface BoletinRow {
   alumnoId?: string;
@@ -48,6 +49,11 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
   const [showComments, setShowComments] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'name'>('name');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [template, setTemplate] = useState<BoletinTemplate | null>(null);
+
+  useEffect(() => {
+    getBoletinTemplate().then(setTemplate).catch(() => setTemplate(null));
+  }, []);
 
   // Normaliza calificaciones provenientes de datos incompletos
   const normalizeGrade = (value: unknown, fallback: number = 0): number => {
@@ -141,24 +147,23 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
   // Función para ordenar materias
   const getSortedMaterias = () => {
     if (!row.materias) return [];
-    
-    const sorted = [...row.materias];
+    const base = template ? applySubjectsOrder(row.materias, template) : [...row.materias];
     switch (sortOrder) {
       case 'asc':
-        return sorted.sort((a, b) => {
+        return base.sort((a, b) => {
           const avgA = (normalizeGrade(a.t1) + normalizeGrade(a.t2) + normalizeGrade(a.t3)) / 3;
           const avgB = (normalizeGrade(b.t1) + normalizeGrade(b.t2) + normalizeGrade(b.t3)) / 3;
           return avgA - avgB;
         });
       case 'desc':
-        return sorted.sort((a, b) => {
+        return base.sort((a, b) => {
           const avgA = (normalizeGrade(a.t1) + normalizeGrade(a.t2) + normalizeGrade(a.t3)) / 3;
           const avgB = (normalizeGrade(b.t1) + normalizeGrade(b.t2) + normalizeGrade(b.t3)) / 3;
           return avgB - avgA;
         });
       case 'name':
       default:
-        return sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        return base;
     }
   };
 

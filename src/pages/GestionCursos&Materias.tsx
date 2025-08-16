@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard } from "@/components/StatCards";
 import { Button } from "@/components/ui/button";
 import ImportCoursesModal from "@/components/ImportCoursesModal";
+import ImportSubjectsModal from "@/components/ImportSubjectsModal";
+import SubjectScheduleModal from "@/components/SubjectScheduleModal";
+import CourseWeeklyCalendar from "@/components/CourseWeeklyCalendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1014,14 +1017,17 @@ export default function GestionCursosMaterias() {
                       <BookOpen className="h-5 w-5 text-orange-600" />
                       Gestión de Materias
                     </CardTitle>
-                    <Button 
-                      onClick={() => setIsAddingSubject(true)}
-                      className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
-                      disabled={editingSubject}
-                    >
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Materia
-            </Button>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={() => setIsAddingSubject(true)}
+                        className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
+                        disabled={editingSubject}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar Materia
+                      </Button>
+                      <ImportSubjectsModal showTrigger />
+                    </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -1152,6 +1158,18 @@ export default function GestionCursosMaterias() {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  {/* Botón para abrir modal de horarios */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingSubject({ ...subject, __openSchedule: true })}
+                    title="Configurar horarios"
+                  >
+                    Horarios
+                  </Button>
+                  {editingSubject && editingSubject.__openSchedule && editingSubject.firestoreId === subject.firestoreId && (
+                    <SubjectScheduleModal subject={editingSubject} courseId={editingSubject.cursoId} open={true} onOpenChange={(v) => setEditingSubject(v ? editingSubject : null)} />
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -1515,7 +1533,7 @@ export default function GestionCursosMaterias() {
                   </Card>
                 </div>
 
-                {/* Información adicional */}
+                {/* Información adicional y calendario */}
                 <div className="mt-6 pt-4 border-t">
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <span>
@@ -1526,6 +1544,9 @@ export default function GestionCursosMaterias() {
                         Actualizado: {new Date(selectedCourse.updatedAt.seconds * 1000).toLocaleDateString()}
                       </span>
                     )}
+                  </div>
+                  <div className="mt-4">
+                    <CourseWeeklyCalendar courseId={selectedCourse.firestoreId} />
                   </div>
                 </div>
               </div>

@@ -7,6 +7,7 @@ import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 // import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
+import { t } from "@/config/translations"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -850,7 +851,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="text-lg font-semibold text-gray-900 mb-1">{meta.title}</div>
+                <div className="text-lg font-semibold text-gray-900 mb-1">{t(`kpis.${kpiKey}`)}</div>
                 <p className="text-sm text-gray-600">{meta.description}</p>
               </div>
             )

@@ -4,6 +4,7 @@ const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos
 
 // Importar sistema de observaciones automáticas
 import { generarObservacionAutomatica, type DatosAlumno, type ObservacionLimpia } from './observacionesAutomaticas';
+import { getBoletinTemplate } from '@/services/boletinService';
 
 // Función para limpiar cache expirado
 function cleanExpiredCache() {
@@ -358,11 +359,12 @@ export async function generarPDFBoletin(row: BoletinRow) {
       throw new Error('La librería autoTable no está disponible');
     }
 
-  const doc = new jsPDF();
+  const template = await getBoletinTemplate();
+  const doc = new jsPDF({ format: template.paperSize === 'Letter' ? 'letter' : 'a4' });
   
   // Configuración de fuentes y colores
-  const primaryColor: [number, number, number] = [75, 85, 99]; // slate-600
-  const secondaryColor: [number, number, number] = [156, 163, 175]; // gray-400
+  const primaryColor = hexToRgbTuple(template.primaryColorHex) as [number, number, number];
+  const secondaryColor = hexToRgbTuple(template.secondaryColorHex) as [number, number, number];
 
   // Título principal
   doc.setFontSize(24);
@@ -375,6 +377,17 @@ export async function generarPDFBoletin(row: BoletinRow) {
   doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
   doc.setFont('helvetica', 'normal');
   doc.text(`Período: ${row.periodo || 'Académico'}`, 105, 35, { align: 'center' });
+
+  // Logo si existe
+  if (template.logoUrl) {
+    try {
+      // Cargar imagen cross-origin como base64
+      const imgData = await fetch(template.logoUrl).then(r => r.blob()).then(blobToDataUrl);
+      doc.addImage(imgData, 'PNG', 20, 12, 18, 18);
+    } catch {
+      // ignorar si falla
+    }
+  }
 
   // Información del estudiante
   doc.setFontSize(14);
@@ -390,7 +403,7 @@ export async function generarPDFBoletin(row: BoletinRow) {
     doc.text(`Alertas: ${row.alertas || 0}`, 20, 95);
 
   // Datos de asistencia si están disponibles
-    if (row.asistencia && row.asistencia.porcentaje !== undefined) {
+    if (template.showAttendance && row.asistencia && row.asistencia.porcentaje !== undefined) {
     doc.text(`Asistencia: ${row.asistencia.porcentaje}%`, 20, 105);
       doc.text(`Clases: ${row.asistencia.presentes || 0}/${row.asistencia.total || 0}`, 20, 115);
   }
@@ -482,7 +495,7 @@ export async function generarPDFBoletin(row: BoletinRow) {
   });
 
   // Comentario general si existe
-  if (row.comentario) {
+  if (template.showComments && row.comentario) {
         const finalY = (doc as any).lastAutoTable?.finalY || 250;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -555,9 +568,10 @@ export async function generarPDFBoletinBlob(row: BoletinRow): Promise<{ blob: Bl
       throw new Error('La librería autoTable no está disponible');
     }
 
-    const doc = new jsPDF();
-    const primaryColor: [number, number, number] = [75, 85, 99];
-    const secondaryColor: [number, number, number] = [156, 163, 175];
+    const template = await getBoletinTemplate();
+    const doc = new jsPDF({ format: template.paperSize === 'Letter' ? 'letter' : 'a4' });
+    const primaryColor = hexToRgbTuple(template.primaryColorHex) as [number, number, number];
+    const secondaryColor = hexToRgbTuple(template.secondaryColorHex) as [number, number, number];
 
     doc.setFontSize(24);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -567,6 +581,14 @@ export async function generarPDFBoletinBlob(row: BoletinRow): Promise<{ blob: Bl
     doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
     doc.setFont('helvetica', 'normal');
     doc.text(`Período: ${row.periodo || 'Académico'}`, 105, 35, { align: 'center' });
+
+    // Logo si existe
+    if (template.logoUrl) {
+      try {
+        const imgData = await fetch(template.logoUrl).then(r => r.blob()).then(blobToDataUrl);
+        doc.addImage(imgData, 'PNG', 20, 12, 18, 18);
+      } catch {}
+    }
 
     doc.setFontSize(14);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -580,7 +602,7 @@ export async function generarPDFBoletinBlob(row: BoletinRow): Promise<{ blob: Bl
     doc.text(`Estado: ${row.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}`, 20, 85);
     doc.text(`Alertas: ${row.alertas || 0}`, 20, 95);
 
-    if (row.asistencia && row.asistencia.porcentaje !== undefined) {
+    if (template.showAttendance && row.asistencia && row.asistencia.porcentaje !== undefined) {
       doc.text(`Asistencia: ${row.asistencia.porcentaje}%`, 20, 105);
       doc.text(`Clases: ${row.asistencia.presentes || 0}/${row.asistencia.total || 0}`, 20, 115);
     }
@@ -662,7 +684,7 @@ export async function generarPDFBoletinBlob(row: BoletinRow): Promise<{ blob: Bl
         },
       });
 
-      if (row.comentario) {
+      if (template.showComments && row.comentario) {
         const finalY = (doc as any).lastAutoTable?.finalY || 250;
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -696,4 +718,27 @@ export async function generarPDFBoletinBlob(row: BoletinRow): Promise<{ blob: Bl
     console.error('Error al generar PDF (blob):', error);
     throw new Error('Error al generar el PDF para imprimir.');
   }
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function hexToRgbTuple(hex: string): [number, number, number] {
+  const normalized = hex.replace('#', '');
+  const bigint = parseInt(normalized, 16);
+  if (normalized.length === 6) {
+    return [
+      (bigint >> 16) & 255,
+      (bigint >> 8) & 255,
+      bigint & 255,
+    ];
+  }
+  // fallback slate-600
+  return [75, 85, 99];
 }

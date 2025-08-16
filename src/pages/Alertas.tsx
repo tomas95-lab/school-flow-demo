@@ -9,6 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import AdminAlertasOverview from "@/components/AdminAlertasOverview";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 import TeacherAlertasOverview from "@/components/TeacherAlertasOverview";
 import AlumnoAlertasOverview from "@/components/AlumnoAlertasOverview";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
@@ -206,6 +210,54 @@ export default function Alertas() {
             ) : (
               <AlumnoAlertasOverview />
             )}
+          </div>
+
+          {/* Mis Alertas (resolución rápida y notas) */}
+          <div className="animate-in slide-in-from-bottom-4 duration-500">
+            {(() => {
+              const myAlerts = (alerts || []).filter(a => a.targetUserId === user?.studentId || a.createdBy === user?.uid || a.recipients?.includes('all'));
+              if (myAlerts.length === 0) return null;
+              return (
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">Mis Alertas Rápidas</h2>
+                    <Badge variant="outline" className="bg-red-50 text-red-700">{myAlerts.length}</Badge>
+                  </div>
+                  <div className="space-y-4">
+                    {myAlerts.slice(0,6).map((a) => (
+                      <div key={a.firestoreId || a.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">{a.title}</span>
+                              <Badge variant="outline">{a.priority}</Badge>
+                              <Badge variant="outline">{a.type}</Badge>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">{a.description}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {a.status !== 'resolved' && (
+                              <Button size="sm" variant="outline" onClick={async () => {
+                                try { await updateDoc(doc(db,'alerts', a.firestoreId || a.id), { status: 'resolved', isActive: false, resolvedAt: new Date() }); } catch {}
+                              }}>Marcar resuelta</Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Input placeholder="Añadir nota interna..." onKeyDown={async (e) => {
+                            const target = e.target as HTMLInputElement;
+                            if (e.key === 'Enter' && target.value.trim()) {
+                              const text = target.value.trim();
+                              try { await updateDoc(doc(db,'alerts', a.firestoreId || a.id), { internalNotes: arrayUnion({ text, createdAt: new Date() }) }); target.value=''; } catch {}
+                            }
+                          }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Observaciones automáticas */}

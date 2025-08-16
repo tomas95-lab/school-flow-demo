@@ -34,6 +34,8 @@ import { es } from "date-fns/locale";
 import { LoadingState } from "./LoadingState";
 import { EmptyState } from "./EmptyState";
 import ReutilizableDialog from "./DialogReutlizable";
+import { uploadFileAndGetUrl, buildInscripcionFilePath } from "@/services/storageService";
+import { notificationService } from "@/services/notificationService";
 
 // Helper function to safely convert Firebase Timestamp to Date
 const convertTimestampToDate = (timestamp: unknown): Date => {
@@ -44,6 +46,13 @@ const convertTimestampToDate = (timestamp: unknown): Date => {
 };
 
 // Tipos TypeScript
+type EstadoAprobacion = 'pendiente' | 'aprobada' | 'rechazada';
+interface AprobacionArea { estado: EstadoAprobacion; comentario?: string }
+interface AprobacionesPorArea {
+  documentacion: AprobacionArea;
+  academica: AprobacionArea;
+  finanzas: AprobacionArea;
+}
 interface Inscripcion {
   firestoreId: string;
   studentId: string;
@@ -53,6 +62,7 @@ interface Inscripcion {
   fechaAprobacion?: unknown;
   comentarios?: string;
   documentos: string[];
+  aprobacionesPorArea?: AprobacionesPorArea;
   estudiante?: {
     nombre: string;
     apellido: string;
@@ -85,14 +95,22 @@ export default function InscripcionesOverview() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCourse, setFilterCourse] = useState("all");
+  const [filterYear, setFilterYear] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"fecha" | "estudiante" | "curso">("fecha");
   const [selectedInscripcion, setSelectedInscripcion] = useState<InscripcionWithDetails | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<{ comentarios: string; documentos: string[]; aprobacionesPorArea: AprobacionesPorArea }>({
     comentarios: "",
-    documentos: [] as string[]
+    documentos: [] as string[],
+    aprobacionesPorArea: {
+      documentacion: { estado: 'pendiente', comentario: '' },
+      academica: { estado: 'pendiente', comentario: '' },
+      finanzas: { estado: 'pendiente', comentario: '' },
+    }
   });
+  const [newFiles, setNewFiles] = useState<FileList | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Obtener datos - TODOS los hooks deben ir antes de cualquier return
   const { data: inscripciones, loading: loadingInscripciones } = useFirestoreCollection<Inscripcion>("inscripciones");
@@ -112,6 +130,11 @@ export default function InscripcionesOverview() {
 
       return {
         ...inscripcion,
+        aprobacionesPorArea: inscripcion.aprobacionesPorArea || {
+          documentacion: { estado: 'pendiente', comentario: '' },
+          academica: { estado: 'pendiente', comentario: '' },
+          finanzas: { estado: 'pendiente', comentario: '' },
+        },
         estudiante: {
           nombre: estudiante?.nombre || "Estudiante no encontrado",
           apellido: estudiante?.apellido || "",
@@ -167,6 +190,13 @@ export default function InscripcionesOverview() {
     // Filtro por curso
     if (filterCourse !== "all") {
       filtered = filtered.filter(inscripcion => inscripcion.courseId === filterCourse);
+    }
+    // Filtro por año
+    if (filterYear !== "all") {
+      filtered = filtered.filter(inscripcion => {
+        const fecha = convertTimestampToDate(inscripcion.fechaInscripcion);
+        return String(fecha.getFullYear()) === filterYear;
+      });
     }
 
     // Ordenamiento
@@ -253,6 +283,14 @@ export default function InscripcionesOverview() {
   // Funciones de acción
   const handleAprobarInscripcion = async (inscripcionId: string) => {
     try {
+      const inscripcion = inscripcionesConDetalles.find(i => i.firestoreId === inscripcionId);
+      if (inscripcion?.aprobacionesPorArea) {
+        const allApproved = Object.values(inscripcion.aprobacionesPorArea).every(a => a.estado === 'aprobada');
+        if (!allApproved) {
+          toast.error("No se puede aprobar: faltan aprobaciones de área");
+          return;
+        }
+      }
       const inscripcionRef = doc(db, "inscripciones", inscripcionId);
       await updateDoc(inscripcionRef, {
         status: 'aprobada',
@@ -260,6 +298,17 @@ export default function InscripcionesOverview() {
         updatedAt: serverTimestamp()
       });
       toast.success("Inscripción aprobada exitosamente");
+      
+      if (inscripcion) {
+        await notificationService.notificarCambioEstadoInscripcion({
+          studentId: inscripcion.studentId,
+          studentName: `${inscripcion.estudiante.nombre} ${inscripcion.estudiante.apellido}`,
+          parentEmail: inscripcion.estudiante.email,
+          parentPhone: inscripcion.estudiante.telefono,
+          cursoNombre: `${inscripcion.curso.nombre} ${inscripcion.curso.division ?? ''}`.trim(),
+          estado: 'aprobada',
+        });
+      }
     } catch (error) {
       console.error("Error al aprobar inscripción:", error);
       toast.error("Error al aprobar la inscripción");
@@ -275,6 +324,18 @@ export default function InscripcionesOverview() {
         updatedAt: serverTimestamp()
       });
       toast.error("Inscripción rechazada");
+      const inscripcion = inscripcionesConDetalles.find(i => i.firestoreId === inscripcionId);
+      if (inscripcion) {
+        await notificationService.notificarCambioEstadoInscripcion({
+          studentId: inscripcion.studentId,
+          studentName: `${inscripcion.estudiante.nombre} ${inscripcion.estudiante.apellido}`,
+          parentEmail: inscripcion.estudiante.email,
+          parentPhone: inscripcion.estudiante.telefono,
+          cursoNombre: `${inscripcion.curso.nombre} ${inscripcion.curso.division ?? ''}`.trim(),
+          estado: 'rechazada',
+          motivoRechazo: inscripcion.comentarios,
+        });
+      }
     } catch (error) {
       console.error("Error al rechazar inscripción:", error);
       toast.error("Error al rechazar la inscripción");
@@ -290,6 +351,17 @@ export default function InscripcionesOverview() {
         updatedAt: serverTimestamp()
       });
       toast.warning("Inscripción cancelada");
+      const inscripcion = inscripcionesConDetalles.find(i => i.firestoreId === inscripcionId);
+      if (inscripcion) {
+        await notificationService.notificarCambioEstadoInscripcion({
+          studentId: inscripcion.studentId,
+          studentName: `${inscripcion.estudiante.nombre} ${inscripcion.estudiante.apellido}`,
+          parentEmail: inscripcion.estudiante.email,
+          parentPhone: inscripcion.estudiante.telefono,
+          cursoNombre: `${inscripcion.curso.nombre} ${inscripcion.curso.division ?? ''}`.trim(),
+          estado: 'cancelada',
+        });
+      }
     } catch (error) {
       console.error("Error al cancelar inscripción:", error);
       toast.error("Error al cancelar la inscripción");
@@ -305,7 +377,12 @@ export default function InscripcionesOverview() {
     setSelectedInscripcion(inscripcion);
     setEditForm({
       comentarios: inscripcion.comentarios || "",
-      documentos: inscripcion.documentos || []
+      documentos: inscripcion.documentos || [],
+      aprobacionesPorArea: inscripcion.aprobacionesPorArea || {
+        documentacion: { estado: 'pendiente', comentario: '' },
+        academica: { estado: 'pendiente', comentario: '' },
+        finanzas: { estado: 'pendiente', comentario: '' },
+      }
     });
     setShowEditModal(true);
   };
@@ -314,17 +391,33 @@ export default function InscripcionesOverview() {
     if (!selectedInscripcion) return;
     
     try {
+      // Subir nuevos archivos si hay
+      let uploadedUrls: string[] = [];
+      if (newFiles && newFiles.length > 0) {
+        setIsUploading(true);
+        const uploads = Array.from(newFiles).map(async (file) => {
+          const path = buildInscripcionFilePath(selectedInscripcion.firestoreId, file.name);
+          const url = await uploadFileAndGetUrl(path, file);
+          return url;
+        });
+        uploadedUrls = await Promise.all(uploads);
+      }
+
       const inscripcionRef = doc(db, "inscripciones", selectedInscripcion.firestoreId);
       await updateDoc(inscripcionRef, {
         comentarios: editForm.comentarios,
-        documentos: editForm.documentos,
+        documentos: [...(editForm.documentos || []), ...uploadedUrls],
+        aprobacionesPorArea: editForm.aprobacionesPorArea,
         updatedAt: serverTimestamp()
       });
       toast.success("Inscripción actualizada exitosamente");
       setShowEditModal(false);
+      setNewFiles(null);
+      setIsUploading(false);
     } catch (error) {
       console.error("Error al actualizar inscripción:", error);
       toast.error("Error al actualizar la inscripción");
+      setIsUploading(false);
     }
   };
 
@@ -481,7 +574,7 @@ export default function InscripcionesOverview() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">Filtrar por Estado</label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -525,6 +618,23 @@ export default function InscripcionesOverview() {
                   <SelectItem value="fecha">Fecha más reciente</SelectItem>
                   <SelectItem value="estudiante">Nombre del estudiante</SelectItem>
                   <SelectItem value="curso">Nombre del curso</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Filtrar por Año</label>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="w-full border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                  <SelectValue placeholder="Seleccionar año" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {Array.from(new Set(inscripcionesConDetalles.map(i => String(convertTimestampToDate(i.fechaInscripcion).getFullYear()))))
+                    .sort((a, b) => Number(b) - Number(a))
+                    .map(year => (
+                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -626,6 +736,15 @@ export default function InscripcionesOverview() {
                                <span>Comentarios</span>
                              </div>
                            )}
+                           {inscripcion.aprobacionesPorArea && (
+                             <div className="flex items-center gap-2 text-xs">
+                               {(['documentacion','academica','finanzas'] as const).map(area => (
+                                 <span key={area} className="px-2 py-0.5 rounded border bg-gray-50">
+                                   {area}: {inscripcion.aprobacionesPorArea?.[area].estado}
+                                 </span>
+                               ))}
+                             </div>
+                           )}
                            {inscripcion.documentos.length > 0 && (
                              <div className="flex items-center gap-1">
                                <FileText className="h-3 w-3" />
@@ -679,6 +798,29 @@ export default function InscripcionesOverview() {
                              title="Editar inscripción"
                            >
                              <Edit className="h-4 w-4" />
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={async () => {
+                               try {
+                                 await notificationService.notificarCambioEstadoInscripcion({
+                                   studentId: inscripcion.studentId,
+                                   studentName: `${inscripcion.estudiante.nombre} ${inscripcion.estudiante.apellido}`,
+                                   parentEmail: inscripcion.estudiante.email,
+                                   parentPhone: inscripcion.estudiante.telefono,
+                                   cursoNombre: `${inscripcion.curso.nombre} ${inscripcion.curso.division ?? ''}`.trim(),
+                                   estado: 'pendiente',
+                                 });
+                                 toast.success('Se solicitó información adicional al aspirante');
+                               } catch (e) {
+                                 toast.error('No se pudo enviar la solicitud');
+                               }
+                             }}
+                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                             title="Solicitar información faltante"
+                           >
+                             <Mail className="h-4 w-4" />
                            </Button>
                            
                            {(inscripcion.status === 'aprobada' || inscripcion.status === 'pendiente') && (
@@ -932,6 +1074,56 @@ export default function InscripcionesOverview() {
                   </p>
                 </div>
 
+                {/* Aprobaciones por área */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Aprobaciones por área</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(['documentacion','academica','finanzas'] as const).map(area => (
+                      <div key={area} className="p-3 bg-gray-50 rounded-lg border space-y-2">
+                        <div className="text-sm font-medium text-gray-800 capitalize">{area}</div>
+                        <Select
+                          value={editForm.aprobacionesPorArea[area].estado}
+                          onValueChange={(valor: 'pendiente' | 'aprobada' | 'rechazada') => {
+                            setEditForm(prev => ({
+                              ...prev,
+                              aprobacionesPorArea: {
+                                ...prev.aprobacionesPorArea,
+                                [area]: { ...prev.aprobacionesPorArea[area], estado: valor },
+                              },
+                            }));
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Estado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendiente">Pendiente</SelectItem>
+                            <SelectItem value="aprobada">Aprobada</SelectItem>
+                            <SelectItem value="rechazada">Rechazada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <input
+                          type="text"
+                          value={editForm.aprobacionesPorArea[area].comentario || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setEditForm(prev => ({
+                              ...prev,
+                              aprobacionesPorArea: {
+                                ...prev.aprobacionesPorArea,
+                                [area]: { ...prev.aprobacionesPorArea[area], comentario: value },
+                              },
+                            }));
+                          }}
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          placeholder="Comentario del área"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Todas las áreas deben estar en estado "Aprobada" para poder aprobar la inscripción.</p>
+                </div>
+
                 {/* Documentos */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -965,6 +1157,17 @@ export default function InscripcionesOverview() {
                         </Button>
                       </div>
                     ))}
+                    <div className="mt-4">
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(e) => setNewFiles(e.target.files)}
+                        className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      {isUploading && (
+                        <p className="text-xs text-gray-500 mt-1">Subiendo archivos...</p>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
@@ -981,7 +1184,7 @@ export default function InscripcionesOverview() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    Lista los documentos que el estudiante ha proporcionado para esta inscripción.
+                    Adjunta y gestiona documentación requerida (DNI, constancias, etc.).
                   </p>
                 </div>
               </div>

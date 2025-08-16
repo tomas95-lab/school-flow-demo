@@ -337,3 +337,15 @@ export function filtrarAlertasPorEstudiante(alertas: AlertaAutomatica[], student
 export function marcarAlertaComoLeida(alerta: AlertaAutomatica): AlertaAutomatica {
   return { ...alerta, leida: true };
 }
+
+export function obtenerEstadisticasAlertas(alertas: AlertaAutomatica[]): { criticas: number; altas: number; medias: number; bajas: number } {
+  return alertas.reduce((acc, a) => {
+    switch (a.prioridad) {
+      case 'critica': acc.criticas += 1; break;
+      case 'alta': acc.altas += 1; break;
+      case 'media': acc.medias += 1; break;
+      case 'baja': acc.bajas += 1; break;
+    }
+    return acc;
+  }, { criticas: 0, altas: 0, medias: 0, bajas: 0 });
+}

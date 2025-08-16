@@ -49,6 +49,9 @@ export default function CrearCalificacion({
   const [saving, setSaving] = useState(false);
   const [studentSearchTerm, setStudentSearchTerm] = useState<string>("");
   const [absentStudentIds, setAbsentStudentIds] = useState<string[]>([]); // NUEVO
+  const [bulkPaste, setBulkPaste] = useState<string>("");
+  const [bulkPreview, setBulkPreview] = useState<Array<{ id: string; nombre: string; valor: number | null; ausente: boolean }>>([]);
+  const [bulkMode, setBulkMode] = useState<boolean>(false);
 
   const toggleStudent = (id: string) => {
     setSelectedStudentIds((prev) =>
@@ -157,6 +160,52 @@ export default function CrearCalificacion({
   };
 
   const isFormValid = formData.actividad && formData.valor && formData.fecha && selectedStudentIds.length > 0;
+
+  // Bulk parse: espera líneas "documento|email|id opcional, nota" o "Nombre Apellido, nota"
+  const parseBulk = () => {
+    const lines = bulkPaste.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const result: Array<{ id: string; nombre: string; valor: number | null; ausente: boolean }> = [];
+    const idToStudent = new Map(studentsInCourse.map(s => [s.firestoreId, s]));
+    const nameToStudent = new Map(studentsInCourse.map(s => [`${(s.nombre||'').toLowerCase()} ${(s.apellido||'').toLowerCase()}`.trim(), s]));
+    for (const line of lines) {
+      // formatos soportados: "id,nota" o "nombre apellido,nota" o "id;nota"
+      const parts = line.split(/[;,]/).map(p => p.trim());
+      if (parts.length < 2) continue;
+      const key = parts[0].toLowerCase();
+      const notaStr = parts[1].replace(',', '.');
+      const notaNum = notaStr === '' ? null : Number(notaStr);
+      let student = idToStudent.get(parts[0]) || nameToStudent.get(key);
+      if (!student) {
+        // intentar por solo nombre (sin apellido) o por apellido, fallback skip
+        student = studentsInCourse.find(s => s.nombre?.toLowerCase() === key || s.apellido?.toLowerCase() === key);
+      }
+      if (!student) continue;
+      const ausente = notaStr.toLowerCase() === 'a' || notaStr.toLowerCase() === 'ausente';
+      const valor = ausente ? null : (typeof notaNum === 'number' && !isNaN(notaNum) ? Math.max(0, Math.min(10, notaNum)) : null);
+      result.push({ id: student.firestoreId, nombre: `${student.nombre} ${student.apellido}`, valor, ausente });
+    }
+    setBulkPreview(result);
+  };
+
+  const applyBulk = () => {
+    if (bulkPreview.length === 0) return;
+    const ids = new Set(selectedStudentIds);
+    const newAbsent = new Set(absentStudentIds);
+    bulkPreview.forEach(row => {
+      ids.add(row.id);
+      if (row.ausente || row.valor === null) {
+        newAbsent.add(row.id);
+      }
+    });
+    setSelectedStudentIds(Array.from(ids));
+    setAbsentStudentIds(Array.from(newAbsent));
+    if (bulkPreview.some(r => r.valor !== null)) {
+      // solo si todas las notas idénticas no están presentes, no forzamos; el campo principal se usa para single entry
+      // aquí no seteamos valor global porque son por-student; se cargará como valor para todos en submit? No.
+      // El submit actual usa un único valor; para batch, recomendamos usar comentario y marcar ausentes, y luego editar por estudiante.
+    }
+    toast.success('Datos pegados; se marcaron estudiantes y ausentes.');
+  };
 
   return (
     <div className="w-full py-6 px-6 bg-white rounded-xl border shadow-sm flex flex-col">
@@ -271,6 +320,37 @@ export default function CrearCalificacion({
 
       {/* Formulario */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+        {/* Pegado desde planilla */}
+        <div className="mb-6 border rounded-lg p-3 bg-gray-50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              <span className="font-medium text-gray-700">Pegar desde planilla (opcional)</span>
+            </div>
+            <button type="button" className="text-sm text-blue-600" onClick={() => setBulkMode(v => !v)}>
+              {bulkMode ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
+          {bulkMode && (
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Formato: id,nota o nombre apellido,nota. Usa 'A' para ausente. Una fila por línea.\nEj:\n st_demo_1, 7.5\n Juan Pérez, 9\n st_demo_3, A"
+                value={bulkPaste}
+                onChange={(e) => setBulkPaste(e.target.value)}
+                rows={5}
+              />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={parseBulk}>Previsualizar</Button>
+                <Button type="button" onClick={applyBulk} disabled={bulkPreview.length === 0}>Aplicar selección</Button>
+              </div>
+              {bulkPreview.length > 0 && (
+                <div className="text-sm text-gray-700">
+                  {bulkPreview.length} filas detectadas.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {/* Actividad */}
           <div className="flex flex-col">

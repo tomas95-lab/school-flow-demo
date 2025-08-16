@@ -1,4 +1,4 @@
-import { useMemo, useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { 
   generarAlertasAutomaticas, 
+  generarAlertasParaEstudiantes,
   filtrarAlertasCriticas,
   obtenerEstadisticasAlertas,
   type AlertaAutomatica,
@@ -55,103 +56,69 @@ export default function AlertasAutomaticasPanel({
     }
   };
 
-  // Generar alertas según el rol
-  const alertasGeneradas = useMemo(() => {
-    if (!calificaciones || !asistencias) return [];
+  const [alertasGeneradas, setAlertasGeneradas] = useState<AlertaAutomatica[]>([]);
 
-    const periodoActual = getPeriodoActual();
-    const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
-
-    switch (role) {
-      case 'admin': {
-        // Para admin: alertas de todos los estudiantes
-        return students.flatMap((student) => {
+  // Generar alertas según el rol (asíncrono)
+  useEffect(() => {
+    const run = async () => {
+      if (!calificaciones || !asistencias) { setAlertasGeneradas([]); return; }
+      const periodoActual = getPeriodoActual();
+      const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
+      if (role === 'admin') {
+        const estudiantes = students.map((student) => {
           const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
           const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
-          
-          if (calificacionesAlumno.length === 0) return [];
-
           const datosAlumno: DatosAlumno = {
             studentId: student.firestoreId || '',
-            calificaciones: calificacionesAlumno.map(cal => ({
-              valor: cal.valor || 0,
-              fecha: cal.fecha || '',
-              subjectId: cal.subjectId || ''
-            })),
-            asistencias: asistenciasAlumno.map(asist => ({
-              present: asist.presente || false,
-              fecha: asist.fecha || ''
-            })),
+            calificaciones: calificacionesAlumno.map(cal => ({ valor: cal.valor || 0, fecha: cal.fecha || '', subjectId: cal.subjectId || '' })),
+            asistencias: asistenciasAlumno.map(asist => ({ present: asist.presente || false, fecha: asist.fecha || '' })),
             periodoActual,
             periodoAnterior
           };
-
-          return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
+          return { studentId: String(student.firestoreId || ''), studentName: `${student.nombre} ${student.apellido}` , datos: datosAlumno };
         });
+        const res = await generarAlertasParaEstudiantes(estudiantes);
+        setAlertasGeneradas(res);
+        return;
       }
-
-      case 'docente': {
-        // Para docente: alertas de sus estudiantes
+      if (role === 'docente') {
         const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
-        if (!teacher) return [];
-
+        if (!teacher) { setAlertasGeneradas([]); return; }
         const teacherStudents = students.filter((student) => student.cursoId === teacher.cursoId);
-        
-        return teacherStudents.flatMap((student) => {
+        const estudiantes = teacherStudents.map((student) => {
           const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
           const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
-          
-          if (calificacionesAlumno.length === 0) return [];
-
           const datosAlumno: DatosAlumno = {
             studentId: student.firestoreId || '',
-            calificaciones: calificacionesAlumno.map(cal => ({
-              valor: cal.valor || 0,
-              fecha: cal.fecha || '',
-              subjectId: cal.subjectId || ''
-            })),
-            asistencias: asistenciasAlumno.map(asist => ({
-              present: asist.presente || false,
-              fecha: asist.fecha || ''
-            })),
+            calificaciones: calificacionesAlumno.map(cal => ({ valor: cal.valor || 0, fecha: cal.fecha || '', subjectId: cal.subjectId || '' })),
+            asistencias: asistenciasAlumno.map(asist => ({ present: asist.presente || false, fecha: asist.fecha || '' })),
             periodoActual,
             periodoAnterior
           };
-
-          return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
+          return { studentId: String(student.firestoreId || ''), studentName: `${student.nombre} ${student.apellido}`, datos: datosAlumno };
         });
+        const res = await generarAlertasParaEstudiantes(estudiantes);
+        setAlertasGeneradas(res);
+        return;
       }
-
-      case 'alumno': {
-        // Para alumno: sus propias alertas
-        if (!user?.studentId) return [];
-
+      if (role === 'alumno') {
+        if (!user?.studentId) { setAlertasGeneradas([]); return; }
         const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === user.studentId);
         const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === user.studentId);
-        
-        if (calificacionesAlumno.length === 0) return [];
-
         const datosAlumno: DatosAlumno = {
           studentId: user.studentId || '',
-          calificaciones: calificacionesAlumno.map(cal => ({
-            valor: cal.valor || 0,
-            fecha: cal.fecha || '',
-            subjectId: cal.subjectId || ''
-          })),
-          asistencias: asistenciasAlumno.map(asist => ({
-            present: asist.presente || false,
-            fecha: asist.fecha || ''
-          })),
+          calificaciones: calificacionesAlumno.map(cal => ({ valor: cal.valor || 0, fecha: cal.fecha || '', subjectId: cal.subjectId || '' })),
+          asistencias: asistenciasAlumno.map(asist => ({ present: asist.presente || false, fecha: asist.fecha || '' })),
           periodoActual,
           periodoAnterior
         };
-
-        return generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
+        const res = await generarAlertasAutomaticas(datosAlumno, user.name || 'Estudiante');
+        setAlertasGeneradas(res);
+        return;
       }
-
-      default:
-        return [];
-    }
+      setAlertasGeneradas([]);
+    };
+    run();
   }, [role, user, calificaciones, asistencias, students, teachers]);
 
   // Filtrar alertas según configuración
@@ -301,7 +268,7 @@ export default function AlertasAutomaticasPanel({
                   <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                     <div>
                       <span className="text-gray-500">Promedio:</span>
-                      <span className="font-medium ml-1">{alerta.datosSoporte.promedioActual.toFixed(1)}</span>
+                      <span className="font-medium ml-1">{(alerta.datosSoporte.promedioActual ?? 0).toFixed(1)}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Ausencias:</span>
@@ -316,7 +283,7 @@ export default function AlertasAutomaticasPanel({
                     <div>
                       <span className="text-gray-500">Tendencia:</span>
                       <span className="font-medium ml-1 capitalize">
-                        {alerta.datosSoporte.tendencia.replace('_', ' ')}
+                        {(alerta.datosSoporte.tendencia || '').replace('_', ' ')}
                       </span>
                     </div>
                   </div>
