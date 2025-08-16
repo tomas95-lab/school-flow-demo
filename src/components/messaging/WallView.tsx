@@ -454,7 +454,7 @@ export default function WallView() {
     try {
       await refetchMessages();
       toast.success("Datos actualizados");
-    } catch (error) {
+    } catch {
       toast.error("Error al actualizar los datos");
     } finally {
       setIsRefreshing(false);

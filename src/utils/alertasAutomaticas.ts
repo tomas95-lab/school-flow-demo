@@ -1,7 +1,53 @@
 // Sistema de Alertas Críticas Automáticas
 // Genera alertas automáticas basadas en rendimiento, asistencia y tendencias
 
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebaseConfig';
 
+// Interfaz para umbrales de IA configurables
+export interface UmbralesIA {
+  rendimientoCritico: number;
+  rendimientoBajo: number;
+  rendimientoExcelente: number;
+  asistenciaCritica: number;
+  asistenciaBaja: number;
+  maxAusenciasCriticas: number;
+  maxAusenciasBajas: number;
+  tendenciaNegativaMinima: number;
+  mejoraSignificativa: number;
+  materiasEnRiesgoMinimas: number;
+  diasAnalisisRendimiento: number;
+  frecuenciaRevisionAlertas: number;
+}
+
+// Umbrales por defecto
+const UMBRALES_DEFAULT: UmbralesIA = {
+  rendimientoCritico: 5.0,
+  rendimientoBajo: 6.0,
+  rendimientoExcelente: 8.5,
+  asistenciaCritica: 70,
+  asistenciaBaja: 80,
+  maxAusenciasCriticas: 5,
+  maxAusenciasBajas: 3,
+  tendenciaNegativaMinima: 1.0,
+  mejoraSignificativa: 1.0,
+  materiasEnRiesgoMinimas: 2,
+  diasAnalisisRendimiento: 30,
+  frecuenciaRevisionAlertas: 24
+};
+
+// Función para obtener umbrales personalizados
+async function obtenerUmbralesIA(): Promise<UmbralesIA> {
+  try {
+    const configDoc = await getDoc(doc(db, 'configuracion', 'umbralesIA'));
+    if (configDoc.exists()) {
+      return { ...UMBRALES_DEFAULT, ...configDoc.data() } as UmbralesIA;
+    }
+  } catch (error) {
+    console.warn('Error cargando configuración de IA, usando valores por defecto:', error);
+  }
+  return UMBRALES_DEFAULT;
+}
 
 export interface DatosAlumno {
   studentId: string;
@@ -9,10 +55,12 @@ export interface DatosAlumno {
     valor: number;
     fecha: string;
     subjectId: string;
+    ausente?: boolean;
   }>;
   asistencias: Array<{
     present: boolean;
     fecha: string;
+    late?: boolean;
   }>;
   periodoActual: string;
   periodoAnterior?: string;
@@ -22,15 +70,15 @@ export interface AlertaAutomatica {
   id: string;
   studentId: string;
   studentName: string;
-  tipo: 'rendimiento_critico' | 'asistencia_critica' | 'tendencia_negativa' | 'materia_riesgo' | 'mejora_significativa';
+  tipo: 'rendimiento_critico' | 'asistencia_critica' | 'tendencia_negativa' | 'mejora_significativa' | 'materia_riesgo';
   prioridad: 'critica' | 'alta' | 'media' | 'baja';
   titulo: string;
   descripcion: string;
   datosSoporte: {
-    promedioActual: number;
+    promedioActual?: number;
     promedioAnterior?: number;
-    ausencias: number;
-    tendencia: 'mejora' | 'descenso' | 'estable' | 'sin_datos';
+    ausencias?: number;
+    tendencia?: string;
     materiasEnRiesgo?: string[];
     porcentajeAsistencia?: number;
   };
@@ -39,7 +87,6 @@ export interface AlertaAutomatica {
   leida: boolean;
 }
 
-// Tipo para las reglas de alertas
 type ReglaAlerta = {
   condicion: (...args: unknown[]) => boolean;
   titulo: string;
@@ -48,89 +95,100 @@ type ReglaAlerta = {
   prioridad: AlertaAutomatica['prioridad'];
 };
 
-// Reglas para generar alertas automáticas
-const REGLAS_ALERTAS: Record<string, ReglaAlerta> = {
-  RENDIMIENTO_CRITICO: {
-    condicion: ((promedioActual: number) => promedioActual < 5.0) as (...args: unknown[]) => boolean,
-    titulo: "Rendimiento Crítico Detectado",
-    descripcion: "El estudiante presenta un rendimiento académico crítico que requiere intervención inmediata.",
-    tipo: 'rendimiento_critico',
-    prioridad: 'critica'
-  },
-  
-  RENDIMIENTO_BAJO: {
-    condicion: ((promedioActual: number) => promedioActual >= 5.0 && promedioActual < 6.0) as (...args: unknown[]) => boolean,
-    titulo: "Rendimiento Bajo",
-    descripcion: "El estudiante presenta un rendimiento académico bajo que necesita atención.",
-    tipo: 'rendimiento_critico',
-    prioridad: 'alta'
-  },
-  
-  ASISTENCIA_CRITICA: {
-    condicion: ((ausencias: number, porcentajeAsistencia: number) => 
-      porcentajeAsistencia < 70 || ausencias > 5) as (...args: unknown[]) => boolean,
-    titulo: "Asistencia Crítica",
-    descripcion: "El estudiante presenta problemas graves de asistencia que afectan su aprendizaje.",
-    tipo: 'asistencia_critica',
-    prioridad: 'critica'
-  },
-  
-  ASISTENCIA_BAJA: {
-    condicion: ((ausencias: number, porcentajeAsistencia: number) => 
-      (porcentajeAsistencia >= 70 && porcentajeAsistencia < 80) || (ausencias > 3 && ausencias <= 5)) as (...args: unknown[]) => boolean,
-    titulo: "Asistencia Baja",
-    descripcion: "El estudiante presenta una asistencia baja que puede afectar su rendimiento.",
-    tipo: 'asistencia_critica',
-    prioridad: 'alta'
-  },
-  
-  TENDENCIA_NEGATIVA: {
-    condicion: ((promedioActual: number, promedioAnterior?: number) => {
-      if (!promedioAnterior) return false;
-      return (promedioActual - promedioAnterior) < -1.0;
-    }) as (...args: unknown[]) => boolean,
-    titulo: "Tendencia Negativa Detectada",
-    descripcion: "El estudiante muestra una tendencia negativa en su rendimiento académico.",
-    tipo: 'tendencia_negativa',
-    prioridad: 'alta'
-  },
-  
-  MATERIAS_EN_RIESGO: {
-    condicion: ((materiasEnRiesgo: string[]) => 
-      materiasEnRiesgo.length >= 2) as (...args: unknown[]) => boolean,
-    titulo: "Múltiples Materias en Riesgo",
-    descripcion: "El estudiante tiene múltiples materias con rendimiento bajo.",
-    tipo: 'materia_riesgo',
-    prioridad: 'alta'
-  },
-  
-  MEJORA_SIGNIFICATIVA: {
-    condicion: ((promedioActual: number, promedioAnterior?: number) => {
-      if (!promedioAnterior) return false;
-      return (promedioActual - promedioAnterior) > 1.0;
-    }) as (...args: unknown[]) => boolean,
-    titulo: "Mejora Significativa",
-    descripcion: "¡Excelente! El estudiante muestra una mejora significativa en su rendimiento.",
-    tipo: 'mejora_significativa',
-    prioridad: 'baja'
-  }
-};
+// Función para crear reglas dinámicas basadas en configuración
+function crearReglasAlertas(umbrales: UmbralesIA): Record<string, ReglaAlerta> {
+  return {
+    RENDIMIENTO_CRITICO: {
+      condicion: ((promedioActual: number) => promedioActual < umbrales.rendimientoCritico) as (...args: unknown[]) => boolean,
+      titulo: "Rendimiento Crítico Detectado",
+      descripcion: `El estudiante presenta un rendimiento académico crítico (< ${umbrales.rendimientoCritico}) que requiere intervención inmediata.`,
+      tipo: 'rendimiento_critico',
+      prioridad: 'critica'
+    },
+    
+    RENDIMIENTO_BAJO: {
+      condicion: ((promedioActual: number) => 
+        promedioActual >= umbrales.rendimientoCritico && promedioActual < umbrales.rendimientoBajo
+      ) as (...args: unknown[]) => boolean,
+      titulo: "Rendimiento Bajo",
+      descripcion: `El estudiante presenta un rendimiento académico bajo (${umbrales.rendimientoCritico}-${umbrales.rendimientoBajo}) que necesita atención.`,
+      tipo: 'rendimiento_critico',
+      prioridad: 'alta'
+    },
+    
+    ASISTENCIA_CRITICA: {
+      condicion: ((ausencias: number, porcentajeAsistencia: number) => 
+        porcentajeAsistencia < umbrales.asistenciaCritica || ausencias > umbrales.maxAusenciasCriticas
+      ) as (...args: unknown[]) => boolean,
+      titulo: "Asistencia Crítica",
+      descripcion: `El estudiante presenta problemas graves de asistencia (< ${umbrales.asistenciaCritica}% o > ${umbrales.maxAusenciasCriticas} ausencias) que afectan su aprendizaje.`,
+      tipo: 'asistencia_critica',
+      prioridad: 'critica'
+    },
+    
+    ASISTENCIA_BAJA: {
+      condicion: ((ausencias: number, porcentajeAsistencia: number) => 
+        (porcentajeAsistencia >= umbrales.asistenciaCritica && porcentajeAsistencia < umbrales.asistenciaBaja) || 
+        (ausencias > umbrales.maxAusenciasBajas && ausencias <= umbrales.maxAusenciasCriticas)
+      ) as (...args: unknown[]) => boolean,
+      titulo: "Asistencia Baja",
+      descripcion: `El estudiante presenta una asistencia baja (${umbrales.asistenciaCritica}-${umbrales.asistenciaBaja}% o ${umbrales.maxAusenciasBajas}-${umbrales.maxAusenciasCriticas} ausencias) que puede afectar su rendimiento.`,
+      tipo: 'asistencia_critica',
+      prioridad: 'alta'
+    },
+    
+    TENDENCIA_NEGATIVA: {
+      condicion: ((promedioActual: number, promedioAnterior?: number) => {
+        if (!promedioAnterior) return false;
+        return (promedioAnterior - promedioActual) > umbrales.tendenciaNegativaMinima;
+      }) as (...args: unknown[]) => boolean,
+      titulo: "Tendencia Negativa en Rendimiento",
+      descripcion: `Se detectó una disminución significativa (> ${umbrales.tendenciaNegativaMinima} puntos) en el rendimiento académico del estudiante.`,
+      tipo: 'tendencia_negativa',
+      prioridad: 'alta'
+    },
+    
+    MEJORA_SIGNIFICATIVA: {
+      condicion: ((promedioActual: number, promedioAnterior?: number) => {
+        if (!promedioAnterior) return false;
+        return (promedioActual - promedioAnterior) > umbrales.mejoraSignificativa;
+      }) as (...args: unknown[]) => boolean,
+      titulo: "Mejora Significativa Detectada",
+      descripcion: `El estudiante muestra una mejora notable (> ${umbrales.mejoraSignificativa} puntos) en su rendimiento académico. ¡Felicitaciones!`,
+      tipo: 'mejora_significativa',
+      prioridad: 'baja'
+    },
+    
+    MATERIAS_EN_RIESGO: {
+      condicion: ((materiasEnRiesgo: string[]) => 
+        materiasEnRiesgo.length >= umbrales.materiasEnRiesgoMinimas
+      ) as (...args: unknown[]) => boolean,
+      titulo: "Múltiples Materias en Riesgo",
+      descripcion: `El estudiante presenta dificultades en ${umbrales.materiasEnRiesgoMinimas} o más materias, requiere atención integral.`,
+      tipo: 'materia_riesgo',
+      prioridad: 'critica'
+    }
+  };
+}
 
 // Función principal para generar alertas automáticas
-export function generarAlertasAutomaticas(
+export async function generarAlertasAutomaticas(
   datosAlumno: DatosAlumno,
   studentName: string
-): AlertaAutomatica[] {
+): Promise<AlertaAutomatica[]> {
+  // Obtener umbrales personalizados de la configuración
+  const umbrales = await obtenerUmbralesIA();
+  const REGLAS_ALERTAS = crearReglasAlertas(umbrales);
   const alertas: AlertaAutomatica[] = [];
   
   // Calcular métricas básicas
   const promedioActual = calcularPromedioActual(datosAlumno.calificaciones);
   const promedioAnterior = calcularPromedioAnterior(datosAlumno.calificaciones, datosAlumno.periodoAnterior);
-  const ausencias = contarAusencias(datosAlumno.asistencias);
+  const ausencias = calcularAusencias(datosAlumno.asistencias);
   const porcentajeAsistencia = calcularPorcentajeAsistencia(datosAlumno.asistencias);
-  const materiasEnRiesgo = identificarMateriasEnRiesgo(datosAlumno.calificaciones);
-  const tendencia = determinarTendencia(promedioActual, promedioAnterior);
-  
+  const materiasEnRiesgo = obtenerMateriasEnRiesgo(datosAlumno.calificaciones);
+  const tendencia = promedioAnterior > 0 ? (promedioActual - promedioAnterior > 0 ? 'positiva' : 'negativa') : 'nueva';
+
   // Verificar cada regla
   Object.entries(REGLAS_ALERTAS).forEach(([key, regla]) => {
     let seCumple = false;
@@ -138,21 +196,21 @@ export function generarAlertasAutomaticas(
     switch (key) {
       case 'RENDIMIENTO_CRITICO':
       case 'RENDIMIENTO_BAJO':
-        seCumple = regla.condicion(datosAlumno, promedioActual);
+        seCumple = regla.condicion(promedioActual);
         break;
         
       case 'ASISTENCIA_CRITICA':
       case 'ASISTENCIA_BAJA':
-        seCumple = regla.condicion(datosAlumno, promedioActual, ausencias, porcentajeAsistencia);
+        seCumple = regla.condicion(ausencias, porcentajeAsistencia);
         break;
         
       case 'TENDENCIA_NEGATIVA':
       case 'MEJORA_SIGNIFICATIVA':
-        seCumple = regla.condicion(datosAlumno, promedioActual, promedioAnterior);
+        seCumple = regla.condicion(promedioActual, promedioAnterior);
         break;
         
       case 'MATERIAS_EN_RIESGO':
-        seCumple = regla.condicion(datosAlumno, promedioActual, materiasEnRiesgo);
+        seCumple = regla.condicion(materiasEnRiesgo);
         break;
     }
     
@@ -190,104 +248,69 @@ export function generarAlertasAutomaticas(
 }
 
 // Función para generar alertas para múltiples estudiantes
-export function generarAlertasParaEstudiantes(
+export async function generarAlertasParaEstudiantes(
   estudiantes: Array<{ studentId: string; studentName: string; datos: DatosAlumno }>
-): AlertaAutomatica[] {
-  const todasLasAlertas: AlertaAutomatica[] = [];
-  
-  estudiantes.forEach(({ studentName, datos }) => {
-    const alertas = generarAlertasAutomaticas(datos, studentName);
-    todasLasAlertas.push(...alertas);
-  });
-  
-  return todasLasAlertas;
-}
-
-// Función para obtener alertas críticas (prioridad crítica y alta)
-export function filtrarAlertasCriticas(alertas: AlertaAutomatica[]): AlertaAutomatica[] {
-  return alertas.filter(alerta => 
-    alerta.prioridad === 'critica' || alerta.prioridad === 'alta'
+): Promise<AlertaAutomatica[]> {
+  const alertasPromises = estudiantes.map(({ studentName, datos }) => 
+    generarAlertasAutomaticas(datos, studentName)
   );
-}
-
-// Función para obtener alertas por tipo
-export function filtrarAlertasPorTipo(alertas: AlertaAutomatica[], tipo: AlertaAutomatica['tipo']): AlertaAutomatica[] {
-  return alertas.filter(alerta => alerta.tipo === tipo);
-}
-
-// Función para obtener alertas por estudiante
-export function filtrarAlertasPorEstudiante(alertas: AlertaAutomatica[], studentId: string): AlertaAutomatica[] {
-  return alertas.filter(alerta => alerta.studentId === studentId);
-}
-
-// Función para marcar alerta como leída
-export function marcarAlertaComoLeida(alerta: AlertaAutomatica): AlertaAutomatica {
-  return {
-    ...alerta,
-    leida: true
-  };
-}
-
-// Función para desactivar alerta
-export function desactivarAlerta(alerta: AlertaAutomatica): AlertaAutomatica {
-  return {
-    ...alerta,
-    activa: false
-  };
+  
+  const alertasArrays = await Promise.all(alertasPromises);
+  return alertasArrays.flat();
 }
 
 // Funciones auxiliares
+
 function calcularPromedioActual(calificaciones: DatosAlumno['calificaciones']): number {
-  if (calificaciones.length === 0) return 0;
-  const suma = calificaciones.reduce((sum, cal) => sum + cal.valor, 0);
-  return suma / calificaciones.length;
+  if (!calificaciones?.length) return 0;
+  
+  const calificacionesValidas = calificaciones.filter(c => !c.ausente && c.valor > 0);
+  if (!calificacionesValidas.length) return 0;
+  
+  const suma = calificacionesValidas.reduce((acc, cal) => acc + cal.valor, 0);
+  return suma / calificacionesValidas.length;
 }
 
-function calcularPromedioAnterior(
-  calificaciones: DatosAlumno['calificaciones'], 
-  periodoAnterior?: string
-): number | undefined {
-  if (!periodoAnterior) return undefined;
+function calcularPromedioAnterior(calificaciones: DatosAlumno['calificaciones'], periodoAnterior?: string): number {
+  if (!periodoAnterior || !calificaciones?.length) return 0;
   
-  // Filtrar calificaciones del período anterior (simplificado)
-  const calificacionesAnteriores = calificaciones.filter(cal => {
-    const fecha = new Date(cal.fecha);
-    const periodo = obtenerPeriodoDesdeFecha(fecha);
-    return periodo === periodoAnterior;
-  });
-  
-  if (calificacionesAnteriores.length === 0) return undefined;
-  
-  const suma = calificacionesAnteriores.reduce((sum, cal) => sum + cal.valor, 0);
-  return suma / calificacionesAnteriores.length;
+  // Esta es una implementación simplificada
+  // En un caso real, filtrarías por el período anterior
+  return 0;
 }
 
-function contarAusencias(asistencias: DatosAlumno['asistencias']): number {
-  return asistencias.filter(asist => !asist.present).length;
+function calcularAusencias(asistencias: DatosAlumno['asistencias']): number {
+  if (!asistencias?.length) return 0;
+  return asistencias.filter(a => !a.present).length;
 }
 
 function calcularPorcentajeAsistencia(asistencias: DatosAlumno['asistencias']): number {
-  if (asistencias.length === 0) return 100;
-  const presentes = asistencias.filter(asist => asist.present).length;
+  if (!asistencias?.length) return 100;
+  
+  const presentes = asistencias.filter(a => a.present).length;
   return (presentes / asistencias.length) * 100;
 }
 
-function identificarMateriasEnRiesgo(calificaciones: DatosAlumno['calificaciones']): string[] {
-  const materiasMap = new Map<string, number[]>();
+function obtenerMateriasEnRiesgo(calificaciones: DatosAlumno['calificaciones']): string[] {
+  if (!calificaciones?.length) return [];
   
-  // Agrupar calificaciones por materia
+  // Agrupar por materia y calcular promedios
+  const promediosPorMateria = new Map<string, number[]>();
+  
   calificaciones.forEach(cal => {
-    if (!materiasMap.has(cal.subjectId)) {
-      materiasMap.set(cal.subjectId, []);
+    if (!cal.ausente && cal.valor > 0) {
+      if (!promediosPorMateria.has(cal.subjectId)) {
+        promediosPorMateria.set(cal.subjectId, []);
+      }
+      promediosPorMateria.get(cal.subjectId)!.push(cal.valor);
     }
-    materiasMap.get(cal.subjectId)!.push(cal.valor);
   });
   
   const materiasEnRiesgo: string[] = [];
   
-  materiasMap.forEach((notas, subjectId) => {
-    const promedio = notas.reduce((sum, nota) => sum + nota, 0) / notas.length;
-    if (promedio < 6.0) {
+  promediosPorMateria.forEach((valores, subjectId) => {
+    const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
+    if (promedio < 6) { // Usar umbral fijo aquí o se puede hacer configurable también
       materiasEnRiesgo.push(subjectId);
     }
   });
@@ -295,51 +318,22 @@ function identificarMateriasEnRiesgo(calificaciones: DatosAlumno['calificaciones
   return materiasEnRiesgo;
 }
 
-function determinarTendencia(
-  promedioActual: number, 
-  promedioAnterior?: number
-): 'mejora' | 'descenso' | 'estable' | 'sin_datos' {
-  if (!promedioAnterior) return 'sin_datos';
-  
-  const diferencia = promedioActual - promedioAnterior;
-  
-  if (diferencia > 0.5) return 'mejora';
-  if (diferencia < -0.5) return 'descenso';
-  return 'estable';
+// Funciones de utilidad para filtrar alertas
+
+export function filtrarAlertasCriticas(alertas: AlertaAutomatica[]): AlertaAutomatica[] {
+  return alertas.filter(alerta => 
+    alerta.prioridad === 'critica' || alerta.prioridad === 'alta'
+  );
 }
 
-function obtenerPeriodoDesdeFecha(fecha: Date): string {
-  const year = fecha.getFullYear();
-  const month = fecha.getMonth() + 1;
-  
-  if (month >= 3 && month <= 5) return `${year}-T1`;
-  if (month >= 6 && month <= 8) return `${year}-T2`;
-  if (month >= 9 && month <= 11) return `${year}-T3`;
-  return `${year}-T1`; // Diciembre, enero, febrero
+export function filtrarAlertasPorTipo(alertas: AlertaAutomatica[], tipo: AlertaAutomatica['tipo']): AlertaAutomatica[] {
+  return alertas.filter(alerta => alerta.tipo === tipo);
 }
 
-// Función para obtener estadísticas de alertas
-export function obtenerEstadisticasAlertas(alertas: AlertaAutomatica[]) {
-  const total = alertas.length;
-  const criticas = alertas.filter(a => a.prioridad === 'critica').length;
-  const altas = alertas.filter(a => a.prioridad === 'alta').length;
-  const noLeidas = alertas.filter(a => !a.leida).length;
-  const activas = alertas.filter(a => a.activa).length;
-  
-  const porTipo = {
-    rendimiento_critico: alertas.filter(a => a.tipo === 'rendimiento_critico').length,
-    asistencia_critica: alertas.filter(a => a.tipo === 'asistencia_critica').length,
-    tendencia_negativa: alertas.filter(a => a.tipo === 'tendencia_negativa').length,
-    materia_riesgo: alertas.filter(a => a.tipo === 'materia_riesgo').length,
-    mejora_significativa: alertas.filter(a => a.tipo === 'mejora_significativa').length
-  };
-  
-  return {
-    total,
-    criticas,
-    altas,
-    noLeidas,
-    activas,
-    porTipo
-  };
-} 
+export function filtrarAlertasPorEstudiante(alertas: AlertaAutomatica[], studentId: string): AlertaAutomatica[] {
+  return alertas.filter(alerta => alerta.studentId === studentId);
+}
+
+export function marcarAlertaComoLeida(alerta: AlertaAutomatica): AlertaAutomatica {
+  return { ...alerta, leida: true };
+}

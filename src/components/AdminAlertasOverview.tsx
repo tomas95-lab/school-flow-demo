@@ -8,6 +8,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+import { UITranslations } from "@/config/translations";
 import { CreateAlertModal } from "./CreateAlertModal";
 import { SchoolSpinner } from "./SchoolSpinner";
 
@@ -64,15 +65,8 @@ export default function AdminAlertasOverview() {
     }
   };
 
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case "critical": return "Crítica";
-      case "high": return "Alta";
-      case "medium": return "Media";
-      case "low": return "Baja";
-      default: return priority;
-    }
-  };
+  // Usar la función centralizada de traducciones
+  const getPriorityLabel = UITranslations.getPriorityLabel;
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -84,15 +78,8 @@ export default function AdminAlertasOverview() {
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "academic": return "Académica";
-      case "attendance": return "Asistencia";
-      case "behavior": return "Comportamiento";
-      case "general": return "General";
-      default: return type;
-    }
-  };
+  // Usar la función centralizada de traducciones
+  const getTypeLabel = UITranslations.getAlertTypeLabel;
 
   return (
     <div>

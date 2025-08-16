@@ -30,6 +30,30 @@ export default function Panel360() {
 	const { data: alerts } = useFirestoreCollection<Alert>("alerts", { enableCache: true })
 	const { data: announcements } = useFirestoreCollection<Announcement>("announcements", { enableCache: true })
 
+	// Normaliza distintos formatos de fecha (Firestore Timestamp, string, number, Date)
+	const normalizeDate = (value: any): string | undefined => {
+		if (!value) return undefined
+		try {
+			if (typeof value === 'object') {
+				if ('toDate' in value && typeof (value as any).toDate === 'function') {
+					const d = (value as any).toDate()
+					return isNaN(d.getTime()) ? undefined : d.toISOString()
+				}
+				if ('seconds' in value && typeof (value as any).seconds === 'number') {
+					const d = new Date((value as any).seconds * 1000)
+					return isNaN(d.getTime()) ? undefined : d.toISOString()
+				}
+				if (value instanceof Date) {
+					return isNaN(value.getTime()) ? undefined : value.toISOString()
+				}
+			}
+			const d = new Date(value)
+			return isNaN(d.getTime()) ? undefined : d.toISOString()
+		} catch {
+			return undefined
+		}
+	}
+
 	const filteredStudents = useMemo(() => {
 		const q = query.trim().toLowerCase()
 		return (students || []).filter(s => `${s.nombre} ${s.apellido}`.toLowerCase().includes(q)).slice(0, 8)
@@ -75,10 +99,10 @@ export default function Panel360() {
 				{ estado: 'Ausente', cantidad: atts.length - present },
 			]
 			const timeline = [
-				...grades.map(g => ({ type: 'grade', date: g.fecha, title: `Nota ${g.valor}`, description: `Evaluación`, color: '#2563eb' })),
-				...atts.map(a => ({ type: 'attendance', date: a.fecha || a.date, title: a.present ? 'Asistencia' : 'Ausencia', description: a.courseId || '', color: a.present ? '#10b981' : '#ef4444' })),
-				...alertsFor.map(al => ({ type: 'alert', date: al.createdAt, title: al.title || 'Alerta', description: al.description || '', color: '#f59e0b' })),
-				...(announcements || []).map(an => ({ type: 'announcement', date: an.createdAt, title: an.title || 'Anuncio', description: an.content || '', color: '#64748b' })),
+				...grades.map(g => ({ type: 'grade', date: normalizeDate((g as any).fecha), title: `Nota ${g.valor}`, description: `Evaluación`, color: '#2563eb' })),
+				...atts.map(a => ({ type: 'attendance', date: normalizeDate((a as any).fecha ?? (a as any).date), title: a.present ? 'Asistencia' : 'Ausencia', description: a.courseId || '', color: a.present ? '#10b981' : '#ef4444' })),
+				...alertsFor.map(al => ({ type: 'alert', date: normalizeDate((al as any).createdAt), title: al.title || 'Alerta', description: al.description || '', color: '#f59e0b' })),
+				...(announcements || []).map(an => ({ type: 'announcement', date: normalizeDate((an as any).createdAt), title: an.title || 'Anuncio', description: an.content || '', color: '#64748b' })),
 			].filter(e => e.date).sort((a,b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime()).slice(0, 20)
 			return { kind: 'student' as const, student, myAvg, myAtt, approved, alertsCount: alertsFor.length, perfBySubject, gradeDist, attDist, timeline }
 		}
@@ -103,10 +127,10 @@ export default function Panel360() {
 		].filter(x => x.cantidad > 0)
 		const attDist = [ { estado: 'Presente', cantidad: present }, { estado: 'Ausente', cantidad: atts.length - present } ]
 		const timeline = [
-			...grades.map(g => ({ type: 'grade', date: g.fecha, title: `Nota ${g.valor}`, description: `Evaluación`, color: '#2563eb' })),
-			...atts.map(a => ({ type: 'attendance', date: a.fecha || a.date, title: a.present ? 'Asistencia' : 'Ausencia', description: a.courseId || '', color: a.present ? '#10b981' : '#ef4444' })),
-			...(alerts || []).map(al => ({ type: 'alert', date: al.createdAt, title: al.title || 'Alerta', description: al.description || '', color: '#f59e0b' })),
-			...(announcements || []).map(an => ({ type: 'announcement', date: an.createdAt, title: an.title || 'Anuncio', description: an.content || '', color: '#64748b' })),
+			...grades.map(g => ({ type: 'grade', date: normalizeDate((g as any).fecha), title: `Nota ${g.valor}`, description: `Evaluación`, color: '#2563eb' })),
+			...atts.map(a => ({ type: 'attendance', date: normalizeDate((a as any).fecha ?? (a as any).date), title: a.present ? 'Asistencia' : 'Ausencia', description: a.courseId || '', color: a.present ? '#10b981' : '#ef4444' })),
+			...(alerts || []).map(al => ({ type: 'alert', date: normalizeDate((al as any).createdAt), title: al.title || 'Alerta', description: al.description || '', color: '#f59e0b' })),
+			...(announcements || []).map(an => ({ type: 'announcement', date: normalizeDate((an as any).createdAt), title: an.title || 'Anuncio', description: an.content || '', color: '#64748b' })),
 		].filter(e => e.date).sort((a,b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime()).slice(0, 20)
 		return { kind: 'course' as const, course, avg, att, perfBySubject, gradeDist, attDist, timeline }
 	}, [selectedId, mode, students, courses, subjects, calificaciones, asistencias, alerts, announcements])
@@ -127,7 +151,7 @@ export default function Panel360() {
 		}
 		const head = [['Fecha','Tipo','Título','Descripción']]
 		const body = context.timeline.slice(0, 15).map(e => [String(e.date || ''), e.type, e.title, e.description])
-		// @ts-ignore
+		// @ts-expect-error autoTable types are not fully compatible
 		autoTable(doc, { head, body, startY: 40, styles: { fontSize: 9 } })
 		doc.save('Informe_360.pdf')
 	}
@@ -222,7 +246,7 @@ export default function Panel360() {
 											<div key={idx} className="flex items-start gap-3">
 												<div className="w-2 h-2 rounded-full mt-2" style={{ background: e.color }} />
 												<div>
-													<div className="text-sm text-gray-500">{new Date(e.date).toLocaleDateString()}</div>
+													<div className="text-sm text-gray-500">{new Date(e.date as string).toLocaleString('es-AR')}</div>
 													<div className="font-medium text-gray-900">{e.title}</div>
 													<div className="text-sm text-gray-600">{e.description}</div>
 												</div>

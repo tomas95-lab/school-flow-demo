@@ -105,12 +105,17 @@ export function BoletinComponent({ row }: { row: BoletinRow }) {
         } catch {
           // fallback simple si no permite addEventListener
           setTimeout(() => {
-            try { printWindow.print() } catch {}
+            try { 
+              printWindow.print() 
+            } catch {
+              console.warn('No se pudo ejecutar print en la ventana nueva')
+            }
           }, 600)
         }
       }
-    } catch (e) {
+    } catch {
       // Si falla, fallback a print de la vista HTML
+      console.warn('Error al abrir ventana de impresión, usando método alternativo')
       window.print()
     }
   }

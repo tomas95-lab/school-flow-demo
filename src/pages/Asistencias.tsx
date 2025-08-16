@@ -4,7 +4,7 @@ import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
-import { Calendar, BookOpen, Plus, AlertTriangle, Brain, Award, TrendingUp, Users, CheckCircle } from "lucide-react";
+import { Calendar, BookOpen, Plus, AlertTriangle, Brain, Award, TrendingUp, Users, CheckCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import AttendanceAlert from "@/components/AttendanceAlert";
 
 // Componente de calendario
 import AttendanceCalendar from "@/components/AttendanceCalendar";
+import ImportAttendanceCSV from "../components/ImportAttendanceCSV";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
 import { usePermission } from "@/hooks/usePermission";
@@ -91,6 +92,14 @@ export default function Asistencias() {
       label: "Resumen",
       icon: BookOpen,
       description: "Vista general de asistencias"
+    },
+    {
+      id: "import",
+      label: "Importar",
+      icon: Upload,
+      description: "Importar asistencias desde CSV",
+      requiresPermission: true,
+      permissionCheck: (role) => role === "docente" || role === 'admin'
     },
     {
       id: "charts",
@@ -455,10 +464,10 @@ export default function Asistencias() {
                 <CardContent className="p-8">
                   <EmptyState
                     icon={BookOpen}
-                    title={user?.role === 'docente' ? 'Ir a Mis Cursos' : 'Sin permisos para registrar'}
-                    description={user?.role === 'docente' ? 'Selecciona un curso desde el panel de Mis Cursos para registrar asistencias.' : 'Solo los docentes pueden registrar asistencias.'}
-                    actionText={user?.role === 'docente' ? 'Ver Mis Cursos' : undefined}
-                    onAction={user?.role === 'docente' ? () => setActiveView('overview') : undefined}
+                    title={'Registrar asistencias'}
+                    description={'Usa el calendario o importa un CSV si tienes registros externos.'}
+                    actionText={'Ir al Calendario'}
+                    onAction={() => setActiveView('calendar')}
                   />
                 </CardContent>
               </Card>
@@ -468,6 +477,12 @@ export default function Asistencias() {
           {activeView === "calendar" && canViewCalendar && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               <AttendanceCalendar />
+            </div>
+          )}
+
+          {activeView === "import" && canRegisterAttendance && (
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+              <ImportAttendanceCSV />
             </div>
           )}
 

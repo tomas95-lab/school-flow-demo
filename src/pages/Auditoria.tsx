@@ -24,11 +24,7 @@ type AuditLog = {
 
 export default function Auditoria() {
   const { user } = useContext(AuthContext)
-  // No llamar hooks condicionalmente: hacemos la verificación de permisos con un render temprano
   const { can } = usePermission()
-  const canView = !!user && can('canViewAll' as any)
-  if (!canView) return <AccessDenied message="No tienes permisos para acceder al módulo de auditoría." />
-
   const { data: logs } = useFirestoreCollection<AuditLog>('auditLogs', { enableCache: true })
 
   const columns: ColumnDef<AuditLog>[] = useMemo(() => ([
@@ -69,6 +65,10 @@ export default function Auditoria() {
     }
   }
 
+  // Verificación de permisos después de todos los hooks
+  const canView = !!user && can('canViewAll')
+  if (!canView) return <AccessDenied message="No tienes permisos para acceder al módulo de auditoría." />
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -94,8 +94,8 @@ export default function Auditoria() {
               <p className="text-gray-600 text-lg max-w-2xl">Registro centralizado de acciones sensibles. Solo visible para administradores.</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={exportCSV}>Export CSV</Button>
-              <Button className="bg-gradient-to-r from-slate-700 to-gray-700 hover:from-slate-800 hover:to-gray-800 shadow" onClick={exportXLSX}>Export XLSX</Button>
+              <Button variant="outline" onClick={exportCSV}>Exportar CSV</Button>
+              <Button className="bg-gradient-to-r from-slate-700 to-gray-700 hover:from-slate-800 hover:to-gray-800 shadow" onClick={exportXLSX}>Exportar XLSX</Button>
             </div>
           </div>
         </div>

@@ -190,7 +190,7 @@ export default function ConversationDetail({ conversationId, title, onBack }: Co
         // ignore
       }
       setText("");
-    } catch (e) {
+    } catch {
       toast.error("No se pudo enviar el mensaje");
     } finally {
       setSending(false);

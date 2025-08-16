@@ -21,11 +21,13 @@ const InscripcionesOverview = lazy(() => import("@/components/InscripcionesOverv
 const ReportesInteligentesOverview = lazy(() => import("@/components/ReportesInteligentesOverview"));
 const ExplicacionBoletinOverview = lazy(() => import("@/components/ExplicacionBoletinOverview"));
 const BotOverview = lazy(() => import("@/components/BotOverview"));
-  const IntervencionesOverview = lazy(() => import("@/components/IntervencionesOverview"));
-  const Panel360 = lazy(() => import("@/pages/Panel360"));
-  const Finanzas = lazy(() => import("@/pages/Finanzas"));
-  const PagoSimulado = lazy(() => import("@/pages/PagoSimulado"));
-  const Auditoria = lazy(() => import("@/pages/Auditoria"));
+const IntervencionesOverview = lazy(() => import("@/components/IntervencionesOverview"));
+const Panel360 = lazy(() => import("@/pages/Panel360"));
+const Finanzas = lazy(() => import("@/pages/Finanzas"));
+const PagoSimulado = lazy(() => import("@/pages/PagoSimulado"));
+const Auditoria = lazy(() => import("@/pages/Auditoria"));
+const ConfiguracionIAPanel = lazy(() => import("@/components/ConfiguracionIAPanel"));
+const ComunicacionFamiliasPanel = lazy(() => import("@/components/ComunicacionFamiliasPanel"));
 import { PrivateRoute } from "./PrivateRoute";
 import { PermissionRoute } from "./PermissionRoute";
 
@@ -93,6 +95,22 @@ export function AppRoutes() {
             <Route path="/app/pago/:id" element={<PagoSimulado />} />
             <Route path="/app/auditoria" element={<Auditoria />} />
             <Route path="/app/intervenciones" element={<IntervencionesOverview />} />
+            <Route 
+              path="/app/configuracion-ia" 
+              element={
+                <PermissionRoute permission={"canManageSettings"}>
+                  <ConfiguracionIAPanel />
+                </PermissionRoute>
+              } 
+            />
+            <Route 
+              path="/app/comunicacion-familias" 
+              element={
+                <PermissionRoute permission={"canManageSettings"}>
+                  <ComunicacionFamiliasPanel />
+                </PermissionRoute>
+              } 
+            />
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" />} />

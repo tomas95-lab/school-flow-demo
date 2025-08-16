@@ -111,7 +111,7 @@ export default function OverviewDashboard() {
     try {
       await refetchMessages();
       toast.success("Datos actualizados");
-    } catch (err) {
+    } catch {
       setError("Error al actualizar los datos");
       toast.error("Error al actualizar los datos");
     } finally {

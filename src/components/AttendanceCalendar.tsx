@@ -263,7 +263,6 @@ export default function AttendanceCalendar() {
                 const doc = new jsPDF()
                 doc.setFontSize(14)
                 doc.text(`Asistencias ${dayStr}`, 14, 18)
-                // @ts-ignore
                 autoTable(doc, { head: [headers as unknown as string[]], body, startY: 24 })
                 doc.save(`Asistencias_${dayStr}.pdf`)
               }}>Exportar PDF (hoy)</Button>

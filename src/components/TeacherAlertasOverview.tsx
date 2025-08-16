@@ -2,6 +2,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { where } from "firebase/firestore";
 import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { StatsCard } from "./StatCards";
+import { UITranslations } from "@/config/translations";
 import { AlertTriangle, Bell, CheckCircle, Search } from "lucide-react";
 import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
@@ -87,15 +88,8 @@ export default function TeacherAlertasOverview() {
     }
   };
 
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case "critical": return "Crítica";
-      case "high": return "Alta";
-      case "medium": return "Media";
-      case "low": return "Baja";
-      default: return priority;
-    }
-  };
+  // Usar la función centralizada de traducciones
+  const getPriorityLabel = UITranslations.getPriorityLabel;
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -107,15 +101,8 @@ export default function TeacherAlertasOverview() {
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "academic": return "Académica";
-      case "attendance": return "Asistencia";
-      case "behavior": return "Comportamiento";
-      case "general": return "General";
-      default: return type;
-    }
-  };
+  // Usar la función centralizada de traducciones
+  const getTypeLabel = UITranslations.getAlertTypeLabel;
 
   return (
     <div>

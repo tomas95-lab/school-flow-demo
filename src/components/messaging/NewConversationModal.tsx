@@ -61,7 +61,9 @@ export default function NewConversationModal({ open, onOpenChange, onCreated }: 
             lastMessageAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
-        } catch {}
+        } catch {
+          console.warn('Error actualizando lastMessage en conversaciones existentes')
+        }
       }
       toast.success("Conversación creada");
       onOpenChange(false);

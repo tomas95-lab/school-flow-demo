@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 
 import ReutilizableDialog from '@/components/DialogReutlizable';
 import { toast } from 'sonner';
+import { UITranslations } from '@/config/translations';
 import { 
   Bot, 
   Brain, 
@@ -797,8 +798,7 @@ const BotOverview: React.FC = () => {
                     variant={analysis.priority === 'high' ? 'destructive' : 
                            analysis.priority === 'medium' ? 'secondary' : 'default'}
                   >
-                    {analysis.priority === 'high' ? 'Alta' : 
-                     analysis.priority === 'medium' ? 'Media' : 'Baja'}
+                    {UITranslations.getPriorityLabel(analysis.priority)}
                   </Badge>
                 </div>
                 <CardDescription className="text-sm">

@@ -7,6 +7,7 @@ import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link } from "react-router-dom"
 // import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
@@ -237,6 +238,8 @@ function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
 
 export default function Dashboard() {
   const { user, loading } = useContext(AuthContext)
+  const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
+  const [courseFilter, setCourseFilter] = useState<string>('all')
   const [stats, setStats] = useState<{
     totalStudents?: number;
     totalTeachers?: number;
@@ -295,11 +298,71 @@ export default function Dashboard() {
       return null;
     }
 
+    const now = new Date();
+    const subDays = (d: Date, days: number) => new Date(d.getTime() - days * 24 * 60 * 60 * 1000);
+    const startDate = timeFilter === '7d' ? subDays(now, 7)
+      : timeFilter === '30d' ? subDays(now, 30)
+      : timeFilter === '90d' ? subDays(now, 90)
+      : new Date(0);
+
+    const parseDate = (val: any): Date | null => {
+      if (!val) return null;
+      try {
+        if (typeof val === 'string') {
+          // soporta yyyy-MM-dd o ISO
+          const m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+          const d = new Date(val);
+          return isNaN(d.getTime()) ? null : d;
+        }
+        if (typeof val === 'number') {
+          return new Date(val > 1e12 ? val : val * 1000);
+        }
+        if (val && typeof val === 'object') {
+          if ('toDate' in val && typeof (val as any).toDate === 'function') {
+            const d = (val as any).toDate();
+            return isNaN(d.getTime()) ? null : d;
+          }
+          if ('seconds' in val && typeof (val as any).seconds === 'number') {
+            const d = new Date((val as any).seconds * 1000);
+            return isNaN(d.getTime()) ? null : d;
+          }
+          if (val instanceof Date) {
+            return isNaN(val.getTime()) ? null : val;
+          }
+        }
+      } catch {}
+      return null;
+    };
+
+    const filterByTimeAndCourse = <T,>(items: T[], getDate: (x: T) => any, getCourseId?: (x: T) => string | undefined) => {
+      return items.filter((it) => {
+        const d = parseDate(getDate(it));
+        if (!d || d < startDate) return false;
+        if (courseFilter !== 'all' && getCourseId) {
+          const cid = (getCourseId(it) || '').toString().trim();
+          if (cid !== courseFilter) return false;
+        }
+        return true;
+      });
+    };
+
+    const filteredGrades = filterByTimeAndCourse(
+      calificaciones,
+      (g: any) => (g as any).fecha,
+      (g: any) => (g as any).courseId
+    );
+    const filteredAttendance = filterByTimeAndCourse(
+      asistencias,
+      (a: any) => (a as any).fecha ?? (a as any).date,
+      (a: any) => (a as any).courseId
+    );
+
     // Generar datos para charts
     const generateChartData = () => {
       // Datos para bar chart de rendimiento por curso
       const performanceByCourse = courses.map(course => {
-        const courseGrades = calificaciones.filter(g => g.courseId === course.firestoreId);
+        const courseGrades = filteredGrades.filter(g => g.courseId === course.firestoreId);
         const avgGrade = courseGrades.length > 0 
           ? courseGrades.reduce((sum, g) => sum + g.valor, 0) / courseGrades.length 
           : 0;
@@ -316,7 +379,7 @@ export default function Dashboard() {
         
         return months.map((month, index) => {
           // const monthNumber = index + 1;
-          const monthAsistencias = asistencias.filter(a => {
+          const monthAsistencias = filteredAttendance.filter(a => {
             if (!a.fecha) return false;
             const attendanceDate = new Date(a.fecha);
             return attendanceDate.getFullYear() === currentYear && 
@@ -339,15 +402,15 @@ export default function Dashboard() {
 
       // Datos para pie chart de distribución de calificaciones
       const gradeDistribution = [
-        { rango: 'Excelente (9-10)', cantidad: calificaciones.filter(g => g.valor >= 9).length },
-        { rango: 'Bueno (7-8.9)', cantidad: calificaciones.filter(g => g.valor >= 7 && g.valor < 9).length },
-        { rango: 'Regular (6-6.9)', cantidad: calificaciones.filter(g => g.valor >= 6 && g.valor < 7).length },
-        { rango: 'Bajo (<6)', cantidad: calificaciones.filter(g => g.valor < 6).length }
+        { rango: 'Excelente (9-10)', cantidad: filteredGrades.filter(g => g.valor >= 9).length },
+        { rango: 'Bueno (7-8.9)', cantidad: filteredGrades.filter(g => g.valor >= 7 && g.valor < 9).length },
+        { rango: 'Regular (6-6.9)', cantidad: filteredGrades.filter(g => g.valor >= 6 && g.valor < 7).length },
+        { rango: 'Bajo (<6)', cantidad: filteredGrades.filter(g => g.valor < 6).length }
       ].filter(item => item.cantidad > 0);
 
       // Datos para bar chart de rendimiento por materia
       const performanceBySubject = subjects.map(subject => {
-        const subjectGrades = calificaciones.filter(g => g.subjectId === subject.firestoreId);
+        const subjectGrades = filteredGrades.filter(g => g.subjectId === subject.firestoreId);
         const avgGrade = subjectGrades.length > 0 
           ? subjectGrades.reduce((sum, g) => sum + g.valor, 0) / subjectGrades.length 
           : 0;
@@ -359,8 +422,8 @@ export default function Dashboard() {
 
       // Datos para pie chart de distribución de asistencias
       const attendanceDistribution = [
-        { estado: 'Presente', cantidad: asistencias.filter(a => a.present).length },
-        { estado: 'Ausente', cantidad: asistencias.filter(a => !a.present).length }
+        { estado: 'Presente', cantidad: filteredAttendance.filter(a => a.present).length },
+        { estado: 'Ausente', cantidad: filteredAttendance.filter(a => !a.present).length }
       ].filter(item => item.cantidad > 0);
 
       return {
@@ -380,13 +443,13 @@ export default function Dashboard() {
     const totalCourses = courses.length;
 
     // Calcular promedios generales de forma optimizada
-    const avgGrades = calificaciones.length > 0 
-      ? (calificaciones.reduce((sum: number, c) => sum + (c.valor || 0), 0) / calificaciones.length).toFixed(1)
+    const avgGrades = filteredGrades.length > 0 
+      ? (filteredGrades.reduce((sum: number, c) => sum + (c.valor || 0), 0) / filteredGrades.length).toFixed(1)
       : "0.0";
 
-    const presentCount = asistencias.filter((a) => a.present).length;
-    const avgAttendance = asistencias.length > 0
-      ? `${Math.round((presentCount / asistencias.length) * 100)}%`
+    const presentCount = filteredAttendance.filter((a) => a.present).length;
+    const avgAttendance = filteredAttendance.length > 0
+      ? `${Math.round((presentCount / filteredAttendance.length) * 100)}%`
       : "0%";
 
     const roleStats: typeof stats = {
@@ -425,7 +488,7 @@ export default function Dashboard() {
 
         // Calcular asistencia del docente basada en sus cursos (courseId)
         const teacherCourseIdsSet = unionCourseIds;
-        const teacherAsistencias = asistencias.filter(a => a.courseId && teacherCourseIdsSet.has(a.courseId));
+        const teacherAsistencias = filteredAttendance.filter(a => a.courseId && teacherCourseIdsSet.has(a.courseId));
         
         const teacherPresentCount = teacherAsistencias.filter(a => a.present).length;
         const teacherAttendance = teacherAsistencias.length > 0
@@ -436,7 +499,7 @@ export default function Dashboard() {
         const teacherSubjectIds = new Set(
           subjects.filter(s => s.teacherId === user.teacherId).map(s => s.firestoreId).filter(Boolean)
         );
-        const teacherCalificaciones = calificaciones.filter(c => 
+        const teacherCalificaciones = filteredGrades.filter(c => 
           c.subjectId && teacherSubjectIds.has(c.subjectId)
         );
         
@@ -481,8 +544,8 @@ export default function Dashboard() {
       
       const studentInfo = studentMap.get(user.studentId);
       if (studentInfo) {
-        const studentCalificaciones = calificaciones.filter(c => c.studentId === user.studentId);
-        const studentAsistencias = asistencias.filter(a => a.studentId === user.studentId);
+        const studentCalificaciones = filteredGrades.filter(c => c.studentId === user.studentId);
+        const studentAsistencias = filteredAttendance.filter(a => a.studentId === user.studentId);
         
         // Calcular promedio del alumno de forma optimizada
         const gradesSum = studentCalificaciones.reduce((sum: number, c) => sum + (c.valor || 0), 0);
@@ -539,103 +602,140 @@ export default function Dashboard() {
     }
   }, [calculatedStats]);
 
+  // Estado para alertas automáticas
+  const [alertasAutomaticas, setAlertasAutomaticas] = useState<any[]>([]);
+
   // Calcular alertas automáticas generadas
-  const alertasAutomaticas = useMemo(() => {
-    const studentsMap = new Map<string, any>();
-    (studentsByCurso || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
-    (studentsByCourse || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
-    const mergedStudents = Array.from(studentsMap.values());
+  useEffect(() => {
+    const calcularAlertasAutomaticas = async () => {
+      const studentsMap = new Map<string, any>();
+      (studentsByCurso || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
+      (studentsByCourse || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
+      const mergedStudents = Array.from(studentsMap.values());
 
-    if (!calificaciones || !asistencias || !mergedStudents || !teachers) return [];
-
-    const getPeriodoActual = () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-      const trimestre = Math.ceil(month / 3);
-      return `${year}-T${trimestre}`;
-    };
-
-    const obtenerPeriodoAnterior = (periodoActual: string): string | undefined => {
-      const [year, trimester] = periodoActual.split('-T');
-      const currentYear = parseInt(year);
-      const currentTrimester = parseInt(trimester);
-      
-      if (currentTrimester === 1) {
-        return `${currentYear - 1}-T4`;
-      } else {
-        return `${currentYear}-T${currentTrimester - 1}`;
-      }
-    };
-
-    const periodoActual = getPeriodoActual();
-    const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
-
-    switch (user?.role) {
-      case 'admin':
-        // Para admin: alertas de todos los estudiantes
-        return mergedStudents.flatMap((student: any) => {
-          const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
-          const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
-          
-          if (calificacionesAlumno.length === 0) return [];
-
-          const datosAlumno: DatosAlumno = {
-            studentId: student.firestoreId || '',
-            calificaciones: calificacionesAlumno as any,
-            asistencias: asistenciasAlumno as any,
-            periodoActual,
-            periodoAnterior
-          };
-
-          return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
-        });
-
-      case 'docente': {
-        // Para docente: alertas de sus estudiantes
-        const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
-        if (!teacher) return [];
-
-        return teacherStudents.flatMap((student: any) => {
-          const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
-          const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
-          
-          if (calificacionesAlumno.length === 0) return [];
-
-          const datosAlumno: DatosAlumno = {
-            studentId: student.firestoreId || '',
-            calificaciones: calificacionesAlumno as any,
-            asistencias: asistenciasAlumno as any,
-            periodoActual,
-            periodoAnterior
-          };
-
-          return generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
-        });
+      if (!calificaciones || !asistencias || !mergedStudents || !teachers) {
+        setAlertasAutomaticas([]);
+        return;
       }
 
-      case 'alumno': {
-        // Para alumno: sus propias alertas
-        if (!user?.studentId) return [];
+      const getPeriodoActual = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const trimestre = Math.ceil(month / 3);
+        return `${year}-T${trimestre}`;
+      };
 
-        const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === user.studentId);
-        const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === user.studentId);
+      const obtenerPeriodoAnterior = (periodoActual: string): string | undefined => {
+        const [year, trimester] = periodoActual.split('-T');
+        const currentYear = parseInt(year);
+        const currentTrimester = parseInt(trimester);
         
-        if (calificacionesAlumno.length === 0) return [];
+        if (currentTrimester === 1) {
+          return `${currentYear - 1}-T4`;
+        } else {
+          return `${currentYear}-T${currentTrimester - 1}`;
+        }
+      };
 
-        const datosAlumno: DatosAlumno = {
-          studentId: user.studentId || '',
-          calificaciones: calificacionesAlumno as any,
-          asistencias: asistenciasAlumno as any,
-          periodoActual,
-          periodoAnterior
-        };
+      const periodoActual = getPeriodoActual();
+      const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
 
-        return generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
+      try {
+        switch (user?.role) {
+          case 'admin': {
+            // Para admin: alertas de todos los estudiantes
+            const alertasPromesas = mergedStudents.map(async (student: any) => {
+              const calificacionesAlumno = calificaciones.filter((cal) => cal.studentId === student.firestoreId);
+              const asistenciasAlumno = asistencias.filter((asist) => asist.studentId === student.firestoreId);
+              
+              if (calificacionesAlumno.length === 0) return [];
+
+              const datosAlumno: DatosAlumno = {
+                studentId: student.firestoreId || '',
+                calificaciones: calificacionesAlumno as any,
+                asistencias: asistenciasAlumno as any,
+                periodoActual,
+                periodoAnterior
+              };
+
+              return await generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
+            });
+
+            const alertasArrays = await Promise.all(alertasPromesas);
+            setAlertasAutomaticas(alertasArrays.flat());
+            break;
+          }
+
+          case 'docente': {
+            // Para docente: alertas de sus estudiantes
+            const teacher = teachers.find((t) => t.firestoreId === user?.teacherId);
+            if (!teacher) {
+              setAlertasAutomaticas([]);
+              return;
+            }
+
+            const alertasPromesas = teacherStudents.map(async (student: any) => {
+              const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === student.firestoreId);
+              const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === student.firestoreId);
+              
+              if (calificacionesAlumno.length === 0) return [];
+
+              const datosAlumno: DatosAlumno = {
+                studentId: student.firestoreId || '',
+                calificaciones: calificacionesAlumno as any,
+                asistencias: asistenciasAlumno as any,
+                periodoActual,
+                periodoAnterior
+              };
+
+              return await generarAlertasAutomaticas(datosAlumno, `${student.nombre} ${student.apellido}`);
+            });
+
+            const alertasArrays = await Promise.all(alertasPromesas);
+            setAlertasAutomaticas(alertasArrays.flat());
+            break;
+          }
+
+          case 'alumno': {
+            // Para alumno: sus propias alertas
+            if (!user?.studentId) {
+              setAlertasAutomaticas([]);
+              return;
+            }
+
+            const calificacionesAlumno = calificaciones.filter((cal: any) => cal.studentId === user.studentId);
+            const asistenciasAlumno = asistencias.filter((asist: any) => asist.studentId === user.studentId);
+            
+            if (calificacionesAlumno.length === 0) {
+              setAlertasAutomaticas([]);
+              return;
+            }
+
+            const datosAlumno: DatosAlumno = {
+              studentId: user.studentId || '',
+              calificaciones: calificacionesAlumno as any,
+              asistencias: asistenciasAlumno as any,
+              periodoActual,
+              periodoAnterior
+            };
+
+            const alertas = await generarAlertasAutomaticas(datosAlumno, user.name || "Estudiante");
+            setAlertasAutomaticas(alertas);
+            break;
+          }
+
+          default:
+            setAlertasAutomaticas([]);
+        }
+      } catch (error) {
+        console.error('Error generando alertas automáticas:', error);
+        setAlertasAutomaticas([]);
       }
+    };
 
-      default:
-        return [];
+    if (user && calificaciones && asistencias) {
+      calcularAlertasAutomaticas();
     }
   }, [user, calificaciones, asistencias, studentsByCurso, studentsByCourse, teachers, teacherStudents]);
 
@@ -696,6 +796,39 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <WelcomeMessage user={user} />
+        {/* Filtros */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="flex gap-3">
+            <div className="w-44">
+              <Select value={timeFilter} onValueChange={(v: '7d' | '30d' | '90d' | 'all') => setTimeFilter(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">Última semana</SelectItem>
+                  <SelectItem value="30d">Últimos 30 días</SelectItem>
+                  <SelectItem value="90d">Últimos 90 días</SelectItem>
+                  <SelectItem value="all">Todo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(user?.role === 'docente' || user?.role === 'admin') && (
+              <div className="w-64">
+                <Select value={courseFilter} onValueChange={(v) => setCourseFilter(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Curso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los cursos</SelectItem>
+                    {courses?.map((c: any) => (
+                      <SelectItem key={c.firestoreId} value={c.firestoreId}>{c.nombre || c.name || c.firestoreId}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
         
         {/* KPIs modernos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
