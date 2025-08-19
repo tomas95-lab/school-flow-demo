@@ -16,8 +16,6 @@ import {
   XCircle, 
   ArrowLeft,
   Download,
-  Table,
-  List,
   Plus
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
@@ -62,10 +60,10 @@ export default function DetalleAsistencia() {
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("id");
   
-  const [selectedSubject, setSelectedSubject] = useState("all");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [viewMode, setViewMode] = useState<"table" | "list">("table");
+  const [selectedSubject] = useState("all");
+  const [selectedDate] = useState("");
+  const [filterStatus] = useState("all");
+  const [viewMode] = useState<"table" | "list">("table");
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // Obtener datos
