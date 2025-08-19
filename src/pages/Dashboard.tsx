@@ -832,7 +832,7 @@ export default function Dashboard() {
         </div>
         
         {/* KPIs modernos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {statsByRole[role as keyof typeof statsByRole]?.slice(0, 4).map(key => {
             const kpiKey = key as keyof typeof kpiMeta
             const meta = kpiMeta[kpiKey]
@@ -860,7 +860,7 @@ export default function Dashboard() {
 
         {/* Sección de Charts */}
         {calculatedStats?.chartData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8">
             {/* Chart de Rendimiento por Curso */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 overflow-hidden h-[30rem]">
               <BarChartComponent
@@ -924,7 +924,7 @@ export default function Dashboard() {
         )}
 
         {/* Sección principal modernizada */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Acceso Rápido Modernizado */}
           <div className="lg:col-span-2 h-full">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-2 h-full">
@@ -1005,7 +1005,7 @@ export default function Dashboard() {
           </div>
         </div>
         <Separator className="my-12" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />

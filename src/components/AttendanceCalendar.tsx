@@ -212,83 +212,106 @@ export default function AttendanceCalendar() {
   const goToToday = () => setCurrentDate(new Date());
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
       {/* Header del calendario */}
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 max-w-full overflow-hidden">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-indigo-600" />
               Calendario de Asistencias
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday}>Hoy</Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const dayStr = format(new Date(), 'yyyy-MM-dd')
-                const exportCourseIds = selectedCourse === 'all' ? availableCourses.map(c => c.firestoreId) : [selectedCourse]
-                const dayRows = (attendances || []).filter(a => exportCourseIds.includes(a.courseId) && a.date === dayStr)
-                const headers = ["Alumno","Curso","Materia","Fecha","Presente"]
-                const rows = dayRows.map(a => {
-                  const st = students?.find(s => s.firestoreId === a.studentId)
-                  const cr = courses?.find(c => c.firestoreId === a.courseId)
-                  return [
-                    st ? `${st.nombre} ${st.apellido}` : a.studentId,
-                    cr ? `${cr.nombre} - ${cr.division}` : a.courseId,
-                    a.subject,
-                    a.date,
-                    a.present ? 'Sí' : 'No'
-                  ]
-                })
-                const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-                const wb = XLSX.utils.book_new()
-                XLSX.utils.book_append_sheet(wb, ws, 'Diario')
-                XLSX.writeFile(wb, `Asistencias_${dayStr}.xlsx`)
-              }}>Exportar XLSX (hoy)</Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const dayStr = format(new Date(), 'yyyy-MM-dd')
-                const exportCourseIds = selectedCourse === 'all' ? availableCourses.map(c => c.firestoreId) : [selectedCourse]
-                const dayRows = (attendances || []).filter(a => exportCourseIds.includes(a.courseId) && a.date === dayStr)
-                const headers = ["Alumno","Curso","Materia","Fecha","Presente"] as const
-                const body = dayRows.map(a => {
-                  const st = students?.find(s => s.firestoreId === a.studentId)
-                  const cr = courses?.find(c => c.firestoreId === a.courseId)
-                  return [
-                    st ? `${st.nombre} ${st.apellido}` : a.studentId,
-                    cr ? `${cr.nombre} - ${cr.division}` : a.courseId,
-                    a.subject,
-                    a.date,
-                    a.present ? 'Sí' : 'No'
-                  ]
-                })
-                const doc = new jsPDF()
-                doc.setFontSize(14)
-                doc.text(`Asistencias ${dayStr}`, 14, 18)
-                autoTable(doc, { head: [headers as unknown as string[]], body, startY: 24 })
-                doc.save(`Asistencias_${dayStr}.pdf`)
-              }}>Exportar PDF (hoy)</Button>
+            <div className="btn-container flex-container-safe">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={goToToday}
+                className="btn-responsive"
+              >
+                Hoy
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  const dayStr = format(new Date(), 'yyyy-MM-dd')
+                  const exportCourseIds = selectedCourse === 'all' ? availableCourses.map(c => c.firestoreId) : [selectedCourse]
+                  const dayRows = (attendances || []).filter(a => exportCourseIds.includes(a.courseId) && a.date === dayStr)
+                  const headers = ["Alumno","Curso","Materia","Fecha","Presente"]
+                  const rows = dayRows.map(a => {
+                    const st = students?.find(s => s.firestoreId === a.studentId)
+                    const cr = courses?.find(c => c.firestoreId === a.courseId)
+                    return [
+                      st ? `${st.nombre} ${st.apellido}` : a.studentId,
+                      cr ? `${cr.nombre} - ${cr.division}` : a.courseId,
+                      a.subject,
+                      a.date,
+                      a.present ? 'Sí' : 'No'
+                    ]
+                  })
+                  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+                  const wb = XLSX.utils.book_new()
+                  XLSX.utils.book_append_sheet(wb, ws, 'Diario')
+                  XLSX.writeFile(wb, `Asistencias_${dayStr}.xlsx`)
+                }}
+                className="btn-responsive"
+              >
+                <span className="btn-text-sm">Exportar XLSX (hoy)</span>
+                <span className="sm:hidden">XLSX</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  const dayStr = format(new Date(), 'yyyy-MM-dd')
+                  const exportCourseIds = selectedCourse === 'all' ? availableCourses.map(c => c.firestoreId) : [selectedCourse]
+                  const dayRows = (attendances || []).filter(a => exportCourseIds.includes(a.courseId) && a.date === dayStr)
+                  const headers = ["Alumno","Curso","Materia","Fecha","Presente"] as const
+                  const body = dayRows.map(a => {
+                    const st = students?.find(s => s.firestoreId === a.studentId)
+                    const cr = courses?.find(c => c.firestoreId === a.courseId)
+                    return [
+                      st ? `${st.nombre} ${st.apellido}` : a.studentId,
+                      cr ? `${cr.nombre} - ${cr.division}` : a.courseId,
+                      a.subject,
+                      a.date,
+                      a.present ? 'Sí' : 'No'
+                    ]
+                  })
+                  const doc = new jsPDF()
+                  doc.setFontSize(14)
+                  doc.text(`Asistencias ${dayStr}`, 14, 18)
+                  autoTable(doc, { head: [headers as unknown as string[]], body, startY: 24 })
+                  doc.save(`Asistencias_${dayStr}.pdf`)
+                }}
+                className="btn-responsive"
+              >
+                <span className="btn-text-sm">Exportar PDF (hoy)</span>
+                <span className="sm:hidden">PDF</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {/* Controles de navegación */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-4 justify-center sm:justify-start">
+              <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="btn-responsive">
+                <ChevronLeft className="h-4 w-4 shrink-0" />
               </Button>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 min-w-0 text-center sm:text-left">
                 {format(currentDate, 'MMMM yyyy', { locale: es })}
               </h2>
-              <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                <ChevronRight className="h-4 w-4" />
+              <Button variant="outline" size="sm" onClick={goToNextMonth} className="btn-responsive">
+                <ChevronRight className="h-4 w-4 shrink-0" />
               </Button>
             </div>
 
             {/* Selector de curso */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Curso:</span>
+            <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 min-w-0">
+              <span className="text-sm text-gray-600 shrink-0 text-center xs:text-left">Curso:</span>
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full xs:w-48 min-w-0">
                   <SelectValue placeholder="Todos los cursos" />
                 </SelectTrigger>
                 <SelectContent>

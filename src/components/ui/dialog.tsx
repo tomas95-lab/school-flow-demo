@@ -60,9 +60,9 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 w-full translate-x-[-50%] translate-y-[-50%] rounded-xl border bg-background shadow-xl duration-200",
+          "fixed top-1/2 left-1/2 z-50 w-[95vw] translate-x-[-50%] translate-y-[-50%] rounded-xl border bg-background shadow-xl duration-200",
           small ? "max-w-md" : "max-w-4xl",
-          "max-h-[90vh] overflow-y-auto p-4",
+          "max-h-[90vh] overflow-y-auto p-4 sm:p-6",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className

@@ -78,11 +78,11 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex w-full h-16 shrink-0 items-center gap-2 border-b px-4 bg-white z-50">
+        <header className="sticky top-0 flex w-full h-16 shrink-0 items-center gap-2 border-b px-3 sm:px-4 bg-white z-50 shadow-sm">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex items-center justify-between w-full">
-            <Breadcrumb>
+          <div className="flex items-center justify-between w-full min-w-0">
+            <Breadcrumb className="hidden sm:block">
               <BreadcrumbList>
                 {urlParts[0] !== 'app' && (
                   <>
@@ -116,9 +116,9 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            <div className="flex items-center gap-3 ml-4">
-              <Badge>
-                {user?.role === 'admin'? 'Administrador'
+            <div className="flex items-center gap-2 sm:gap-3 ml-2 sm:ml-4">
+              <Badge className="text-xs px-2 py-1">
+                {user?.role === 'admin'? 'Admin'
                   : user?.role === 'docente'
                   ? 'Docente'
                   : user?.role === 'alumno'
@@ -135,16 +135,16 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                     navigate('/login')
                   }
                 }}
-                className="gap-2"
+                className="gap-1 sm:gap-2 px-2 sm:px-3"
                 aria-label="Cerrar sesión"
               >
-                <LogOut className="h-4 w-4" />
-                Logout
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-4">
+        <div className="flex flex-1 flex-col gap-4 p-3 sm:p-4 pt-4">
           {children}
         </div>
       </SidebarInset>

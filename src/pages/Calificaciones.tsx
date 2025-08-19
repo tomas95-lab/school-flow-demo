@@ -149,42 +149,43 @@ export default function Calificaciones() {
       <div className="p-4 sm:p-6 md:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                  <BookOpen className="h-8 w-8 text-white" />
+                  <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-2">
                     Panel de Calificaciones
                   </h1>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="secondary" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                       <RoleIcon className="h-3 w-3 mr-1" />
                       {user?.role === "admin" && "Administrador"}
                       {user?.role === "docente" && "Docente"}
                       {user?.role === "alumno" && "Estudiante"}
                     </Badge>
-                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">EduNova</span>
+                    <div className="h-1 w-1 bg-gray-400 rounded-full hidden sm:block"></div>
+                    <span className="text-xs sm:text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-lg max-w-2xl">
+              <p className="text-gray-600 text-sm sm:text-base lg:text-lg max-w-2xl">
                 {getRoleMessage(user?.role)}
               </p>
             </div>
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap max-w-full overflow-hidden">
               {canRegisterGrades && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={() => setActiveView("register")}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 shrink-0 min-w-0"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Registrar Calificaciones
+                      <Plus className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="hidden sm:inline">Registrar Calificaciones</span>
+                      <span className="sm:hidden">Registrar</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -198,7 +199,7 @@ export default function Calificaciones() {
 
         {/* Navegación por tabs mejorada */}
         <div className="mb-8">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 max-w-full overflow-hidden">
             {availableTabs.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeView === tab.id;
@@ -209,14 +210,14 @@ export default function Calificaciones() {
                     <Button
                       variant={isActive ? "default" : "outline"}
                       onClick={() => setActiveView(tab.id)}
-                      className={`flex items-center gap-2 transition-all duration-300 ${
+                      className={`flex items-center gap-2 transition-all duration-300 shrink-0 min-w-0 ${
                         isActive 
                           ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg' 
                           : 'hover:bg-gray-50 hover:shadow-md'
                       }`}
                     >
-                      <TabIcon className="h-4 w-4" />
-                      {tab.label}
+                      <TabIcon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{tab.label}</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

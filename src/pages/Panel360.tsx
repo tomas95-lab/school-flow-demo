@@ -164,28 +164,50 @@ export default function Panel360() {
 						<CardDescription>Busca un alumno o curso y accede a su estado 360</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-							<div className="flex-1">
+						<div className="flex flex-col gap-4 max-w-full overflow-hidden">
+							<div className="flex-1 min-w-0">
 								<label className="text-sm text-gray-700">Buscar</label>
 								<div className="relative">
-									<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-									<Input className="pl-9" placeholder={mode === 'alumno' ? 'Nombre del alumno' : 'Nombre del curso'} value={query} onChange={e => setQuery(e.target.value)} />
+									<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 shrink-0" />
+									<Input className="pl-9 w-full" placeholder={mode === 'alumno' ? 'Nombre del alumno' : 'Nombre del curso'} value={query} onChange={e => setQuery(e.target.value)} />
 								</div>
 								{(query.length > 1) && (
 									<div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
 										{(mode === 'alumno' ? filteredStudents : filteredCourses).map(item => (
-											<Button key={(item as any).firestoreId} variant={selectedId === (item as any).firestoreId ? 'default' : 'outline'} size="sm" onClick={() => setSelectedId((item as any).firestoreId)}>
+											<Button 
+												key={(item as any).firestoreId} 
+												variant={selectedId === (item as any).firestoreId ? 'default' : 'outline'} 
+												size="sm" 
+												onClick={() => setSelectedId((item as any).firestoreId)}
+												className="btn-responsive w-full text-left justify-start"
+											>
 												{mode === 'alumno' ? `${(item as Student).nombre} ${(item as Student).apellido}` : `${(item as Course).nombre} ${(item as Course).division || ''}`}
 											</Button>
 										))}
 									</div>
 								)}
 							</div>
-							<div className="flex gap-2">
-								<Button variant={mode === 'alumno' ? 'default' : 'outline'} onClick={() => { setMode('alumno'); setSelectedId("") }}><User className="w-4 h-4 mr-1" /> Alumno</Button>
-								<Button variant={mode === 'curso' ? 'default' : 'outline'} onClick={() => { setMode('curso'); setSelectedId("") }}><Users className="w-4 h-4 mr-1" /> Curso</Button>
+							<div className="btn-container">
+								<Button 
+									variant={mode === 'alumno' ? 'default' : 'outline'} 
+									onClick={() => { setMode('alumno'); setSelectedId("") }}
+									className="btn-responsive flex-1 xs:flex-none"
+								>
+									<User className="w-4 h-4 mr-1 shrink-0" /> 
+									<span className="btn-text-xs">Alumno</span>
+									<span className="xs:hidden">👤</span>
+								</Button>
+								<Button 
+									variant={mode === 'curso' ? 'default' : 'outline'} 
+									onClick={() => { setMode('curso'); setSelectedId("") }}
+									className="btn-responsive flex-1 xs:flex-none"
+								>
+									<Users className="w-4 h-4 mr-1 shrink-0" /> 
+									<span className="btn-text-xs">Curso</span>
+									<span className="xs:hidden">👥</span>
+								</Button>
 							</div>
-							<div className="ml-auto flex gap-2">
+							<div className="flex gap-2">
 								{context && (
 									<Button variant="outline" onClick={exportPDF}><Download className="w-4 h-4 mr-1" /> Exportar PDF</Button>
 								)}

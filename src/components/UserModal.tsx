@@ -350,7 +350,7 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
       <div className="space-y-4 ">
         <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Configuración</h4>
         
-        <div className="space-y-4 flex w-full gap-4">
+        <div className="space-y-4 flex flex-col sm:flex-row w-full gap-4">
           <div className="space-y-2 w-full">
             <Label htmlFor="role" className="text-sm font-medium text-gray-700">
               Rol *
@@ -462,13 +462,13 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
   );
 
   const footerContent = (
-    <div className="flex gap-3 pt-4 border-t border-gray-200 w-full">
+    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 w-full">
       <Button
         type="button"
         variant="outline"
         onClick={() => handleOpenChange(false)}
         disabled={loading}
-        className="flex-1"
+        className="flex-1 order-2 sm:order-1"
       >
         Cancelar
       </Button>
@@ -485,16 +485,17 @@ export function UserModal({ mode, user, onUserCreated, onUserUpdated, open: exte
             }
           }}
           disabled={loading}
-          className="flex-1"
+          className="flex-1 order-3 sm:order-2"
         >
-          Enviar restablecimiento de contraseña
+          <span className="hidden sm:inline">Enviar restablecimiento de contraseña</span>
+          <span className="sm:hidden">Restablecer contraseña</span>
         </Button>
       )}
       <Button
         type="submit"
         form="user-form"
         disabled={loading}
-        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium order-1 sm:order-3"
       >
         {loading ? (
           <>

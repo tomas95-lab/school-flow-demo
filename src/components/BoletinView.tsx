@@ -175,23 +175,26 @@ export function BoletinView({ row, trigger, showDownloadButton = false, onDownlo
         <div className="h-full overflow-y-auto">
           {/* Header con estado del boletín */}
           <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg ${status.color}`}>
+            <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 max-w-full overflow-hidden">
+              <div className="flex items-center space-x-3 min-w-0 flex-1">
+                <div className={`p-2 rounded-lg ${status.color} shrink-0`}>
                   <Icon className="w-4 h-4" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900">Estado del Boletín</p>
-                  <p className="text-sm text-gray-700 font-medium">{status.description}</p>
+                  <p className="text-sm text-gray-700 font-medium break-words">{status.description}</p>
                 </div>
               </div>
               {policy?.enabled && (
-                <div className="flex items-center gap-2">
-                  <div className="text-xs text-gray-600">
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 shrink-0">
+                  <div className="text-xs text-gray-600 text-center xs:text-left">
                     Firmas: {signatures.length}{policy.requiredRoles?.length ? ` / ${policy.requiredRoles.length}` : ''}
                   </div>
                   {canSign && (
-                    <Button size="sm" onClick={handleSign}>Firmar</Button>
+                    <Button size="sm" onClick={handleSign} className="btn-responsive w-full xs:w-auto">
+                      <span className="btn-text-xs">Firmar</span>
+                      <span className="xs:hidden">✓</span>
+                    </Button>
                   )}
                 </div>
               )}

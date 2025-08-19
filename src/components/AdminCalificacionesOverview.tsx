@@ -43,7 +43,7 @@ export default function AdminCalificacionesOverview() {
 
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <StatsCard
             label="Promedio de calificaciones"
             value={averageGrade}
@@ -82,13 +82,18 @@ export default function AdminCalificacionesOverview() {
             subtitle="Materias con promedio menor a 6"
             />
         </div>
-        <div className="m-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">
-                    Todos los Cursos ({courses.length})
-                </h2>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => {
+        <div className="m-4 sm:m-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                        Todos los Cursos ({courses.length})
+                    </h2>
+                    <p className="text-gray-600 mt-1">
+                        Administra cursos, revisa calificaciones y gestiona información académica
+                    </p>
+                </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+              <Button size="sm" variant="outline" className="shrink-0 min-w-0" onClick={() => {
                 const headers = ["Curso", "% Aprobados", "% Reprobados", "Promedio"]
                 const rows = courses.map(c => {
                   const notas = calificaciones.filter(x => x.courseId === c.firestoreId).map(x => x.valor || 0)
@@ -102,19 +107,18 @@ export default function AdminCalificacionesOverview() {
                 XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
                 XLSX.writeFile(wb, `Resumen_Calificaciones_${new Date().toISOString().slice(0,10)}.xlsx`)
               }}>
-                <Download className="h-4 w-4 mr-2" /> Exportar resumen
+                <Download className="h-4 w-4 mr-2 shrink-0" /> 
+                <span className="hidden sm:inline">Exportar resumen</span>
+                <span className="sm:hidden">Exportar</span>
               </Button>
-              <div className="text-sm text-gray-600 hidden sm:flex items-center gap-2">
+              <div className="text-sm text-gray-600 hidden lg:flex items-center gap-2">
                 <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                 <span>Todos los cursos activos</span>
               </div>
             </div>
             </div>
-            <p className="text-gray-600 mt-1">
-            Administra cursos, revisa calificaciones y gestiona información académica
-            </p>
         </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {courses.map((course) => (
                     <CourseCard
                         key={course.firestoreId}

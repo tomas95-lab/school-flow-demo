@@ -308,14 +308,15 @@ export default function DetalleAsistencia() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full overflow-hidden">
               {user?.role === "docente" && (
                 <Button 
                   onClick={() => setShowRegisterModal(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-indigo-600 hover:bg-indigo-700 shrink-0 min-w-0"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Registrar Asistencias
+                  <Plus className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="hidden sm:inline">Registrar Asistencias</span>
+                  <span className="sm:hidden">Registrar</span>
                 </Button>
               )}
               <Button 
@@ -323,28 +324,12 @@ export default function DetalleAsistencia() {
                 size="sm"
                 onClick={exportToCSV}
                 disabled={tableData.length === 0}
+                className="shrink-0 min-w-0"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
+                <Download className="h-4 w-4 mr-2 shrink-0" />
+                <span className="hidden xs:inline">Exportar CSV</span>
+                <span className="xs:hidden">CSV</span>
               </Button>
-              <div className="flex border rounded-md">
-                <Button
-                  variant={viewMode === "table" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("table")}
-                  className="rounded-r-none"
-                >
-                  <Table className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-l-none"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
           </div>
 
@@ -466,11 +451,11 @@ export default function DetalleAsistencia() {
             </div>
             
             {/* Filtros integrados */}
-            <div className="flex items-end gap-4">
-              <div>
+            <div className="flex flex-wrap items-end gap-4 max-w-full overflow-hidden">
+              <div className="min-w-0 flex-1 sm:flex-none sm:max-w-xs">
                 <Label htmlFor="subject" className="text-sm font-medium text-gray-700 mb-1">Materia</Label>
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Todas las materias" />
                   </SelectTrigger>
                   <SelectContent>
@@ -484,7 +469,7 @@ export default function DetalleAsistencia() {
                 </Select>
               </div>
               
-              <div>
+              <div className="min-w-0 flex-1 sm:flex-none sm:max-w-xs">
                 <Label htmlFor="date" className="text-sm font-medium text-gray-700 mb-1 block">Fecha</Label>
                 <Input
                   id="date"
@@ -492,13 +477,14 @@ export default function DetalleAsistencia() {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   placeholder="Todas las fechas"
+                  className="w-full"
                 />
               </div>
               
-              <div>
+              <div className="min-w-0 flex-1 sm:flex-none sm:max-w-xs">
                 <Label htmlFor="status" className="text-sm font-medium text-gray-700 mb-1 block">Estado</Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -507,6 +493,32 @@ export default function DetalleAsistencia() {
                     <SelectItem value="absent">Ausentes</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="shrink-0">
+                <Label className="text-sm font-medium text-gray-700 mb-1 block">Vista</Label>
+                <div className="flex border rounded-md">
+                  <Button
+                    variant={viewMode === "table" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("table")}
+                    className="rounded-r-none px-2 xs:px-3"
+                    aria-label="Vista Tabla"
+                  >
+                    <Table className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Tabla</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="rounded-l-none px-2 xs:px-3"
+                    aria-label="Vista Lista"
+                  >
+                    <List className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Lista</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>

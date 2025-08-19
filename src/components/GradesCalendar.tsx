@@ -296,7 +296,7 @@ export default function GradesCalendar() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
       {/* Header del calendario */}
 
 
@@ -326,53 +326,64 @@ export default function GradesCalendar() {
 
 
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-indigo-600" />
-              Calendario de Calificaciones
-              {user?.role === "docente" && (
-                <Badge variant="secondary" className="ml-2">
-                  Mis Cursos
-                </Badge>
-              )}
-              {user?.role === "alumno" && (
-                <Badge variant="secondary" className="ml-2">
-                  Mi Curso
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday}>
-                Hoy
-              </Button>
+          <div className="flex flex-col gap-4 max-w-full overflow-hidden">
+            <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4">
+              <CardTitle className="flex flex-col xs:flex-row xs:items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-indigo-600 shrink-0" />
+                  <span className="break-words">Calendario de Calificaciones</span>
+                </div>
+                <div className="flex gap-2">
+                  {user?.role === "docente" && (
+                    <Badge variant="secondary" className="shrink-0">
+                      Mis Cursos
+                    </Badge>
+                  )}
+                  {user?.role === "alumno" && (
+                    <Badge variant="secondary" className="shrink-0">
+                      Mi Curso
+                    </Badge>
+                  )}
+                </div>
+              </CardTitle>
+              <div className="shrink-0">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={goToToday}
+                  className="btn-responsive w-full xs:w-auto"
+                >
+                  Hoy
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {/* Controles de navegación */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
+          <div className="flex flex-col gap-4 mb-6 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-4 justify-center">
+              <Button variant="outline" size="sm" onClick={goToPreviousMonth} className="btn-responsive">
+                <ChevronLeft className="h-4 w-4 shrink-0" />
               </Button>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 min-w-0 text-center">
                 {format(currentDate, 'MMMM yyyy', { locale: es })}
               </h2>
-              <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                <ChevronRight className="h-4 w-4" />
+              <Button variant="outline" size="sm" onClick={goToNextMonth} className="btn-responsive">
+                <ChevronRight className="h-4 w-4 shrink-0" />
               </Button>
             </div>
             
             {/* Filtros */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 max-w-full overflow-hidden">
               {/* Selector de curso */}
               {availableCourses.length > 1 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Curso:</span>
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 min-w-0 flex-1">
+                  <span className="text-sm text-gray-600 shrink-0 text-center xs:text-left">Curso:</span>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full min-w-0">
                       <SelectValue placeholder="Todos los cursos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -389,10 +400,10 @@ export default function GradesCalendar() {
               
               {/* Selector de materia */}
               {availableSubjects.length > 1 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Materia:</span>
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 min-w-0 flex-1">
+                  <span className="text-sm text-gray-600 shrink-0 text-center xs:text-left">Materia:</span>
                   <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full min-w-0">
                       <SelectValue placeholder="Todas las materias" />
                     </SelectTrigger>
                     <SelectContent>
@@ -541,27 +552,29 @@ export default function GradesCalendar() {
             </div>
           </div>
 
-          {/* Leyenda */}
-          <div className="mt-4 flex items-center justify-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-50 border border-green-200 rounded"></div>
-              <span>Promedio ≥ 8</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
-              <span>Promedio 7-7.9</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded"></div>
-              <span>Promedio 6-6.9</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
-              <span>Promedio &lt; 6</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-white border border-gray-200 rounded"></div>
-              <span>Sin calificaciones</span>
+          {/* Leyenda responsive */}
+          <div className="mt-4 max-w-full overflow-hidden">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:gap-6 text-sm">
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-4 h-4 bg-green-50 border border-green-200 rounded shrink-0"></div>
+                <span className="whitespace-nowrap">Promedio ≥ 8</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded shrink-0"></div>
+                <span className="whitespace-nowrap">Promedio 7-7.9</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded shrink-0"></div>
+                <span className="whitespace-nowrap">Promedio 6-6.9</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-4 h-4 bg-red-50 border border-red-200 rounded shrink-0"></div>
+                <span className="whitespace-nowrap">Promedio &lt; 6</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-4 h-4 bg-white border border-gray-200 rounded shrink-0"></div>
+                <span className="whitespace-nowrap">Sin calificaciones</span>
+              </div>
             </div>
           </div>
         </CardContent>

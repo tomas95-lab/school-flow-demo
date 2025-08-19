@@ -4,6 +4,7 @@ import { AuthContext } from "@/context/AuthContext"
 import { usePermission } from "@/hooks/usePermission"
 import { NavLink, useLocation } from "react-router-dom"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   LayoutDashboard,
   CalendarCheck2,
@@ -30,6 +31,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 // This is sample data.
@@ -97,6 +99,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   void useContext(AuthContext)
   const { can } = usePermission()
   const location = useLocation()
+  const isMobile = useIsMobile()
+  const { setOpenMobile } = useSidebar()
 
   const iconMap: Record<string, React.ElementType> = {
     "Dashboard": LayoutDashboard,
@@ -118,6 +122,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const { user } = useContext(AuthContext)
   const isAlumno = user?.role === 'alumno'
+
+  // Función para cerrar el sidebar en móviles cuando se hace clic en un enlace
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
 
   // Filtrar elementos del menú según el rol del usuario
   const filteredNavMain = useMemo(() => data.navMain.map(group => {
@@ -179,7 +190,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <SidebarMenuButton asChild isActive={isActive} aria-label={menuItem.title}>
-                            <NavLink to={menuItem.url} className="flex items-center gap-2">
+                            <NavLink 
+                              to={menuItem.url} 
+                              className="flex items-center gap-2"
+                              onClick={handleNavClick}
+                            >
                               <Icon className="h-4 w-4" />
                               <span>{menuItem.title}</span>
                             </NavLink>

@@ -1,57 +1,108 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
+
 import { where } from "firebase/firestore";
-import { useTeacherCourses } from "@/hooks/useTeacherCourses";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
-import { Bell, Lock, AlertTriangle, Award, TrendingUp, Users, MessageSquare } from "lucide-react";
+import { Bell, Plus, AlertTriangle, Award, TrendingUp, Users, MessageSquare, BarChart3, Brain, Settings, FileText, Cog } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import AdminAlertasOverview from "@/components/AdminAlertasOverview";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
-import TeacherAlertasOverview from "@/components/TeacherAlertasOverview";
-import AlumnoAlertasOverview from "@/components/AlumnoAlertasOverview";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AccessDenied } from "@/components/AccessDenied";
+import AlertDashboard from "@/components/AlertDashboard";
+import AlertRulesManager from "@/components/AlertRulesManager";
+import AlertTemplatesManager from "@/components/AlertTemplatesManager";
+import AlertSystemSettings from "@/components/AlertSystemSettings";
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 import { BarChartComponent, LineChartComponent, PieChartComponent } from "@/components/charts";
+
+// Tipos para las pestañas
+interface TabItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  description: string;
+  requiresPermission?: boolean;
+  permissionCheck?: (role?: string) => boolean;
+}
 
 export default function Alertas() {
   const { user, loading: userLoading } = useContext(AuthContext);
   const roleScope = user?.role;
-  const { teacherCourses } = useTeacherCourses(user?.teacherId);
-  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
+  const [activeView, setActiveView] = useState("overview");
 
-  const { loading: coursesLoading } = useFirestoreCollection("courses", {
-    constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
-    dependencies: [roleScope, user?.teacherId]
+  // Obtener alertas según el rol
+  const { data: alerts, loading: alertsLoading } = useFirestoreCollection("alerts", {
+    constraints: roleScope === "alumno" ? [
+      where("recipients", "array-contains", "all")
+    ] : [],
+    dependencies: [roleScope]
   });
-  const { data: alerts } = useFirestoreCollection("alerts", {
-    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('courseId','in', teacherCourseIds.slice(0,10))] : roleScope === 'alumno' ? [where('studentId','==', user?.studentId || '')] : [],
-    dependencies: [roleScope, teacherCourseIds.join(','), user?.studentId]
-  });
-  const { data: students } = useFirestoreCollection("students", {
-    constraints: roleScope === 'docente' && teacherCourseIds.length > 0 ? [where('cursoId','in', teacherCourseIds.slice(0,10))] : [],
-    dependencies: [roleScope, teacherCourseIds.join(',')]
-  });
-  const { data: courses } = useFirestoreCollection("courses", {
-    constraints: roleScope === 'docente' && user?.teacherId ? [where('teacherId','==', user.teacherId)] : [],
-    dependencies: [roleScope, user?.teacherId]
-  });
+
+  // Obtener estudiantes y cursos para generar charts
+  const { data: students } = useFirestoreCollection("students");
+  const { data: courses } = useFirestoreCollection("courses");
+
+  // Configuración de pestañas
+  const tabs: TabItem[] = [
+    {
+      id: "overview",
+      label: "Dashboard",
+      icon: Bell,
+      description: "Vista general de alertas y métricas"
+    },
+    {
+      id: "rules",
+      label: "Reglas",
+      icon: Settings,
+      description: "Configurar reglas automáticas de alertas",
+      requiresPermission: true,
+      permissionCheck: (role) => role === "admin"
+    },
+    {
+      id: "templates",
+      label: "Plantillas",
+      icon: FileText,
+      description: "Gestionar plantillas de alertas",
+      requiresPermission: true,
+      permissionCheck: (role) => role === "admin" || role === "docente"
+    },
+    {
+      id: "charts",
+      label: "Analytics",
+      icon: BarChart3,
+      description: "Análisis y estadísticas avanzadas"
+    },
+    {
+      id: "observaciones",
+      label: "IA",
+      icon: Brain,
+      description: "Observaciones automáticas con IA"
+    },
+    {
+      id: "config",
+      label: "Configuración",
+      icon: Cog,
+      description: "Configuración global del sistema",
+      requiresPermission: true,
+      permissionCheck: (role) => role === "admin"
+    }
+  ];
 
   // Función para obtener el mensaje según el rol
   const getRoleMessage = (role: string | undefined) => {
     switch (role) {
       case "admin":
-        return "Gestiona y supervisa todas las alertas del sistema educativo, notificaciones y comunicaciones importantes.";
+        return "Gestiona y supervisa todas las alertas del sistema educativo de EduNova.";
       case "docente":
-        return "Revisa alertas relacionadas con tus cursos y estudiantes asignados.";
+        return "Administra las alertas de tus materias y cursos asignados.";
       case "alumno":
-        return "Consulta tus notificaciones personales y mantente informado sobre tu rendimiento académico.";
+        return "Mantente informado sobre tus alertas académicas y notificaciones importantes.";
       default:
-        return "Panel de gestión de alertas y notificaciones del sistema educativo.";
+        return "Panel de gestión de alertas de EduNova.";
     }
   };
 
@@ -70,46 +121,16 @@ export default function Alertas() {
   };
 
   // Verificar permisos de acceso
-  const canAccessAlertas = user?.role === "admin" || user?.role === "docente" || user?.role === "alumno";
+  const canAccessAlerts = Boolean(user);
+  const canCreateAlerts = user?.role === "admin" || user?.role === "docente";
 
-  // Mostrar spinner si el usuario está cargando o si los cursos están cargando
-  if (userLoading || coursesLoading) {
-    return (
-      <LoadingState 
-        text="Cargando panel de alertas..."
-        timeout={8000}
-        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
-      />
-    );
-  }
-
-  // Si no tiene permisos de acceso
-  if (!canAccessAlertas) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="p-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="p-4 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Acceso Restringido
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  No tienes permisos para acceder al módulo de alertas.
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Contacta al administrador del sistema si crees que esto es un error.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  // Filtrar pestañas según permisos
+  const availableTabs = tabs.filter(tab => {
+    if (tab.requiresPermission && tab.permissionCheck) {
+      return tab.permissionCheck(user?.role);
+    }
+    return true;
+  });
 
   // Generar datos para charts de alertas
   const generateAlertChartData = () => {
@@ -163,248 +184,267 @@ export default function Alertas() {
 
   const chartData = generateAlertChartData();
 
+  // Renderizar contenido de la vista activa
+  const renderActiveView = () => {
+    switch (activeView) {
+      case "overview":
+        return <AlertDashboard className="mt-0" />;
+      case "rules":
+        return <AlertRulesManager className="mt-0" />;
+      case "templates":
+        return <AlertTemplatesManager className="mt-0" />;
+      case "charts":
+        return (
+          <div className="space-y-6">
+            {chartData ? (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Análisis de Alertas</h2>
+                  <p className="text-gray-600 text-sm sm:text-base">Visualizaciones y estadísticas de las alertas del sistema</p>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                  {/* Chart de Alertas por Prioridad */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 w-full min-w-0">
+                    <BarChartComponent
+                      data={chartData.alertsByPriority}
+                      xKey="prioridad"
+                      yKey="cantidad"
+                      title="Alertas por Prioridad"
+                      description="Distribución de alertas según su nivel de urgencia"
+                      className="h-64 sm:h-80 w-full"
+                    />
+                  </div>
+
+                  {/* Chart de Alertas por Mes */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 w-full min-w-0">
+                    <LineChartComponent
+                      data={chartData.alertsByMonth}
+                      xKey="mes"
+                      yKey="alertas"
+                      title="Tendencia de Alertas"
+                      description="Número de alertas generadas por mes"
+                      className="h-64 sm:h-80 w-full"
+                      color="#ef4444"
+                    />
+                  </div>
+
+                  {/* Chart de Distribución de Tipos de Alerta */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 w-full min-w-0">
+                    <PieChartComponent
+                      data={chartData.alertTypeDistribution}
+                      dataKey="cantidad"
+                      nameKey="tipo"
+                      title="Distribución por Tipo"
+                      description="Tipos de alertas en el sistema"
+                      className="h-64 sm:h-80 w-full"
+                      colors={["#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6"]}
+                    />
+                  </div>
+
+                  {/* Estadísticas Generales de Alertas */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 w-full min-w-0">
+                    <div className="h-64 sm:h-80 flex items-center justify-center">
+                      <div className="text-center w-full max-w-full">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 break-words">Estadísticas Generales</h3>
+                        <div className="grid grid-cols-2 gap-3 sm:gap-6">
+                          <div className="text-center">
+                            <div className="text-xl sm:text-3xl font-bold text-red-600">
+                              {alerts?.length || 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600">Total Alertas</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xl sm:text-3xl font-bold text-orange-600">
+                              {alerts?.filter(a => a.priority === 'critical').length || 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600">Críticas</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xl sm:text-3xl font-bold text-blue-600">
+                              {alerts?.filter(a => a.status === 'pending').length || 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600">Pendientes</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xl sm:text-3xl font-bold text-green-600">
+                              {alerts?.filter(a => a.status === 'resolved').length || 0}
+                            </div>
+                            <div className="text-xs sm:text-sm text-gray-600">Resueltas</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-8 w-full">
+                <div className="text-center max-w-md mx-auto">
+                  <div className="text-gray-400 mb-4">
+                    <BarChart3 className="w-12 h-12 sm:w-16 sm:h-16 mx-auto" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 break-words">Sin datos disponibles</h3>
+                  <p className="text-gray-600 mb-4 text-sm sm:text-base">Los gráficos aparecerán cuando haya alertas en el sistema</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case "observaciones":
+        return (
+          <ObservacionesAutomaticasPanel 
+            role={user?.role as "admin" | "docente" | "alumno"} 
+            context="general" 
+            className="mb-6" 
+          />
+        );
+      case "config":
+        return <AlertSystemSettings className="mt-0" />;
+      default:
+        return null;
+    }
+  };
+
+  if (userLoading || alertsLoading) {
+    return (
+      <LoadingState 
+        text="Cargando panel de alertas..."
+        timeout={8000}
+        timeoutMessage="La carga está tomando más tiempo del esperado. Verifica tu conexión a internet."
+      />
+    );
+  }
+
+  // Si no tiene permisos de acceso
+  if (!canAccessAlerts) {
+    return <AccessDenied message="No tienes permisos para acceder al módulo de alertas." />
+  }
+
   const RoleIcon = getRoleIcon(user?.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-lg">
-                  <Bell className="h-8 w-8 text-white" />
+                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-2">
                     Panel de Alertas
                   </h1>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="secondary" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                       <RoleIcon className="h-3 w-3 mr-1" />
                       {user?.role === "admin" && "Administrador"}
                       {user?.role === "docente" && "Docente"}
                       {user?.role === "alumno" && "Estudiante"}
                     </Badge>
-                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">EduNova</span>
+                    <div className="h-1 w-1 bg-gray-400 rounded-full hidden sm:block"></div>
+                    <span className="text-xs sm:text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-lg max-w-2xl">
+              <p className="text-gray-600 text-sm sm:text-base lg:text-lg max-w-2xl">
                 {getRoleMessage(user?.role)}
               </p>
             </div>
+            <div className="flex items-center gap-4 flex-wrap max-w-full overflow-hidden">
+              {canCreateAlerts && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 shrink-0 min-w-0"
+                    >
+                      <Plus className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="hidden sm:inline">Nueva Alerta</span>
+                      <span className="sm:hidden">Nueva</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Crear nueva alerta
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Contenido principal con animaciones */}
-        <div className="space-y-6 animate-in fade-in-50 duration-500">
-          {/* Vista según rol */}
-          <div className="animate-in slide-in-from-bottom-4 duration-500">
-            {user?.role === "admin" ? (
-              <AdminAlertasOverview />
-            ) : user?.role === "docente" ? (
-              <TeacherAlertasOverview />
-            ) : (
-              <AlumnoAlertasOverview />
-            )}
-          </div>
-
-          {/* Mis Alertas (resolución rápida y notas) */}
-          <div className="animate-in slide-in-from-bottom-4 duration-500">
-            {(() => {
-              const myAlerts = (alerts || []).filter(a => a.targetUserId === user?.studentId || a.createdBy === user?.uid || a.recipients?.includes('all'));
-              if (myAlerts.length === 0) return null;
+        {/* Navegación por tabs mejorada */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-3 max-w-full overflow-hidden">
+            {availableTabs.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = activeView === tab.id;
+              
               return (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-gray-900">Mis Alertas Rápidas</h2>
-                    <Badge variant="outline" className="bg-red-50 text-red-700">{myAlerts.length}</Badge>
-                  </div>
-                  <div className="space-y-4">
-                    {myAlerts.slice(0,6).map((a) => (
-                      <div key={a.firestoreId || a.id} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">{a.title}</span>
-                              <Badge variant="outline">{a.priority}</Badge>
-                              <Badge variant="outline">{a.type}</Badge>
-                            </div>
-                            <div className="text-sm text-gray-600 mt-1">{a.description}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {a.status !== 'resolved' && (
-                              <Button size="sm" variant="outline" onClick={async () => {
-                                try { await updateDoc(doc(db,'alerts', a.firestoreId || a.id), { status: 'resolved', isActive: false, resolvedAt: new Date() }); } catch {}
-                              }}>Marcar resuelta</Button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Input placeholder="Añadir nota interna..." onKeyDown={async (e) => {
-                            const target = e.target as HTMLInputElement;
-                            if (e.key === 'Enter' && target.value.trim()) {
-                              const text = target.value.trim();
-                              try { await updateDoc(doc(db,'alerts', a.firestoreId || a.id), { internalNotes: arrayUnion({ text, createdAt: new Date() }) }); target.value=''; } catch {}
-                            }
-                          }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <Tooltip key={tab.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isActive ? "default" : "outline"}
+                      onClick={() => setActiveView(tab.id)}
+                      className={`flex items-center gap-2 transition-all duration-300 shrink-0 min-w-0 ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg' 
+                          : 'hover:bg-gray-50 hover:shadow-md'
+                      }`}
+                    >
+                      <TabIcon className="h-4 w-4 shrink-0" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">{tab.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {tab.description}
+                  </TooltipContent>
+                </Tooltip>
               );
-            })()}
-          </div>
-
-          {/* Observaciones automáticas */}
-          <div className="animate-in slide-in-from-bottom-4 duration-500">
-            <ObservacionesAutomaticasPanel 
-              role={user?.role as "admin" | "docente" | "alumno"} 
-              context="general" 
-              className="mb-8" 
-            />
+            })}
           </div>
         </div>
 
-        {/* Sección de Charts de Alertas */}
-        {chartData ? (
-          <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Análisis de Alertas</h2>
-              <p className="text-gray-600">Visualizaciones y estadísticas de las alertas del sistema</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {/* Chart de Alertas por Prioridad */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                <BarChartComponent
-                  data={chartData.alertsByPriority}
-                  xKey="prioridad"
-                  yKey="cantidad"
-                  title="Alertas por Prioridad"
-                  description="Distribución de alertas según su nivel de urgencia"
-                  className="h-80"
-                />
-              </div>
-
-              {/* Chart de Alertas por Mes */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                <LineChartComponent
-                  data={chartData.alertsByMonth}
-                  xKey="mes"
-                  yKey="alertas"
-                  title="Tendencia de Alertas"
-                  description="Número de alertas generadas por mes"
-                  className="h-80"
-                  color="#ef4444"
-                />
-              </div>
-
-              {/* Chart de Distribución de Tipos de Alerta */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                <PieChartComponent
-                  data={chartData.alertTypeDistribution}
-                  dataKey="cantidad"
-                  nameKey="tipo"
-                  title="Distribución por Tipo"
-                  description="Tipos de alertas en el sistema"
-                  className="h-80"
-                  colors={["#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6"]}
-                />
-              </div>
-
-              {/* Estadísticas Generales de Alertas */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                <div className="h-80 flex items-center justify-center">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas Generales</h3>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-red-600">
-                          {alerts?.length || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Total Alertas</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-orange-600">
-                          {alerts?.filter(a => a.priority === 'critical').length || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Críticas</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-blue-600">
-                          {alerts?.filter(a => a.status === 'pending').length || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Pendientes</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-green-600">
-                          {alerts?.filter(a => a.status === 'resolved').length || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Resueltas</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-12 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Análisis de Alertas</h2>
-              <p className="text-gray-600">Visualizaciones y estadísticas de las alertas del sistema</p>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
-              <div className="text-center max-w-md mx-auto">
-                <div className="text-gray-400 mb-4">
-                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a10 10 0 100 20 10 10 0 000-20z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin alertas disponibles</h3>
-                <p className="text-gray-600 mb-4">Los charts aparecerán cuando haya alertas en el sistema</p>
-                <p className="text-gray-400 text-sm">Datos cargados desde Firestore</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Contenido principal */}
+        <div className="mb-8">
+          {renderActiveView()}
+        </div>
 
         {/* Footer con información adicional */}
-        <Separator className="my-12" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <Separator className="my-8" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-full overflow-hidden">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Bell className="h-5 w-5 text-red-600" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 shrink-0" />
               Centro de Ayuda
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-4 text-sm sm:text-base">
               ¿Necesitas ayuda con el sistema de alertas? Consulta nuestros recursos.
             </p>
-            <div className="flex gap-3">
-              <button className="text-red-600 hover:text-red-700 font-medium text-sm">
+            <div className="flex flex-col xs:flex-row gap-3">
+              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 justify-start p-0">
                 Guía de alertas
-              </button>
-              <button className="text-red-600 hover:text-red-700 font-medium text-sm">
+              </Button>
+              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 justify-start p-0">
                 Soporte técnico
-              </button>
+              </Button>
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-red-600" />
-              Última Actualización
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 shrink-0" />
+              Estado del Sistema
             </h3>
-            <p className="text-gray-600">
-              Los datos fueron actualizados por última vez hace pocos minutos. 
-              El sistema se sincroniza automáticamente cada 5 minutos.
+            <p className="text-gray-600 text-sm sm:text-base mb-3">
+              Todos los sistemas funcionando correctamente.
             </p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-xs sm:text-sm text-green-600 font-medium">Operativo</span>
+            </div>
           </div>
         </div>
 

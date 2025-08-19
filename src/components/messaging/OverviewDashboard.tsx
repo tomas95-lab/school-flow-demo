@@ -286,9 +286,9 @@ export default function OverviewDashboard() {
   return (
     <div className="space-y-6">
       {/* Header con botón de actualizar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Visión General</h2>
+      <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4 max-w-full overflow-hidden">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl xs:text-2xl font-bold text-gray-900">Visión General</h2>
           <p className="text-gray-600">Resumen de actividad y estadísticas del sistema</p>
         </div>
         <Button
@@ -296,10 +296,11 @@ export default function OverviewDashboard() {
           size="sm"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center gap-2"
+          className="btn-responsive flex items-center gap-2 w-full xs:w-auto"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+          <RefreshCw className={`h-4 w-4 shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="btn-text-xs">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+          <span className="xs:hidden">{isRefreshing ? 'Cargando...' : 'Refresh'}</span>
         </Button>
       </div>
 

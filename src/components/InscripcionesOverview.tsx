@@ -482,38 +482,38 @@ export default function InscripcionesOverview() {
       <div className="p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-6 max-w-full overflow-hidden">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col xs:flex-row xs:items-center gap-4 mb-4">
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg shrink-0">
                   <UserPlus className="h-8 w-8 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                <div className="min-w-0">
+                  <h1 className="text-2xl xs:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 break-words">
                     Gestión de Inscripciones
                   </h1>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="secondary" className="text-sm px-3 py-1 shrink-0">
                       <UserPlus className="h-3 w-3 mr-1" />
                       {user?.role === "admin" && "Administrador"}
                     </Badge>
-                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
+                    <div className="h-1 w-1 bg-gray-400 rounded-full shrink-0"></div>
                     <span className="text-sm text-gray-500">Sistema Educativo</span>
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-lg max-w-2xl">
+              <p className="text-gray-600 text-base lg:text-lg max-w-2xl">
                 Administra y revisa todas las solicitudes de inscripción de estudiantes de manera eficiente.
               </p>
             </div>
-            <div className="flex items-center gap-4">
-
+            <div className="btn-container flex-container-safe">
               <Button 
                 onClick={handleExportarCSV}
-                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                className="btn-responsive bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 w-full lg:w-auto"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
+                <Download className="h-4 w-4 mr-2 shrink-0" />
+                <span className="btn-text-sm">Exportar CSV</span>
+                <span className="sm:hidden">Exportar</span>
               </Button>
             </div>
           </div>
@@ -779,25 +779,25 @@ export default function InscripcionesOverview() {
                          )}
                          
                          {/* Acciones secundarias */}
-                         <div className="flex gap-1">
+                         <div className="btn-container">
                            <Button 
                              size="sm" 
                              variant="ghost"
                              onClick={() => handleVerDetalles(inscripcion)}
-                             className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                             className="btn-responsive text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                              title="Ver detalles"
                            >
-                             <Eye className="h-4 w-4" />
+                             <Eye className="h-4 w-4 shrink-0" />
                            </Button>
                            
                            <Button 
                              size="sm" 
                              variant="ghost"
                              onClick={() => handleEditarInscripcion(inscripcion)}
-                             className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                             className="btn-responsive text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                              title="Editar inscripción"
                            >
-                             <Edit className="h-4 w-4" />
+                             <Edit className="h-4 w-4 shrink-0" />
                            </Button>
                            <Button
                              size="sm"

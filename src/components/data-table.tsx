@@ -265,22 +265,23 @@ export function DataTable<TData, TValue>({
       <div className="rounded-lg border bg-white shadow-sm">
         <div className="p-4 border-b bg-gray-50/50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="relative max-w-sm">
+            <div className="relative w-full sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder={`Buscar ${placeholder}...`}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-9"
+                className="pl-9 w-full"
                 ref={searchInputRef}
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full overflow-hidden">
               {exportable && (
-                <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
+                <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)} className="shrink-0 min-w-0">
                   <Download className="h-4 w-4 mr-1" />
-                  Exportar
+                  <span className="hidden xs:inline">Exportar</span>
+                  <span className="xs:hidden">Export</span>
                 </Button>
               )}
               {hasActiveFilters && (
@@ -288,18 +289,19 @@ export function DataTable<TData, TValue>({
                   variant="ghost"
                   size="sm"
                   onClick={clearAllFilters}
-                  className="text-gray-600 hover:text-gray-900"
+                  className="text-gray-600 hover:text-gray-900 shrink-0 min-w-0"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Limpiar todo
+                  <span className="hidden xs:inline">Limpiar todo</span>
+                  <span className="xs:hidden">Limpiar</span>
                 </Button>
               )}
             </div>
           </div>
 
           {filters.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t">
-              <div className="flex items-center gap-1 text-sm font-medium text-gray-700">
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t max-w-full overflow-hidden">
+              <div className="flex items-center gap-1 text-sm font-medium text-gray-700 w-full xs:w-auto mb-2 xs:mb-0 shrink-0">
                 <Filter className="h-4 w-4" />
                 Filtros:
               </div>
@@ -312,7 +314,7 @@ export function DataTable<TData, TValue>({
                       placeholder={filter.placeholder || `Filtrar ${filter.columnId}`}
                       value={(col?.getFilterValue() as string) ?? ""}
                       onChange={(e) => col?.setFilterValue(e.target.value)}
-                      className={cn("h-8", filter.size || "max-w-xs")}
+                      className={cn("h-8 min-w-0 flex-1 xs:flex-none", filter.size || "xs:max-w-xs max-w-full")}
                     />
                   )
                 }
@@ -323,9 +325,9 @@ export function DataTable<TData, TValue>({
                       variant={filter.variant || "outline"}
                       size="sm"
                       onClick={() => filter.onClick?.(table)}
-                      className="h-8"
+                      className="h-8 shrink-0 min-w-0 px-2 xs:px-3"
                     >
-                      {filter.label}
+                      <span className="truncate">{filter.label}</span>
                     </Button>
                   )
                 }
@@ -338,20 +340,20 @@ export function DataTable<TData, TValue>({
                     gray: "bg-gray-100 text-gray-800",
                   }
                   return (
-                    <Badge key={i} className={cn("h-8 px-3", colors[filter.color || "gray"])}>
-                      {filter.label}: {filter.value}
+                    <Badge key={i} className={cn("h-8 px-2 xs:px-3 shrink-0 min-w-0", colors[filter.color || "gray"])}>
+                      <span className="truncate">{filter.label}: {filter.value}</span>
                     </Badge>
                   )
                 }
                 if (filter.type === "select" && filter.columnId && filter.options) {
                     const col = table.getColumn(filter.columnId)
                     return (
-                      <div key={i} className="max-w-xs">
+                      <div key={i} className="min-w-0 flex-1 xs:flex-none xs:max-w-xs max-w-full">
                         <Select
                           value={(col?.getFilterValue() as string) ?? ""}
                           onValueChange={v => col?.setFilterValue(v)}
                         >
-                          <SelectTrigger size="sm" className="w-full">
+                          <SelectTrigger size="sm" className="w-full min-w-0">
                             <SelectValue placeholder={filter.placeholder || filter.label} />
                           </SelectTrigger>
                           <SelectContent>
@@ -367,7 +369,7 @@ export function DataTable<TData, TValue>({
                   }
                   if (filter.type === "custom" && filter.element) {
                     return (
-                      <div key={i} className="max-w-xs">
+                      <div key={i} className="min-w-0 flex-1 xs:flex-none xs:max-w-xs max-w-full">
                         {filter.element(table)}
                       </div>
                     )
@@ -378,14 +380,14 @@ export function DataTable<TData, TValue>({
           )}
 
           {hasActiveFilters && (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2 max-w-full overflow-hidden">
               {globalFilter && (
                 <Badge
                   variant="outline"
-                  className="cursor-pointer"
+                  className="cursor-pointer shrink-0 min-w-0 max-w-full"
                   onClick={() => setGlobalFilter("")}
                 >
-                  Buscar: {globalFilter} <X className="inline-block w-3 h-3 ml-1" />
+                  <span className="truncate">Buscar: {globalFilter}</span> <X className="inline-block w-3 h-3 ml-1 shrink-0" />
                 </Badge>
               )}
               {table.getState().columnFilters.map(cf => {
@@ -396,10 +398,10 @@ export function DataTable<TData, TValue>({
                   <Badge
                     key={cf.id}
                     variant="outline"
-                    className="cursor-pointer"
+                    className="cursor-pointer shrink-0 min-w-0 max-w-full"
                     onClick={() => col?.setFilterValue(undefined)}
                   >
-                    {`${cf.id}: ${displayValue}`} <X className="inline-block w-3 h-3 ml-1" />
+                    <span className="truncate">{`${cf.id}: ${displayValue}`}</span> <X className="inline-block w-3 h-3 ml-1 shrink-0" />
                   </Badge>
                 )
               })}
@@ -407,9 +409,9 @@ export function DataTable<TData, TValue>({
           )}
         </div>
 
-        {/* Tabla responsive */}
+        {/* Tabla responsive mejorada */}
         <div className="w-full overflow-x-auto">
-          <UiTable className="min-w-[600px]">
+          <UiTable className="min-w-full sm:min-w-[600px]">
             <TableHeader>
               {table.getHeaderGroups().map(hg => (
                 <TableRow key={hg.id} className="hover:bg-transparent">
@@ -475,41 +477,46 @@ export function DataTable<TData, TValue>({
           </UiTable>
         </div>
 
-        {/* Paginación corregida */}
+        {/* Paginación responsive mejorada */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between py-3 px-4 border-t bg-gray-50/30">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center sm:justify-start gap-2">
             <Button 
               size="sm" 
               variant="outline" 
               onClick={() => table.previousPage()} 
               disabled={!table.getCanPreviousPage()}
+              className="flex-1 sm:flex-none"
             >
-              ‹ Anterior
+              <span className="hidden sm:inline">‹ Anterior</span>
+              <span className="sm:hidden">‹</span>
             </Button>
             <Button 
               size="sm" 
               variant="outline" 
               onClick={() => table.nextPage()} 
               disabled={!table.getCanNextPage()}
+              className="flex-1 sm:flex-none"
             >
-              Siguiente ›
+              <span className="hidden sm:inline">Siguiente ›</span>
+              <span className="sm:hidden">›</span>
             </Button>
           </div>
           
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <span className="text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 order-last md:order-none">
+            <span className="text-sm text-gray-600 text-center sm:text-left">
               Página <strong>{table.getState().pagination.pageIndex + 1}</strong> de{" "}
               <strong>{table.getPageCount()}</strong>
             </span>
             
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Filas por página:</span>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-sm text-gray-600 hidden sm:inline">Filas por página:</span>
+              <span className="text-sm text-gray-600 sm:hidden">Por página:</span>
               <select
                 value={table.getState().pagination.pageSize}
                 onChange={e => {
                   table.setPageSize(Number(e.target.value))
                 }}
-                className="border rounded px-2 py-1 text-sm bg-white"
+                className="border rounded px-2 py-1 text-sm bg-white min-w-0"
               >
                 {[5, 10, 20, 50].map(size => (
                   <option key={size} value={size}>
@@ -520,9 +527,10 @@ export function DataTable<TData, TValue>({
             </div>
           </div>
 
-          <div className="text-sm text-gray-600">
-            Mostrando {table.getRowModel().rows.length} de{" "}
-            {table.getFilteredRowModel().rows.length} resultados
+          <div className="text-sm text-gray-600 text-center md:text-right">
+            <span className="hidden sm:inline">Mostrando {table.getRowModel().rows.length} de{" "}
+            {table.getFilteredRowModel().rows.length} resultados</span>
+            <span className="sm:hidden">{table.getRowModel().rows.length}/{table.getFilteredRowModel().rows.length}</span>
           </div>
         </div>
       </div>
@@ -537,7 +545,7 @@ export function DataTable<TData, TValue>({
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-700 mb-2">Columnas a incluir</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {visibleExportableColumns().map(col => {
                     const label = typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
                     const checked = selectedColumnIds.includes(col.id)
@@ -560,10 +568,10 @@ export function DataTable<TData, TValue>({
                   <Button size="sm" variant="ghost" onClick={() => setSelectedColumnIds([])}>Quitar todo</Button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 pt-2 border-t">
-                <Button size="sm" onClick={handleExportCsv}>Exportar CSV</Button>
-                <Button size="sm" onClick={handleExportXlsx}>Exportar XLSX</Button>
-                <Button size="sm" onClick={handleExportPdf}>Exportar PDF</Button>
+              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
+                <Button size="sm" onClick={handleExportCsv} className="w-full sm:w-auto">Exportar CSV</Button>
+                <Button size="sm" onClick={handleExportXlsx} className="w-full sm:w-auto">Exportar XLSX</Button>
+                <Button size="sm" onClick={handleExportPdf} className="w-full sm:w-auto">Exportar PDF</Button>
               </div>
             </div>
           }

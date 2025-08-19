@@ -242,42 +242,42 @@ export default function Usuarios() {
       <div className="p-4 sm:p-6 md:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                  <Users className="h-8 w-8 text-white" />
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-2">
                     Gestión de Usuarios
                   </h1>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="secondary" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                       <RoleIcon className="h-3 w-3 mr-1" />
                       {user?.role === "admin" && "Administrador"}
                       {user?.role === "docente" && "Docente"}
                       {user?.role === "alumno" && "Estudiante"}
                     </Badge>
-                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">EduNova</span>
+                    <div className="h-1 w-1 bg-gray-400 rounded-full hidden sm:block"></div>
+                    <span className="text-xs sm:text-sm text-gray-500">EduNova</span>
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-lg max-w-2xl">
+              <p className="text-gray-600 text-sm sm:text-base lg:text-lg max-w-2xl">
                 {getRoleMessage(user?.role)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col xs:flex-row flex-wrap items-stretch xs:items-center gap-2 max-w-full overflow-hidden">
               {canCreateUsuarios && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={() => setShowCreateModal(true)}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 shrink-0 min-w-0"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Crear Usuario
+                      <Plus className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="truncate">Crear Usuario</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Crear un usuario individual</TooltipContent>
@@ -289,10 +289,11 @@ export default function Usuarios() {
                     <Button 
                       variant="outline"
                       onClick={() => setShowImportModal(true)}
-                      className="hover:bg-gray-50"
+                      className="hover:bg-gray-50 shrink-0 min-w-0"
                     >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Importar
+                      <UserPlus className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="hidden xs:inline">Importar</span>
+                      <span className="xs:hidden">Import</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Importar usuarios desde CSV</TooltipContent>
@@ -304,10 +305,12 @@ export default function Usuarios() {
                     <Button 
                       variant="outline"
                       onClick={() => setShowImportTeachersModal(true)}
-                      className="hover:bg-gray-50"
+                      className="hover:bg-gray-50 shrink-0 min-w-0"
                     >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Importar Docentes
+                      <UserPlus className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="hidden sm:inline">Importar Docentes</span>
+                      <span className="sm:hidden xs:inline">Import Docentes</span>
+                      <span className="xs:hidden">Docentes</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Importar docentes (usuarios + teachers) desde CSV</TooltipContent>
@@ -319,7 +322,7 @@ export default function Usuarios() {
 
         {/* Navegación por tabs mejorada */}
         <div className="mb-8">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 max-w-full overflow-hidden">
             {availableTabs.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeView === tab.id;
@@ -329,14 +332,14 @@ export default function Usuarios() {
                   key={tab.id}
                   variant={isActive ? "default" : "outline"}
                   onClick={() => setActiveView(tab.id)}
-                  className={`flex items-center gap-2 transition-all duration-300 ${
+                  className={`flex items-center gap-2 transition-all duration-300 shrink-0 min-w-0 ${
                     isActive 
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg' 
                       : 'hover:bg-gray-50 hover:shadow-md'
                   }`}
                 >
-                  <TabIcon className="h-4 w-4" />
-                  {tab.label}
+                  <TabIcon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{tab.label}</span>
                 </Button>
               );
             })}
@@ -348,7 +351,7 @@ export default function Usuarios() {
           {activeView === "overview" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 {userStats.map((stat, index) => (
                   <StatsCard
                     key={index}

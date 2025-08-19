@@ -674,42 +674,48 @@ export default function WallView() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-6">
         {/* Header mejorado */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 mb-6">
+          <div className="flex flex-col gap-4">
+            {/* Botón volver */}
+            <div className="flex items-center justify-between">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSearchParams({ tab: 'wall' })}
-                className="flex items-center gap-2"
+                className="btn-responsive flex items-center gap-2"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Seleccionar Curso
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                <span className="btn-text-sm">Seleccionar Curso</span>
+                <span className="sm:hidden">Volver</span>
               </Button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Muro de {course.nombre} - {course.division}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  {filteredMessages.length} mensajes
-                </p>
+              
+              <div className="btn-container">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="btn-responsive flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="btn-text-xs">Actualizar</span>
+                  <span className="xs:hidden">↻</span>
+                </Button>
+                <Badge variant="outline" className="bg-green-50 text-green-700 shrink-0">
+                  <CheckCircle className="h-3 w-3 mr-1 shrink-0" />
+                  Activo
+                </Badge>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Actualizar
-              </Button>
-              <Badge variant="outline" className="bg-green-50 text-green-700">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Activo
-              </Badge>
+            
+            {/* Título */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
+                Muro de {course.nombre} - {course.division}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {filteredMessages.length} mensajes
+              </p>
             </div>
           </div>
 
@@ -758,9 +764,9 @@ export default function WallView() {
           </div>
 
           {/* Filtros y ordenamiento */}
-          <div className="flex flex-wrap gap-4 mb-4">
+          <div className="btn-container flex-container-safe mb-4">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full xs:w-40 min-w-0">
                 <SelectValue placeholder="Tipo de mensaje" />
               </SelectTrigger>
               <SelectContent>
@@ -776,20 +782,22 @@ export default function WallView() {
               variant={showOnlyPinned ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyPinned(!showOnlyPinned)}
-              className="flex items-center gap-2"
+              className="btn-responsive flex items-center gap-2"
             >
-              <Pin className="h-4 w-4" />
-              Solo fijados
+              <Pin className="h-4 w-4 shrink-0" />
+              <span className="btn-text-xs">Solo fijados</span>
+              <span className="xs:hidden">Fijados</span>
             </Button>
 
             <Button
               variant={showOnlyMyMessages ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyMyMessages(!showOnlyMyMessages)}
-              className="flex items-center gap-2"
+              className="btn-responsive flex items-center gap-2"
             >
-              <User className="h-4 w-4" />
-              Mis mensajes
+              <User className="h-4 w-4 shrink-0" />
+              <span className="btn-text-xs">Mis mensajes</span>
+              <span className="xs:hidden">Míos</span>
             </Button>
           </div>
         </div>

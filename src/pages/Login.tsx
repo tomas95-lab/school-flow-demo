@@ -103,7 +103,7 @@ export default function Login() {
       <div className="flex justify-center items-center flex-col">
         <img
           src={logo}
-          alt="Logo de EduFlow"
+          alt="Logo de EduNova"
           className="w-24"
         />
         <ReutilizableCard
@@ -120,18 +120,6 @@ export default function Login() {
             >
               {loading ? "Cargando..." : "Iniciar sesión"}
             </Button>
-          }
-          footer={
-            <p className="text-center text-sm text-gray-500">
-              ¿No tienes una cuenta?{" "}
-              <a href="/register" className="text-blue-500 hover:underline">
-                Regístrate
-              </a>
-              <span className="mx-2">·</span>
-              <button type="button" onClick={handleGoogle} className="text-blue-600 hover:underline" disabled={loading}>
-                Ingresar con Google
-              </button>
-            </p>
           }
         >
           <form
@@ -169,14 +157,14 @@ export default function Login() {
         <div className="absolute inset-0 bg-blue-900/30" />
         <div className="relative z-10 flex flex-col justify-center items-center text-white text-center px-12 h-full animate-fade-in">
           <h1 className="text-4xl font-bold drop-shadow-lg">
-            Bienvenido a <span className="text-yellow-400">EduFlow</span>
+            Bienvenido a <span className="text-yellow-400">EduNova</span>
           </h1>
           <p className="mt-4 text-lg max-w-md drop-shadow-sm">
             Una{" "}
             <span className="text-yellow-400 font-semibold">
               plataforma moderna
             </span>{" "}
-            para simplificar la gestión escolar — desde{" "}
+            para simplificar la gestión escolar desde{" "}
             <span className="text-yellow-400 font-semibold">calificaciones</span>{" "}
             hasta{" "}
             <span className="text-yellow-400 font-semibold">

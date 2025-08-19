@@ -690,9 +690,9 @@ export default function DetallesMuro() {
           </div>
 
           {/* Filtros y ordenamiento */}
-          <div className="flex flex-wrap gap-4 mb-4">
+          <div className="btn-container flex-container-safe mb-4">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full xs:w-40 min-w-0">
                 <SelectValue placeholder="Tipo de mensaje" />
               </SelectTrigger>
               <SelectContent>
@@ -704,36 +704,37 @@ export default function DetallesMuro() {
               </SelectContent>
             </Select>
 
-
-
             <Button
               variant={showOnlyPinned ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyPinned(!showOnlyPinned)}
-              className="flex items-center gap-2"
+              className="btn-responsive flex items-center gap-2"
             >
-              <Pin className="h-4 w-4" />
-              Solo fijados
+              <Pin className="h-4 w-4 shrink-0" />
+              <span className="btn-text-xs">Solo fijados</span>
+              <span className="xs:hidden">Fijados</span>
             </Button>
 
             <Button
               variant={showOnlyMyMessages ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyMyMessages(!showOnlyMyMessages)}
-              className="flex items-center gap-2"
+              className="btn-responsive flex items-center gap-2"
             >
-              <User className="h-4 w-4" />
-              Mis mensajes
+              <User className="h-4 w-4 shrink-0" />
+              <span className="btn-text-xs">Mis mensajes</span>
+              <span className="xs:hidden">Míos</span>
             </Button>
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="flex items-center gap-2"
+              className="btn-responsive flex items-center gap-2"
             >
-              <Filter className="h-4 w-4" />
-              Filtros avanzados
+              <Filter className="h-4 w-4 shrink-0" />
+              <span className="btn-text-sm">Filtros avanzados</span>
+              <span className="sm:hidden">Filtros</span>
             </Button>
           </div>
 

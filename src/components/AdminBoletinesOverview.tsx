@@ -278,12 +278,14 @@ export default function AdminBoletinesOverview() {
       </div>
 
       {user?.role === "admin" && (
-        <div className="flex items-center gap-2 mb-6">
+        <div className="btn-container flex-container-safe mb-6">
           <Button 
             onClick={subirBoletines} 
             disabled={isGenerating}
+            className="btn-responsive"
           >
-            {isGenerating ? 'Generando...' : 'Generar Boletines'}
+            <span className="btn-text-sm">{isGenerating ? 'Generando...' : 'Generar Boletines'}</span>
+            <span className="sm:hidden">{isGenerating ? 'Cargando...' : 'Generar'}</span>
           </Button>
           <BoletinTemplateModal />
         </div>

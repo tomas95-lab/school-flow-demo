@@ -281,7 +281,7 @@ export default function MessagingModule() {
 
         {/* Navegación por pestañas moderna */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8 overflow-x-auto">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 overflow-x-auto">
             <div className="flex space-x-0 min-w-max">
               {tabs.filter(tab => hasRoleAccess(tab)).map((tab, index) => {
                 const Icon = tab.icon;
@@ -290,7 +290,7 @@ export default function MessagingModule() {
                 const isLast = index === tabs.filter(tab => hasRoleAccess(tab)).length - 1;
                 
                 return (
-                  <div key={tab.id} className="relative">
+                  <div key={tab.id} className="relative shrink-0">
                     <div className="absolute -top-1 right-2">
                       {tab.development && (
                         <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-600 border-yellow-200">Dev</Badge>
@@ -300,7 +300,7 @@ export default function MessagingModule() {
                       onClick={() => handleTabChange(tab.id)}
                       title={tab.description}
                       className={`
-                        flex items-center gap-3 px-6 py-4 text-sm font-medium transition-all duration-200 relative
+                        flex items-center gap-2 xs:gap-3 px-3 xs:px-6 py-4 text-sm font-medium transition-all duration-200 relative shrink-0 min-w-0
                         ${isFirst ? 'rounded-tl-2xl' : ''} 
                         ${isLast ? 'rounded-tr-2xl' : ''}
                         ${isActive 
@@ -311,10 +311,11 @@ export default function MessagingModule() {
                         }
                       `}
                     >
-                      <Icon className={`h-5 w-5 ${isActive ? 'text-purple-600' : ''}`} />
-                      <span>{tab.label}</span>
+                      <Icon className={`h-4 w-4 xs:h-5 xs:w-5 shrink-0 ${isActive ? 'text-purple-600' : ''}`} />
+                      <span className="hidden xs:inline">{tab.label}</span>
+                      <span className="xs:hidden text-xs">{tab.label.split(' ')[0]}</span>
                       {!tab.enabled && (
-                        <Badge variant="outline" className="ml-1 text-xs bg-gray-50 text-gray-500 border-gray-200">
+                        <Badge variant="outline" className="ml-1 text-xs bg-gray-50 text-gray-500 border-gray-200 hidden sm:inline-flex">
                           Próximamente
                         </Badge>
                       )}

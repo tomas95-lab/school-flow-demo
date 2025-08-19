@@ -24,6 +24,68 @@ h1, h2, h3 {
   letter-spacing: -0.025em;
 }
 
+/* Utilidades globales para prevenir overflow de botones */
+.btn-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 100%;
+  overflow: hidden;
+  align-items: center;
+}
+
+.btn-container > * {
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.btn-responsive {
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.btn-responsive .btn-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Asegurar que todos los flex containers no permitan overflow */
+.flex-container-safe {
+  max-width: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.flex-container-safe > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Clases para text truncation en botones pequeños */
+.btn-text-xs {
+  display: none;
+}
+
+@media (min-width: 475px) {
+  .btn-text-xs {
+    display: inline;
+  }
+}
+
+.btn-text-sm {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .btn-text-sm {
+    display: inline;
+  }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
