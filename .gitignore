@@ -52,11 +52,11 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Firebase config
+# Firebase config (NEVER ignore firebase.json and .firebaserc in production!)
 firebaseConfig.js
-firebase.json
-.firebaserc
-firestore.indexes.json
+# firebase.json  # COMMENTED OUT - This file is needed for hosting!
+# .firebaserc    # COMMENTED OUT - This file is needed for hosting!
+# firestore.indexes.json  # COMMENTED OUT - This file is needed!
 logo2.png.specstory/
 .cursorindexingignore
 .src.scripts/

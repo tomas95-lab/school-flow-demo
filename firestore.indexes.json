@@ -1,0 +1,25 @@
+{
+  "indexes": [
+    {"collectionGroup": "attendances", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "courseId", "order": "ASCENDING"},
+      {"fieldPath": "fecha", "order": "DESCENDING"}
+    ]},
+    {"collectionGroup": "attendances", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "studentId", "order": "ASCENDING"},
+      {"fieldPath": "fecha", "order": "DESCENDING"}
+    ]},
+    {"collectionGroup": "calificaciones", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "subjectId", "order": "ASCENDING"},
+      {"fieldPath": "fecha", "order": "DESCENDING"}
+    ]},
+    {"collectionGroup": "calificaciones", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "studentId", "order": "ASCENDING"},
+      {"fieldPath": "subjectId", "order": "ASCENDING"}
+    ]},
+    {"collectionGroup": "alerts", "queryScope": "COLLECTION", "fields": [
+      {"fieldPath": "courseId", "order": "ASCENDING"},
+      {"fieldPath": "status", "order": "ASCENDING"}
+    ]}
+  ],
+  "fieldOverrides": []
+}
