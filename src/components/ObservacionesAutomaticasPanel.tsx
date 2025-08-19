@@ -205,19 +205,20 @@ export default function ObservacionesAutomaticasPanel({
   if (observacionesFiltradas.length === 0) {
     return (
       <Card className={`border-0 shadow-sm ${className}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Brain className="h-5 w-5 text-purple-600" />
-            {tituloContexto}
+        <CardHeader className="p-3 sm:p-4 lg:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            <span className="truncate">{tituloContexto}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="bg-green-50 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+        <CardContent className="p-3 sm:p-4 lg:p-6">
+          <div className="text-center py-6 sm:py-8">
+            <div className="bg-green-50 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
-            <p className="text-gray-600">
-              No hay observaciones automáticas relevantes en este contexto.
+            <p className="text-gray-600 text-sm sm:text-base">
+              <span className="hidden sm:inline">No hay observaciones automáticas relevantes en este contexto.</span>
+              <span className="sm:hidden">Sin observaciones relevantes.</span>
             </p>
           </div>
         </CardContent>
@@ -227,21 +228,26 @@ export default function ObservacionesAutomaticasPanel({
 
   return (
     <Card className={`border-0 shadow-sm ${className}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Brain className="h-5 w-5 text-purple-600" />
-          {tituloContexto} ({observacionesFiltradas.length})
+      <CardHeader className="p-3 sm:p-4 lg:p-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+          <span className="truncate">
+            <span className="hidden sm:inline">{tituloContexto} ({observacionesFiltradas.length})</span>
+            <span className="sm:hidden">{tituloContexto.split(' ')[0]} ({observacionesFiltradas.length})</span>
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="p-3 sm:p-4 lg:p-6">
+        <div className="space-y-3 sm:space-y-4">
           {observacionesFiltradas.map((item, index: number) => (
-            <div key={`${item.studentId}-${index}`} className="border-l-4 border-purple-200 pl-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-semibold text-sm text-gray-700">
+            <div key={`${item.studentId}-${index}`} className="border-l-4 border-purple-200 pl-3 sm:pl-4">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="font-semibold text-xs sm:text-sm text-gray-700 truncate max-w-[200px] sm:max-w-none">
                   {item.studentName}
                 </span>
-                {renderObservacionIcon(item.observacion)}
+                <div className="shrink-0">
+                  {renderObservacionIcon(item.observacion)}
+                </div>
               </div>
               <ObservacionAutomatica 
                 observacion={item.observacion}

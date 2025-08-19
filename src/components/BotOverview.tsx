@@ -569,52 +569,60 @@ const BotOverview: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 lg:p-6">
              {/* Header */}
-       <div className="mb-8">
-         <div className="flex items-center justify-between mb-4">
-           <div className="flex items-center space-x-4">
-             <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg">
-               <Bot className="h-8 w-8 text-white" />
+       <div className="mb-4 sm:mb-6 lg:mb-8">
+         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+           <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+             <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg shrink-0">
+               <Bot className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
              </div>
-             <div>
-               <h1 className="text-3xl font-bold text-gray-900">Bot IA</h1>
-               <p className="text-gray-600">Asistente inteligente para análisis educativo</p>
+             <div className="min-w-0 flex-1">
+               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Bot IA</h1>
+               <p className="text-gray-600 text-sm sm:text-base">
+                 <span className="hidden sm:inline">Asistente inteligente para análisis educativo</span>
+                 <span className="sm:hidden">Asistente IA educativo</span>
+               </p>
              </div>
            </div>
-           <div className="flex items-center space-x-2">
-             <div className="flex items-center space-x-2 text-sm text-gray-600">
+           <div className="flex items-center gap-2 shrink-0">
+             <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-               <span>Conectado</span>
+               <span className="hidden xs:inline">Conectado</span>
+               <span className="xs:hidden">●</span>
              </div>
              <Button
                variant="outline"
                size="sm"
                onClick={handleRefresh}
-               className="flex items-center space-x-2"
+               className="flex items-center gap-1 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
              >
-               <RefreshCw className="h-4 w-4" />
-               <span>Actualizar</span>
+               <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+               <span className="hidden xs:inline">Actualizar</span>
+               <span className="xs:hidden">🔄</span>
              </Button>
            </div>
          </div>
 
          {/* Welcome Message */}
          <Card className="bg-white/80 backdrop-blur-sm">
-           <CardContent className="p-6">
-             <div className="flex items-center justify-between">
-               <div>
-                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
+           <CardContent className="p-3 sm:p-4 lg:p-6">
+             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+               <div className="min-w-0 flex-1">
+                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 break-words">
                    ¡Hola {user?.email?.split('@')[0]}!
                  </h2>
-                 <p className="text-gray-600">
-                   Soy tu asistente IA para análisis educativo. Puedo ayudarte a entender patrones, 
-                   detectar tendencias y generar insights valiosos sobre el rendimiento académico.
+                 <p className="text-gray-600 text-sm sm:text-base">
+                   <span className="hidden sm:inline">Soy tu asistente IA para análisis educativo. Puedo ayudarte a entender patrones, detectar tendencias y generar insights valiosos sobre el rendimiento académico.</span>
+                   <span className="sm:hidden">Tu asistente IA para análisis educativo.</span>
                  </p>
                </div>
-               <div className="text-right">
-                 <p className="text-sm text-gray-500">Última actualización</p>
-                 <p className="text-sm font-medium text-gray-700">
+               <div className="text-left sm:text-right shrink-0">
+                 <p className="text-xs sm:text-sm text-gray-500">
+                   <span className="hidden xs:inline">Última actualización</span>
+                   <span className="xs:hidden">Última act.</span>
+                 </p>
+                 <p className="text-xs sm:text-sm font-medium text-gray-700">
                    {format(lastUpdate, 'dd/MM/yyyy HH:mm', { locale: es })}
                  </p>
                </div>
@@ -624,7 +632,7 @@ const BotOverview: React.FC = () => {
        </div>
 
       {/* Query Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">
         {/* Predefined Queries */}
         <Card className="bg-white/80 backdrop-blur-sm">
           <CardHeader>

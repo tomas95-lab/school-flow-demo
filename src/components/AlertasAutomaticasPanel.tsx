@@ -182,21 +182,32 @@ export default function AlertasAutomaticasPanel({
   if (alertasFiltradas.length === 0) {
     return (
       <Card className={`border-0 shadow-sm ${className}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Brain className="h-5 w-5 text-purple-600" />
-            Alertas Automáticas
+        <CardHeader className="p-3 sm:p-4 lg:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            <span className="hidden sm:inline">Alertas Automáticas</span>
+            <span className="sm:hidden">Alertas IA</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="bg-green-50 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+        <CardContent className="p-3 sm:p-4 lg:p-6">
+          <div className="text-center py-6 sm:py-8">
+            <div className="bg-green-50 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm sm:text-base">
               {showOnlyCritical 
-                ? "No hay alertas críticas en este momento."
-                : "No hay alertas automáticas en este momento."
+                ? (
+                  <>
+                    <span className="hidden sm:inline">No hay alertas críticas en este momento.</span>
+                    <span className="sm:hidden">Sin alertas críticas.</span>
+                  </>
+                )
+                : (
+                  <>
+                    <span className="hidden sm:inline">No hay alertas automáticas en este momento.</span>
+                    <span className="sm:hidden">Sin alertas automáticas.</span>
+                  </>
+                )
               }
             </p>
           </div>
@@ -207,58 +218,69 @@ export default function AlertasAutomaticasPanel({
 
   return (
     <Card className={`border-0 shadow-sm ${className}`}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Brain className="h-5 w-5 text-purple-600" />
-            Alertas Automáticas ({alertasFiltradas.length})
+      <CardHeader className="p-3 sm:p-4 lg:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl min-w-0 flex-1">
+            <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 shrink-0" />
+            <span className="truncate">
+              <span className="hidden sm:inline">Alertas Automáticas ({alertasFiltradas.length})</span>
+              <span className="sm:hidden">Alertas IA ({alertasFiltradas.length})</span>
+            </span>
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
               <Brain className="h-3 w-3 mr-1" />
-              IA Generadas
+              <span className="hidden xs:inline">IA Generadas</span>
+              <span className="xs:hidden">IA</span>
             </Badge>
             {stats.criticas > 0 && (
-              <Badge variant="destructive" className="text-xs">
-                {stats.criticas} críticas
+              <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                {stats.criticas} 
+                <span className="hidden xs:inline"> críticas</span>
+                <span className="xs:hidden"> crit.</span>
               </Badge>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="p-3 sm:p-4 lg:p-6">
+        <div className="space-y-3 sm:space-y-4">
           {alertasFiltradas.map((alerta) => (
             <div 
               key={alerta.id} 
-              className={`border-l-4 pl-4 py-3 bg-white rounded-r-lg shadow-sm ${getPrioridadBorderColor(alerta.prioridad)}`}
+              className={`border-l-4 pl-3 sm:pl-4 py-2 sm:py-3 bg-white rounded-r-lg shadow-sm ${getPrioridadBorderColor(alerta.prioridad)}`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    {getAlertaIcon(alerta.tipo)}
-                    <h4 className="font-semibold text-gray-900">{alerta.titulo}</h4>
-                    <Badge className={`text-xs ${getPrioridadColor(alerta.prioridad)}`}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
+                    <div className="shrink-0">
+                      {getAlertaIcon(alerta.tipo)}
+                    </div>
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">
+                      {alerta.titulo}
+                    </h4>
+                    <Badge className={`text-xs px-1.5 py-0.5 shrink-0 ${getPrioridadColor(alerta.prioridad)}`}>
                       {alerta.prioridad.toUpperCase()}
                     </Badge>
                     {!alerta.leida && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5 shrink-0">
                         <Eye className="h-3 w-3 mr-1" />
-                        Nueva
+                        <span className="hidden xs:inline">Nueva</span>
+                        <span className="xs:hidden">●</span>
                       </Badge>
                     )}
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 break-words">
                     {alerta.descripcion}
                   </p>
                   
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {alerta.studentName}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                    <span className="flex items-center gap-1 truncate max-w-[150px] sm:max-w-none">
+                      <Users className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{alerta.studentName}</span>
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 shrink-0">
                       <Clock className="h-3 w-3" />
                       {new Date(alerta.fechaGeneracion).toLocaleDateString()}
                     </span>

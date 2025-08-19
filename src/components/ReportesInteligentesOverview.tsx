@@ -400,96 +400,112 @@ export default function ReportesInteligentesOverview() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
         {/* Header mejorado con diseño moderno */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                  <BarChart3 className="h-8 w-8 text-white" />
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shrink-0">
+                  <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                    Reportes Inteligentes
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">
+                    <span className="hidden sm:inline">Reportes Inteligentes</span>
+                    <span className="sm:hidden">Reportes IA</span>
                   </h1>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <Badge variant="secondary" className="text-xs sm:text-sm px-2 sm:px-3 py-1 shrink-0">
                       <BarChart3 className="h-3 w-3 mr-1" />
                       {user?.role === "admin" && "Administrador"}
                       {user?.role === "docente" && "Docente"}
                     </Badge>
-                    <div className="h-1 w-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-500">Sistema Educativo</span>
+                    <div className="h-1 w-1 bg-gray-400 rounded-full shrink-0"></div>
+                    <span className="text-xs sm:text-sm text-gray-500">
+                      <span className="hidden xs:inline">Sistema Educativo</span>
+                      <span className="xs:hidden">Sistema</span>
+                    </span>
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600 text-lg max-w-2xl">
-                Análisis avanzado y detección de patrones en tiempo real con inteligencia artificial.
+              <p className="text-gray-600 text-sm sm:text-base lg:text-lg max-w-2xl">
+                <span className="hidden sm:inline">Análisis avanzado y detección de patrones en tiempo real con inteligencia artificial.</span>
+                <span className="sm:hidden">Análisis IA en tiempo real.</span>
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               <Button 
                 onClick={() => handleExportReport("completo")}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar Reporte
+                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Exportar Reporte</span>
+                <span className="xs:hidden">Exportar</span>
               </Button>
             </div>
           </div>
 
           {/* Indicadores de datos */}
           {analysis && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 xs:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Users className="h-4 w-4 text-blue-600" />
+                <CardContent className="p-2 sm:p-3 lg:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg shrink-0">
+                      <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Estudiantes</p>
-                      <p className="font-bold text-gray-900">{analysis.performance.totalStudents}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        <span className="hidden xs:inline">Estudiantes</span>
+                        <span className="xs:hidden">Est.</span>
+                      </p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{analysis.performance.totalStudents}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <GraduationCap className="h-4 w-4 text-green-600" />
+                <CardContent className="p-2 sm:p-3 lg:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg shrink-0">
+                      <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Cursos</p>
-                      <p className="font-bold text-gray-900">{analysis.performance.totalCourses}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <TrendingUp className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Docentes</p>
-                      <p className="font-bold text-gray-900">{analysis.performance.totalTeachers}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">Cursos</p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{analysis.performance.totalCourses}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <BookOpen className="h-4 w-4 text-purple-600" />
+                <CardContent className="p-2 sm:p-3 lg:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg shrink-0">
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Materias</p>
-                      <p className="font-bold text-gray-900">{analysis.performance.totalSubjects}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        <span className="hidden xs:inline">Docentes</span>
+                        <span className="xs:hidden">Prof.</span>
+                      </p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{analysis.performance.totalTeachers}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
+                <CardContent className="p-2 sm:p-3 lg:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg shrink-0">
+                      <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        <span className="hidden xs:inline">Materias</span>
+                        <span className="xs:hidden">Mat.</span>
+                      </p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{analysis.performance.totalSubjects}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -499,7 +515,7 @@ export default function ReportesInteligentesOverview() {
         </div>
 
         {/* KPIs Principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
           <StatsCard
             label="Total Estudiantes"
             value={analysis.performance.totalStudents}
@@ -530,10 +546,13 @@ export default function ReportesInteligentesOverview() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 lg:mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Reporte</label>
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">
+                <span className="hidden sm:inline">Tipo de Reporte</span>
+                <span className="sm:hidden">Tipo</span>
+              </label>
               <Select value={selectedReport} onValueChange={setSelectedReport}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Seleccionar reporte" />
@@ -548,7 +567,7 @@ export default function ReportesInteligentesOverview() {
             </div>
             
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Curso</label>
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">Curso</label>
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todos los cursos" />
@@ -565,7 +584,10 @@ export default function ReportesInteligentesOverview() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Período</label>
+              <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 block">
+                <span className="hidden xs:inline">Período</span>
+                <span className="xs:hidden">Per.</span>
+              </label>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todos los períodos" />
@@ -582,28 +604,35 @@ export default function ReportesInteligentesOverview() {
         </div>
 
         {/* Secciones de Análisis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Análisis de Rendimiento */}
           <Card className="bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all duration-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-blue-600" />
-                Análisis de Rendimiento
+            <CardHeader className="p-3 sm:p-4 lg:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                <span className="hidden sm:inline">Análisis de Rendimiento</span>
+                <span className="sm:hidden">Rendimiento</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
+            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 lg:p-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
+                <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">
                     {analysis.patterns.atRiskStudents.length}
                   </div>
-                  <div className="text-sm text-gray-600">Estudiantes en Riesgo</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    <span className="hidden xs:inline">Estudiantes en Riesgo</span>
+                    <span className="xs:hidden">En Riesgo</span>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
+                <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
                     {analysis.performance.boletinAnalysis.highPerformance}
                   </div>
-                  <div className="text-sm text-gray-600">Alto Rendimiento</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    <span className="hidden xs:inline">Alto Rendimiento</span>
+                    <span className="xs:hidden">Alto Rend.</span>
+                  </div>
                 </div>
               </div>
               

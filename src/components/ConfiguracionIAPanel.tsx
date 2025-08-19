@@ -130,36 +130,42 @@ export default function ConfiguracionIAPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Brain className="h-6 w-6 text-purple-600" />
-            Configuración de IA
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 break-words">
+            <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 shrink-0" />
+            <span className="hidden sm:inline">Configuración de IA</span>
+            <span className="sm:hidden">Config. IA</span>
           </h1>
-          <p className="text-gray-600 mt-1">
-            Personaliza los umbrales para la generación automática de alertas inteligentes
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
+            <span className="hidden sm:inline">Personaliza los umbrales para la generación automática de alertas inteligentes</span>
+            <span className="sm:hidden">Personaliza umbrales de alertas IA</span>
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button
             variant="outline"
+            size="sm"
             onClick={restaurarDefaults}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
           >
-            <RotateCcw className="h-4 w-4" />
-            Restaurar Defaults
+            <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">Restaurar Defaults</span>
+            <span className="xs:hidden">Restaurar</span>
           </Button>
           
           <Button
+            size="sm"
             onClick={guardarConfiguracion}
             disabled={!hasChanges || loading}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+            className="flex items-center gap-1 sm:gap-2 bg-purple-600 hover:bg-purple-700 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
           >
-            <Save className="h-4 w-4" />
-            {loading ? 'Guardando...' : 'Guardar Cambios'}
+            <Save className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
+            <span className="xs:hidden">{loading ? 'Guardando...' : 'Guardar'}</span>
           </Button>
         </div>
       </div>
@@ -175,22 +181,25 @@ export default function ConfiguracionIAPanel() {
 
       {/* Configuración de Rendimiento Académico */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-blue-600" />
-            Umbrales de Rendimiento Académico
+        <CardHeader className="p-3 sm:p-4 lg:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            <span className="hidden sm:inline">Umbrales de Rendimiento Académico</span>
+            <span className="sm:hidden">Rendimiento Académico</span>
           </CardTitle>
-          <CardDescription>
-            Define los límites para clasificar el rendimiento de los estudiantes
+          <CardDescription className="text-sm sm:text-base">
+            <span className="hidden sm:inline">Define los límites para clasificar el rendimiento de los estudiantes</span>
+            <span className="sm:hidden">Define límites de rendimiento</span>
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 lg:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div>
-              <Label htmlFor="rendimientoCritico" className="text-sm font-medium">
-                Rendimiento Crítico
+              <Label htmlFor="rendimientoCritico" className="text-xs sm:text-sm font-medium">
+                <span className="hidden xs:inline">Rendimiento Crítico</span>
+                <span className="xs:hidden">Crítico</span>
               </Label>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
                 <Input
                   id="rendimientoCritico"
                   type="number"
@@ -199,10 +208,10 @@ export default function ConfiguracionIAPanel() {
                   max="10"
                   value={umbrales.rendimientoCritico}
                   onChange={(e) => handleChange('rendimientoCritico', e.target.value)}
-                  className="w-20"
+                  className="w-16 sm:w-20 h-8 text-xs sm:text-sm"
                 />
-                <span className="text-sm text-gray-600">o menos</span>
-                <Badge variant="destructive" className="text-xs">Crítico</Badge>
+                <span className="text-xs sm:text-sm text-gray-600">o menos</span>
+                <Badge variant="destructive" className="text-xs px-1.5 py-0.5 shrink-0">Crítico</Badge>
               </div>
             </div>
 

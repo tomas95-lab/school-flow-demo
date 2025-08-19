@@ -198,27 +198,31 @@ export default function ComunicacionFamiliasPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-600" />
-            Comunicación con Familias
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 break-words">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 shrink-0" />
+            <span className="hidden sm:inline">Comunicación con Familias</span>
+            <span className="sm:hidden">Comunicación Familias</span>
           </h1>
-          <p className="text-gray-600 mt-1">
-            Configure notificaciones automáticas y gestione la comunicación con padres y tutores
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
+            <span className="hidden sm:inline">Configure notificaciones automáticas y gestione la comunicación con padres y tutores</span>
+            <span className="sm:hidden">Configure notificaciones y comunicación</span>
           </p>
         </div>
         
         {activeTab === 'configuracion' && (
           <Button
+            size="sm"
             onClick={guardarConfiguracion}
             disabled={!hasChanges || loading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            className="flex items-center gap-1 sm:gap-2 bg-blue-600 hover:bg-blue-700 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 shrink-0"
           >
-            <Settings className="h-4 w-4" />
-            {loading ? 'Guardando...' : 'Guardar Configuración'}
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">{loading ? 'Guardando...' : 'Guardar Configuración'}</span>
+            <span className="xs:hidden">{loading ? 'Guardando...' : 'Guardar'}</span>
           </Button>
         )}
       </div>

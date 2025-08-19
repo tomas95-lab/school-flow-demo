@@ -195,7 +195,6 @@ export default function Panel360() {
 								>
 									<User className="w-4 h-4 mr-1 shrink-0" /> 
 									<span className="btn-text-xs">Alumno</span>
-									<span className="xs:hidden">👤</span>
 								</Button>
 								<Button 
 									variant={mode === 'curso' ? 'default' : 'outline'} 
@@ -204,7 +203,6 @@ export default function Panel360() {
 								>
 									<Users className="w-4 h-4 mr-1 shrink-0" /> 
 									<span className="btn-text-xs">Curso</span>
-									<span className="xs:hidden">👥</span>
 								</Button>
 							</div>
 							<div className="flex gap-2">

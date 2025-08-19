@@ -147,22 +147,34 @@ export default function IntervencionesOverview() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card className="border-0 shadow-sm h-auto">
-        <CardHeader className="pb-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg"><TrendingDown className="h-5 w-5 text-purple-700" /></div>
-              <div>
-                <CardTitle className="text-xl">Intervenciones Inteligentes</CardTitle>
-                <CardDescription>Detecta estudiantes en riesgo y sugiere acciones concretas.</CardDescription>
+        <CardHeader className="pb-0 p-3 sm:p-4 lg:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg shrink-0">
+                <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-purple-700" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-lg sm:text-xl break-words">
+                  <span className="hidden sm:inline">Intervenciones Inteligentes</span>
+                  <span className="sm:hidden">Intervenciones IA</span>
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base">
+                  <span className="hidden sm:inline">Detecta estudiantes en riesgo y sugiere acciones concretas.</span>
+                  <span className="sm:hidden">Detecta estudiantes en riesgo.</span>
+                </CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">{rows.length} estudiantes</Badge>
-              <Button variant="outline" size="sm" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <LineChart className="h-4 w-4 mr-1" />
-                Actualizar
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{rows.length} 
+                <span className="hidden xs:inline"> estudiantes</span>
+                <span className="xs:hidden"> est.</span>
+              </Badge>
+              <Button variant="outline" size="sm" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="h-8 text-xs px-2 sm:px-3">
+                <LineChart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden xs:inline">Actualizar</span>
+                <span className="xs:hidden">🔄</span>
               </Button>
             </div>
           </div>
