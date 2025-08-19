@@ -388,13 +388,13 @@ export default function DetallesCalificaciones() {
             <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex flex-col lg:flex-row lg:justify-between gap-3 sm:gap-4 lg:gap-6">
                 {/* Sección Izquierda - Info del Curso */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                      <GraduationCap className="h-8 w-8 text-white" />
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shrink-0">
+                      <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                     </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-gray-900">{course?.nombre}</h1>
+                    <div className="min-w-0 flex-1">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">{course?.nombre}</h1>
                       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2">
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
                           División {course?.division}
@@ -410,44 +410,48 @@ export default function DetallesCalificaciones() {
                     </div>
                   </div>
                   {/* Descripción mejorada */}
-                  <div className="ml-16 space-y-2">
-                    <p className="text-gray-600">
-                      Gestión completa de Calificaciones y Análisis de Rendimiento
+                  <div className="ml-8 sm:ml-12 lg:ml-16 space-y-2">
+                    <p className="text-gray-600 text-sm sm:text-base">
+                      <span className="hidden sm:inline">Gestión completa de Calificaciones y Análisis de Rendimiento</span>
+                      <span className="sm:hidden">Calificaciones y Análisis</span>
                     </p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                       <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        {calificacionesFiltradas?.length || 0} Evaluaciones registradas
+                        <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0"></div>
+                        <span className="hidden xs:inline">{calificacionesFiltradas?.length || 0} Evaluaciones</span>
+                        <span className="xs:hidden">{calificacionesFiltradas?.length || 0} Eval.</span>
                       </span>
                       {calificacionesFiltradas?.length > 0 && (
                         <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          Promedio: {averageGrade}
+                          <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                          <span>Prom: {averageGrade}</span>
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-purple-500 rounded-full shrink-0"></div>
                         Última actualización: Hoy
                       </span>
                     </div>
                   </div>
                 </div>
                 {/* Sección Derecha - Acciones */}
-                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start gap-3 sm:gap-4">
                   {/* Indicadores de estado */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {calificacionesFiltradas?.some(cal => cal.valor < 6) && (
-                      <div className="flex items-center gap-1 px-3 py-1 bg-red-50 rounded-full border border-red-200">
-                        <AlertTriangle className="h-3 w-3 text-red-600" />
+                      <div className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-red-50 rounded-full border border-red-200">
+                        <AlertTriangle className="h-3 w-3 text-red-600 shrink-0" />
                         <span className="text-xs text-red-700 font-medium">
-                          {calificacionesFiltradas.filter(cal => cal.valor < 6).length} En riesgo
+                          <span className="hidden xs:inline">{calificacionesFiltradas.filter(cal => cal.valor < 6).length} En riesgo</span>
+                          <span className="xs:hidden">{calificacionesFiltradas.filter(cal => cal.valor < 6).length} ⚠️</span>
                         </span>
                       </div>
                     )}
-                    <div className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-full border border-gray-200">
-                      <Clock className="h-3 w-3 text-gray-500" />
+                    <div className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-gray-50 rounded-full border border-gray-200">
+                      <Clock className="h-3 w-3 text-gray-500 shrink-0" />
                       <span className="text-xs text-gray-600">
-                        Actualizado hoy
+                        <span className="hidden xs:inline">Actualizado hoy</span>
+                        <span className="xs:hidden">Hoy</span>
                       </span>
                     </div>
                   </div>
@@ -456,10 +460,11 @@ export default function DetallesCalificaciones() {
                       onClick={exportCalificacionesToCSV}
                       variant="outline"
                       disabled={!studentsInCourse.length}
-                      className="bg-white hover:bg-gray-50"
+                      className="bg-white hover:bg-gray-50 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
                     >
-                      <Download className="h-4 w-4 mr-2" /> 
-                      Exportar CSV
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" /> 
+                      <span className="hidden xs:inline">Exportar CSV</span>
+                      <span className="xs:hidden">CSV</span>
                     </Button>
                   </div>
                 </div>
@@ -467,8 +472,8 @@ export default function DetallesCalificaciones() {
               
               {/* Distribución de calificaciones */}
               {calificacionesFiltradas?.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">

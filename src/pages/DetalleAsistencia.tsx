@@ -291,20 +291,24 @@ export default function DetalleAsistencia() {
       <div className="p-3 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 min-w-0 flex-1">
               <Link to="/app/asistencias">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
+                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 flex items-center gap-1 sm:gap-2 shrink-0">
+                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">Volver</span>
+                  <span className="xs:hidden">←</span>
                 </Button>
               </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {course.nombre} - {course.division}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
+                  {course.nombre}
+                  <span className="hidden xs:inline"> - {course.division}</span>
+                  <span className="xs:hidden"> ({course.division})</span>
                 </h1>
-                <p className="text-gray-600">
-                  Detalle de asistencias del curso
+                <p className="text-gray-600 text-sm sm:text-base">
+                  <span className="hidden sm:inline">Detalle de asistencias del curso</span>
+                  <span className="sm:hidden">Asistencias del curso</span>
                 </p>
               </div>
             </div>
@@ -334,15 +338,16 @@ export default function DetalleAsistencia() {
           </div>
 
           {/* Calendario semanal */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-indigo-600" />
-                Semana del {format(weekStart, 'dd MMM', { locale: es })} al {format(weekEnd, 'dd MMM yyyy', { locale: es })}
+          <Card className="mb-4 sm:mb-6">
+            <CardHeader className="p-3 sm:p-4 lg:p-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                <span className="hidden sm:inline">Semana del {format(weekStart, 'dd MMM', { locale: es })} al {format(weekEnd, 'dd MMM yyyy', { locale: es })}</span>
+                <span className="sm:hidden">{format(weekStart, 'dd/MM', { locale: es })} - {format(weekEnd, 'dd/MM', { locale: es })}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-2">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
                 {weekDays.map((day, index) => {
                   const dayAttendances = courseAttendances.filter(a => a.date === format(day, 'yyyy-MM-dd'));
                   const dayPresent = dayAttendances.filter(a => a.present).length;
@@ -352,16 +357,17 @@ export default function DetalleAsistencia() {
                   return (
                     <div
                       key={index}
-                      className={`p-3 text-center rounded-lg border transition-colors ${
+                      className={`p-1.5 sm:p-2 lg:p-3 text-center rounded-lg border transition-colors ${
                         dayAttendances.length > 0
                           ? 'bg-blue-50 border-blue-200'
                           : 'bg-white border-gray-200'
                       }`}
                     >
                       <div className="text-xs text-gray-500 mb-1">
-                        {format(day, 'EEE', { locale: es })}
+                        <span className="hidden xs:inline">{format(day, 'EEE', { locale: es })}</span>
+                        <span className="xs:hidden">{format(day, 'EEEEE', { locale: es })}</span>
                       </div>
-                      <div className="text-lg font-semibold">
+                      <div className="text-sm sm:text-base lg:text-lg font-semibold">
                         {format(day, 'dd')}
                       </div>
                       {dayAttendances.length > 0 && (
@@ -450,77 +456,7 @@ export default function DetalleAsistencia() {
               </div>
             </div>
             
-            {/* Filtros integrados */}
-            <div className="flex flex-wrap items-end gap-4 max-w-full overflow-hidden">
-              <div className="min-w-0 flex-1 sm:flex-none sm:max-w-xs">
-                <Label htmlFor="subject" className="text-sm font-medium text-gray-700 mb-1">Materia</Label>
-                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Todas las materias" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las materias</SelectItem>
-                    {courseSubjects.map(subject => (
-                      <SelectItem key={subject.firestoreId} value={subject.nombre}>
-                        {subject.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="min-w-0 flex-1 sm:flex-none sm:max-w-xs">
-                <Label htmlFor="date" className="text-sm font-medium text-gray-700 mb-1 block">Fecha</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  placeholder="Todas las fechas"
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="min-w-0 flex-1 sm:flex-none sm:max-w-xs">
-                <Label htmlFor="status" className="text-sm font-medium text-gray-700 mb-1 block">Estado</Label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="present">Presentes</SelectItem>
-                    <SelectItem value="absent">Ausentes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="shrink-0">
-                <Label className="text-sm font-medium text-gray-700 mb-1 block">Vista</Label>
-                <div className="flex border rounded-md">
-                  <Button
-                    variant={viewMode === "table" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("table")}
-                    className="rounded-r-none px-2 xs:px-3"
-                    aria-label="Vista Tabla"
-                  >
-                    <Table className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-1">Tabla</span>
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className="rounded-l-none px-2 xs:px-3"
-                    aria-label="Vista Lista"
-                  >
-                    <List className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-1">Lista</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
           </CardHeader>
           <CardContent>
             {viewMode === "table" ? (
@@ -543,7 +479,7 @@ export default function DetalleAsistencia() {
                     label: "Estado",
                     placeholder: "Filtrar por estado",
                     options: [
-                      { label: "Todos", value: "" },
+                      { label: "Todos", value: "all" },
                       { label: "Presentes", value: "true" },
                       { label: "Ausentes", value: "false" }
                     ]

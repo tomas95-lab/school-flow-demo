@@ -622,55 +622,76 @@ export default function DetallesMuro() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-3 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Muro de {course.nombre} - {course.division}
+        <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
+                <span className="hidden sm:inline">Muro de </span>{course.nombre}
+                <span className="hidden xs:inline"> - {course.division}</span>
+                <span className="xs:hidden"> ({course.division})</span>
               </h1>
-              <p className="text-gray-600 mt-1">
-                {courseSubjects.length} materias • {filteredMessages.length} mensajes
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                <span className="hidden sm:inline">{courseSubjects.length} materias • {filteredMessages.length} mensajes</span>
+                <span className="sm:hidden">{courseSubjects.length} mat. • {filteredMessages.length} msg.</span>
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-green-50 text-green-700">
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="outline" className="bg-green-50 text-green-700 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
                 Activo
               </Badge>
             </div>
           </div>
 
           {/* Estadísticas del muro */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
             {(() => {
               const stats = getWallStats();
               return (
                 <>
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{stats.totalMessages}</div>
-                    <div className="text-sm text-blue-700">Mensajes</div>
+                  <div className="bg-blue-50 p-2 sm:p-3 rounded-lg">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{stats.totalMessages}</div>
+                    <div className="text-xs sm:text-sm text-blue-700">
+                      <span className="hidden xs:inline">Mensajes</span>
+                      <span className="xs:hidden">Msg.</span>
+                    </div>
                   </div>
-                  <div className="bg-yellow-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-yellow-600">{stats.pinnedMessages}</div>
-                    <div className="text-sm text-yellow-700">Fijados</div>
+                  <div className="bg-yellow-50 p-2 sm:p-3 rounded-lg">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-600">{stats.pinnedMessages}</div>
+                    <div className="text-xs sm:text-sm text-yellow-700">
+                      <span className="hidden xs:inline">Fijados</span>
+                      <span className="xs:hidden">Fij.</span>
+                    </div>
                   </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{stats.myMessages}</div>
-                    <div className="text-sm text-green-700">Mis mensajes</div>
+                  <div className="bg-green-50 p-2 sm:p-3 rounded-lg">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{stats.myMessages}</div>
+                    <div className="text-xs sm:text-sm text-green-700">
+                      <span className="hidden sm:inline">Mis mensajes</span>
+                      <span className="sm:hidden">Míos</span>
+                    </div>
                   </div>
-                  <div className="bg-purple-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{stats.totalLikes}</div>
-                    <div className="text-sm text-purple-700">Me gusta</div>
+                  <div className="bg-purple-50 p-2 sm:p-3 rounded-lg">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-600">{stats.totalLikes}</div>
+                    <div className="text-xs sm:text-sm text-purple-700">
+                      <span className="hidden xs:inline">Me gusta</span>
+                      <span className="xs:hidden">❤️</span>
+                    </div>
                   </div>
-                  <div className="bg-orange-50 p-3 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">{stats.totalReplies}</div>
-                    <div className="text-sm text-orange-700">Respuestas</div>
+                  <div className="bg-orange-50 p-2 sm:p-3 rounded-lg">
+                    <div className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">{stats.totalReplies}</div>
+                    <div className="text-xs sm:text-sm text-orange-700">
+                      <span className="hidden xs:inline">Respuestas</span>
+                      <span className="xs:hidden">Resp.</span>
+                    </div>
                   </div>
                   {showReadStatus && (
-                    <div className="bg-red-50 p-3 rounded-lg">
-                      <div className="text-2xl font-bold text-red-600">{stats.unreadMessages}</div>
-                      <div className="text-sm text-red-700">No leídos</div>
+                    <div className="bg-red-50 p-2 sm:p-3 rounded-lg col-span-2 xs:col-span-1">
+                      <div className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">{stats.unreadMessages}</div>
+                      <div className="text-xs sm:text-sm text-red-700">
+                        <span className="hidden xs:inline">No leídos</span>
+                        <span className="xs:hidden">Sin leer</span>
+                      </div>
                     </div>
                   )}
                 </>
@@ -690,9 +711,9 @@ export default function DetallesMuro() {
           </div>
 
           {/* Filtros y ordenamiento */}
-          <div className="btn-container flex-container-safe mb-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full xs:w-40 min-w-0">
+              <SelectTrigger className="w-full h-8 sm:h-9 text-xs sm:text-sm">
                 <SelectValue placeholder="Tipo de mensaje" />
               </SelectTrigger>
               <SelectContent>
@@ -708,10 +729,10 @@ export default function DetallesMuro() {
               variant={showOnlyPinned ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyPinned(!showOnlyPinned)}
-              className="btn-responsive flex items-center gap-2"
+              className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 w-full flex items-center justify-center gap-1 sm:gap-2 min-w-0"
             >
-              <Pin className="h-4 w-4 shrink-0" />
-              <span className="btn-text-xs">Solo fijados</span>
+              <Pin className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden xs:inline">Solo fijados</span>
               <span className="xs:hidden">Fijados</span>
             </Button>
 
@@ -719,10 +740,10 @@ export default function DetallesMuro() {
               variant={showOnlyMyMessages ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyMyMessages(!showOnlyMyMessages)}
-              className="btn-responsive flex items-center gap-2"
+              className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 w-full flex items-center justify-center gap-1 sm:gap-2 min-w-0"
             >
-              <User className="h-4 w-4 shrink-0" />
-              <span className="btn-text-xs">Mis mensajes</span>
+              <User className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden xs:inline">Mis mensajes</span>
               <span className="xs:hidden">Míos</span>
             </Button>
 
@@ -730,18 +751,18 @@ export default function DetallesMuro() {
               variant="outline"
               size="sm"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="btn-responsive flex items-center gap-2"
+              className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 w-full flex items-center justify-center gap-1 sm:gap-2 min-w-0 col-span-1 xs:col-span-2 sm:col-span-1"
             >
-              <Filter className="h-4 w-4 shrink-0" />
-              <span className="btn-text-sm">Filtros avanzados</span>
+              <Filter className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+              <span className="hidden sm:inline">Filtros avanzados</span>
               <span className="sm:hidden">Filtros</span>
             </Button>
           </div>
 
           {/* Filtros avanzados */}
           {showAdvancedFilters && (
-            <div className="bg-gray-50 p-4 rounded-lg mb-4">
-              <div className="flex flex-wrap gap-4">
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg mb-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -783,20 +804,22 @@ export default function DetallesMuro() {
         </div>
 
         {/* Formulario de nuevo mensaje */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Nuevo mensaje
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden xs:inline">Nuevo mensaje</span>
+              <span className="xs:hidden">Mensaje</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
+            <div className="flex flex-wrap gap-2">
               <label htmlFor="file-upload" className="cursor-pointer">
-                <Button variant="outline" size="sm" className="flex items-center gap-2" asChild>
+                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 flex items-center gap-1 sm:gap-2" asChild>
                   <span>
-                    <Paperclip className="h-4 w-4" />
-                    Adjuntar
+                    <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">Adjuntar</span>
+                    <span className="xs:hidden">📎</span>
                   </span>
                 </Button>
               </label>
@@ -810,10 +833,11 @@ export default function DetallesMuro() {
               />
               
               <label htmlFor="image-upload" className="cursor-pointer">
-                <Button variant="outline" size="sm" className="flex items-center gap-2" asChild>
+                <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 flex items-center gap-1 sm:gap-2" asChild>
                   <span>
-                    <Image className="h-4 w-4" />
-                    Imagen
+                    <Image className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">Imagen</span>
+                    <span className="xs:hidden">🖼️</span>
                   </span>
                 </Button>
               </label>

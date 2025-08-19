@@ -376,8 +376,8 @@ export function DataTable<TData, TValue>({
                     return (
                       <div key={i} className="min-w-0">
                         <Select
-                          value={(col?.getFilterValue() as string) ?? ""}
-                          onValueChange={v => col?.setFilterValue(v)}
+                          value={(col?.getFilterValue() as string) ?? "all"}
+                          onValueChange={v => col?.setFilterValue(v === "all" ? undefined : v)}
                         >
                           <SelectTrigger size="sm" className="h-8 w-full text-xs border-gray-200 focus:border-blue-300">
                             <SelectValue placeholder={filter.placeholder || filter.label} />

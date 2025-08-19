@@ -183,7 +183,7 @@ export default function BoletinesCurso() {
 							label: "Estado",
 							placeholder: "Filtrar por estado",
 							options: [
-								{ label: "Todos", value: "" },
+								{ label: "Todos", value: "all" },
 								{ label: "Abierto", value: "abierto" },
 								{ label: "Cerrado", value: "cerrado" }
 							]
@@ -194,7 +194,7 @@ export default function BoletinesCurso() {
 							label: "Observación",
 							placeholder: "Filtrar por observación",
 							options: [
-								{ label: "Todas", value: "" },
+								{ label: "Todas", value: "all" },
 								{ label: "Excelente", value: "Excelente" },
 								{ label: "Muy Bueno", value: "Muy Bueno" },
 								{ label: "Bueno", value: "Bueno" },

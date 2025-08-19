@@ -238,7 +238,7 @@ export default function Finanzas() {
                   label: "Estado",
                   placeholder: "Filtrar por estado",
                   options: [
-                    { label: "Todos los estados", value: "" },
+                    { label: "Todos los estados", value: "all" },
                     { label: "Pagado", value: "paid" },
                     { label: "Pendiente", value: "pending" },
                     { label: "Fallido", value: "failed" }
@@ -250,7 +250,7 @@ export default function Finanzas() {
                   label: "Moneda",
                   placeholder: "Filtrar por moneda",
                   options: [
-                    { label: "Todas las monedas", value: "" },
+                    { label: "Todas las monedas", value: "all" },
                     { label: "ARS", value: "ARS" },
                     { label: "USD", value: "USD" },
                     { label: "EUR", value: "EUR" }

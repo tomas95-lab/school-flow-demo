@@ -125,7 +125,7 @@ export default function Auditoria() {
                   label: "Acción",
                   placeholder: "Filtrar por acción",
                   options: [
-                    { label: "Todas las acciones", value: "" },
+                    { label: "Todas las acciones", value: "all" },
                     { label: "Crear", value: "create" },
                     { label: "Actualizar", value: "update" },
                     { label: "Eliminar", value: "delete" },
@@ -139,7 +139,7 @@ export default function Auditoria() {
                   label: "Entidad",
                   placeholder: "Filtrar por entidad",
                   options: [
-                    { label: "Todas las entidades", value: "" },
+                    { label: "Todas las entidades", value: "all" },
                     { label: "Usuarios", value: "users" },
                     { label: "Estudiantes", value: "students" },
                     { label: "Cursos", value: "courses" },
