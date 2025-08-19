@@ -599,7 +599,6 @@ const BotOverview: React.FC = () => {
              >
                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
                <span className="hidden xs:inline">Actualizar</span>
-               <span className="xs:hidden">🔄</span>
              </Button>
            </div>
          </div>
@@ -652,13 +651,13 @@ const BotOverview: React.FC = () => {
                   <Button
                     key={query.id}
                     variant={selectedQuery === query.id ? "default" : "outline"}
-                    className="justify-start h-auto p-4"
+                    className="justify-start h-auto p-4 w-full text-wrap whitespace-normal"
                     onClick={() => handleQuery(query.id)}
                   >
                     <Icon className="h-5 w-5 mr-3 text-purple-600" />
-                    <div className="text-left">
+                    <div className="text-left w-auto text-wrap whitespace-normal">
                       <div className="font-medium">{query.title}</div>
-                      <div className="text-sm text-gray-600">{query.description}</div>
+                      <div className="text-sm text-gray-600 w-auto text-wrap whitespace-normal"><p className='break-words w-auto text-wrap whitespace-normal'>{query.description}</p></div>
                     </div>
                   </Button>
                 );
