@@ -395,16 +395,16 @@ export default function DetallesCalificaciones() {
                     </div>
                     <div>
                       <h1 className="text-3xl font-bold text-gray-900">{course?.nombre}</h1>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
                           División {course?.division}
                         </Badge>
-                        <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
                           Año {course?.año}
                         </Badge>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          <Users className="h-3 w-3 mr-1" />
-                          {studentsInCourse.length} Alumnos
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
+                          <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1 shrink-0" />
+                          <span className="truncate">{studentsInCourse.length} <span className="hidden xs:inline">Alumnos</span><span className="xs:hidden">Est.</span></span>
                         </Badge>
                       </div>
                     </div>

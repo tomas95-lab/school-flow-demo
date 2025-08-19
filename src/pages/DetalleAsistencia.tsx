@@ -524,7 +524,49 @@ export default function DetalleAsistencia() {
           </CardHeader>
           <CardContent>
             {viewMode === "table" ? (
-              <DataTable columns={columns} data={tableData} />
+              <DataTable 
+                columns={columns} 
+                data={tableData} 
+                placeholder="registro de asistencia"
+                exportable={true}
+                title="Registros de Asistencia"
+                description="Lista detallada de asistencias del curso"
+                filters={[
+                  {
+                    type: "input",
+                    columnId: "Nombre",
+                    placeholder: "Buscar estudiante"
+                  },
+                  {
+                    type: "select",
+                    columnId: "present",
+                    label: "Estado",
+                    placeholder: "Filtrar por estado",
+                    options: [
+                      { label: "Todos", value: "" },
+                      { label: "Presentes", value: "true" },
+                      { label: "Ausentes", value: "false" }
+                    ]
+                  },
+                  {
+                    type: "input",
+                    columnId: "subject",
+                    placeholder: "Filtrar materia"
+                  },
+                  {
+                    type: "button",
+                    label: "Solo Ausentes",
+                    variant: "outline",
+                    onClick: (table) => table.getColumn("present")?.setFilterValue("false")
+                  },
+                  {
+                    type: "button",
+                    label: "Solo Presentes", 
+                    variant: "outline",
+                    onClick: (table) => table.getColumn("present")?.setFilterValue("true")
+                  }
+                ]}
+              />
             ) : (
               <div className="space-y-3">
                 {tableData.length === 0 ? (

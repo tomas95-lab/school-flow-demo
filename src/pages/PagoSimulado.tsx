@@ -90,7 +90,7 @@ export default function PagoSimulado() {
                 <div className="text-xl font-bold">{(new Intl.NumberFormat('es-AR', { style: 'currency', currency: invoice.currency || 'ARS' })).format(Number(invoice.total || 0))}</div>
               </div>
               <div className="mt-3 text-sm flex items-center gap-2">Estado:
-                {invoice.status === 'paid' ? <Badge variant="success">Pagado</Badge> : invoice.status === 'failed' ? <Badge variant="destructive">Fallido</Badge> : <Badge variant="outline" className="text-amber-700 border-amber-300">Pendiente</Badge>}
+                {invoice.status === 'paid' ? <Badge variant="success" className="text-xs px-1.5 py-0.5">Pagado</Badge> : invoice.status === 'failed' ? <Badge variant="destructive" className="text-xs px-1.5 py-0.5">Fallido</Badge> : <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs px-1.5 py-0.5 shrink-0">Pendiente</Badge>}
               </div>
               {invoice.dueDate && <div className="text-sm text-gray-600">Vence: {invoice.dueDate}</div>}
             </div>

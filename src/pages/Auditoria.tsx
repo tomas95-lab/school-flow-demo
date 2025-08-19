@@ -106,7 +106,54 @@ export default function Auditoria() {
             <CardDescription>Acciones recientes</CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable<AuditLog, any> columns={columns} data={logs || []} title="Auditoría" description="Bitácora centralizada" />
+            <DataTable<AuditLog, any> 
+              columns={columns} 
+              data={logs || []} 
+              title="Auditoría" 
+              description="Bitácora centralizada"
+              placeholder="registro de auditoría"
+              exportable={true}
+              filters={[
+                {
+                  type: "input",
+                  columnId: "userEmail",
+                  placeholder: "Buscar usuario"
+                },
+                {
+                  type: "select",
+                  columnId: "action",
+                  label: "Acción",
+                  placeholder: "Filtrar por acción",
+                  options: [
+                    { label: "Todas las acciones", value: "" },
+                    { label: "Crear", value: "create" },
+                    { label: "Actualizar", value: "update" },
+                    { label: "Eliminar", value: "delete" },
+                    { label: "Login", value: "login" },
+                    { label: "Logout", value: "logout" }
+                  ]
+                },
+                {
+                  type: "select",
+                  columnId: "entity",
+                  label: "Entidad",
+                  placeholder: "Filtrar por entidad",
+                  options: [
+                    { label: "Todas las entidades", value: "" },
+                    { label: "Usuarios", value: "users" },
+                    { label: "Estudiantes", value: "students" },
+                    { label: "Cursos", value: "courses" },
+                    { label: "Calificaciones", value: "calificaciones" },
+                    { label: "Asistencias", value: "asistencias" }
+                  ]
+                },
+                {
+                  type: "input",
+                  columnId: "entityId",
+                  placeholder: "Buscar por ID"
+                }
+              ]}
+            />
           </CardContent>
         </Card>
       </div>

@@ -105,15 +105,15 @@ export default function BoletinesCurso() {
 								</div>
 								<div>
 									<h1 className="text-3xl font-bold text-gray-900">{course?.nombre}</h1>
-									<div className="flex items-center gap-2 mt-1">
-										<Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+									<div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
+										<Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
 											División {course?.division}
 										</Badge>
-										<Badge variant="outline" className="bg-gray-50 text-gray-700">
+										<Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
 											Año {course?.año}
 										</Badge>
-										<Badge variant="outline" className="bg-gray-50 text-gray-700">
-											Trimestre {periodoActual}
+										<Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 shrink-0">
+											<span className="hidden xs:inline">Trimestre </span>T{periodoActual}
 										</Badge>
 									</div>
 								</div>
@@ -164,7 +164,64 @@ export default function BoletinesCurso() {
 				/>
 
 			</div>
-				<DataTable columns={columns} data={rows} />
+				<DataTable 
+					columns={columns} 
+					data={rows} 
+					placeholder="boletín"
+					exportable={true}
+					title="Boletines del Curso"
+					description="Lista de boletines académicos de los estudiantes"
+					filters={[
+						{
+							type: "input",
+							columnId: "Nombre",
+							placeholder: "Buscar estudiante"
+						},
+						{
+							type: "select",
+							columnId: "estado",
+							label: "Estado",
+							placeholder: "Filtrar por estado",
+							options: [
+								{ label: "Todos", value: "" },
+								{ label: "Abierto", value: "abierto" },
+								{ label: "Cerrado", value: "cerrado" }
+							]
+						},
+						{
+							type: "select",
+							columnId: "observacionGeneral",
+							label: "Observación",
+							placeholder: "Filtrar por observación",
+							options: [
+								{ label: "Todas", value: "" },
+								{ label: "Excelente", value: "Excelente" },
+								{ label: "Muy Bueno", value: "Muy Bueno" },
+								{ label: "Bueno", value: "Bueno" },
+								{ label: "Regular", value: "Regular" },
+								{ label: "Insuficiente", value: "Insuficiente" }
+							]
+						},
+						{
+							type: "button",
+							label: "Reprobados",
+							variant: "outline",
+							onClick: () => {
+								// Filtrar estudiantes con promedio menor a 6
+								// Esta funcionalidad se implementará con filtros dinámicos en una versión futura
+							}
+						},
+						{
+							type: "button",
+							label: "Aprobados",
+							variant: "outline", 
+							onClick: () => {
+								// Filtrar estudiantes con promedio mayor o igual a 6
+								// Esta funcionalidad se implementará con filtros dinámicos en una versión futura
+							}
+						}
+					]}
+				/>
 			</div>
 		
 		</div>

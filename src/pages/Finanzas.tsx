@@ -78,7 +78,7 @@ export default function Finanzas() {
       ) : row.original.status === 'failed' ? (
         <Badge variant="destructive">Fallido</Badge>
       ) : (
-        <Badge variant="outline" className="text-amber-700 border-amber-300">Pendiente</Badge>
+        <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs px-1.5 py-0.5 shrink-0">Pendiente</Badge>
       )
     ) },
     { accessorKey: 'dueDate', header: 'Vencimiento', cell: ({ row }) => (
@@ -219,7 +219,57 @@ export default function Finanzas() {
             <CardTitle>Facturas</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable<Invoice, any> columns={columns} data={invoices} exportable title="Facturas" description="Listado de facturas simuladas" />
+            <DataTable<Invoice, any> 
+              columns={columns} 
+              data={invoices} 
+              exportable 
+              title="Facturas" 
+              description="Listado de facturas simuladas"
+              placeholder="factura"
+              filters={[
+                {
+                  type: "input",
+                  columnId: "alumnoNombre",
+                  placeholder: "Buscar alumno"
+                },
+                {
+                  type: "select",
+                  columnId: "status",
+                  label: "Estado",
+                  placeholder: "Filtrar por estado",
+                  options: [
+                    { label: "Todos los estados", value: "" },
+                    { label: "Pagado", value: "paid" },
+                    { label: "Pendiente", value: "pending" },
+                    { label: "Fallido", value: "failed" }
+                  ]
+                },
+                {
+                  type: "select",
+                  columnId: "currency",
+                  label: "Moneda",
+                  placeholder: "Filtrar por moneda",
+                  options: [
+                    { label: "Todas las monedas", value: "" },
+                    { label: "ARS", value: "ARS" },
+                    { label: "USD", value: "USD" },
+                    { label: "EUR", value: "EUR" }
+                  ]
+                },
+                {
+                  type: "button",
+                  label: "Solo Pendientes",
+                  variant: "outline",
+                  onClick: (table) => table.getColumn("status")?.setFilterValue("pending")
+                },
+                {
+                  type: "button",
+                  label: "Solo Pagadas",
+                  variant: "outline",
+                  onClick: (table) => table.getColumn("status")?.setFilterValue("paid")
+                }
+              ]}
+            />
           </CardContent>
         </Card>
       </div>
