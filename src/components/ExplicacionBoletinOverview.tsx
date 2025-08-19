@@ -545,7 +545,7 @@ export default function ExplicacionBoletinOverview() {
       <div className="p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 flex-wrap">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
@@ -576,8 +576,8 @@ export default function ExplicacionBoletinOverview() {
                 )}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 py-8">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <Button 
                     onClick={handleGenerateExplanations}

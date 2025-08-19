@@ -564,7 +564,7 @@ export default function GestionCursosMaterias() {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
             <div className="flex-1">
-              <div className="flex flex-col xs:flex-row xs:items-center gap-4 mb-4">
+              <div className="flex items-center xs:flex-row xs:items-center gap-4 mb-4">
                 <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg shrink-0">
                   <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>

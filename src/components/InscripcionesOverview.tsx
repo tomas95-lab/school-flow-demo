@@ -484,8 +484,8 @@ export default function InscripcionesOverview() {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-6 max-w-full overflow-hidden">
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col xs:flex-row xs:items-center gap-4 mb-4">
-                <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg shrink-0">
+              <div className="flex items-center xs:flex-row xs:items-center gap-4 mb-4">
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg shrink-0 w-fit">
                   <UserPlus className="h-8 w-8 text-white" />
                 </div>
                 <div className="min-w-0">

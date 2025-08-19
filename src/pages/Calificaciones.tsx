@@ -276,7 +276,7 @@ export default function Calificaciones() {
           {!activeView && (
             <div className="text-center py-12 animate-in fade-in-50 duration-500">
               <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                   <div className="p-4 bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                     <BookOpen className="h-8 w-8 text-gray-400" />
                   </div>
@@ -297,7 +297,7 @@ export default function Calificaciones() {
           {activeView === "calendar" && !canViewCalendar && (
             <div className="text-center py-12 animate-in fade-in-50 duration-500">
               <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                   <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle className="h-8 w-8 text-orange-400" />
                   </div>
@@ -315,7 +315,7 @@ export default function Calificaciones() {
 
         {/* Footer con información adicional */}
         <Separator className="my-12" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-blue-600" />

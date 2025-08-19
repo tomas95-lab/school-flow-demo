@@ -375,7 +375,7 @@ export default function Asistencias() {
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Chart de Asistencia por Día de la Semana */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-3 sm:p-4 lg:p-6 xl:p-8">
                    <LineChartComponent
                      data={chartData.attendanceByDayOfWeek}
                      xKey="dia"
@@ -388,7 +388,7 @@ export default function Asistencias() {
                  </div>
 
                                  {/* Chart de Asistencia por Curso */}
-                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-3 sm:p-4 lg:p-6 xl:p-8">
                    <BarChartComponent
                      data={chartData.attendanceByCourse}
                      xKey="curso"
@@ -400,7 +400,7 @@ export default function Asistencias() {
                  </div>
 
                                  {/* Chart de Distribución de Asistencias */}
-                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-3 sm:p-4 lg:p-6 xl:p-8">
                    <PieChartComponent
                      data={chartData.attendanceDistribution}
                      dataKey="cantidad"
@@ -413,7 +413,7 @@ export default function Asistencias() {
                  </div>
 
                                  {/* Estadísticas Generales */}
-                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8">
+                 <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-3 sm:p-4 lg:p-6 xl:p-8">
                   <div className="h-80 flex items-center justify-center">
                     <div className="text-center">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas Generales</h3>
@@ -450,7 +450,7 @@ export default function Asistencias() {
             </div>
           ) : (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6 lg:p-8">
                 <div className="text-center max-w-md mx-auto">
                   <div className="text-gray-400 mb-4">
                     <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -468,7 +468,7 @@ export default function Asistencias() {
           {activeView === "register" && canRegisterAttendance && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               <Card className="bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                   <EmptyState
                     icon={BookOpen}
                     title={'Registrar asistencias'}
@@ -507,7 +507,7 @@ export default function Asistencias() {
           {!activeView && (
             <div className="text-center py-12 animate-in fade-in-50 duration-500">
               <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                   <div className="p-4 bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                     <BookOpen className="h-8 w-8 text-gray-400" />
                   </div>
@@ -526,7 +526,7 @@ export default function Asistencias() {
           {activeView === "register" && !canRegisterAttendance && (
             <div className="text-center py-12 animate-in fade-in-50 duration-500">
               <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                   <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle className="h-8 w-8 text-orange-400" />
                   </div>
@@ -545,7 +545,7 @@ export default function Asistencias() {
           {activeView === "calendar" && !canViewCalendar && (
             <div className="text-center py-12 animate-in fade-in-50 duration-500">
               <Card className="max-w-md mx-auto bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
                   <div className="p-4 bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle className="h-8 w-8 text-orange-400" />
                   </div>
@@ -563,7 +563,7 @@ export default function Asistencias() {
 
         {/* Footer con información adicional */}
         <Separator className="my-12" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />

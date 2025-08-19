@@ -382,11 +382,11 @@ export default function DetallesCalificaciones() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto space-y-3 sm:space-y-4 lg:space-y-6">
           {/* Header mejorado */}
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex flex-col lg:flex-row lg:justify-between gap-3 sm:gap-4 lg:gap-6">
                 {/* Sección Izquierda - Info del Curso */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -530,7 +530,7 @@ export default function DetallesCalificaciones() {
           </Card>
 
           {/* KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             <StatsCard
               label="Promedio general"
               icon={TrendingUp}
@@ -730,7 +730,7 @@ export default function DetallesCalificaciones() {
 
             {activeView === "analytics" && (
               <div className="animate-in slide-in-from-bottom-4 duration-500">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                   {/* Rendimiento por estudiante */}
                   <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
                     <CardHeader>

@@ -288,10 +288,10 @@ export default function DetalleAsistencia() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-8">
+      <div className="p-3 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div className="flex items-center gap-4">
               <Link to="/app/asistencias">
                 <Button variant="outline" size="sm">
@@ -378,9 +378,9 @@ export default function DetalleAsistencia() {
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-3 rounded-lg">
                   <Users className="h-6 w-6 text-blue-600" />
@@ -394,7 +394,7 @@ export default function DetalleAsistencia() {
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="bg-green-100 p-3 rounded-lg">
                   <CheckCircle className="h-6 w-6 text-green-600" />
@@ -408,7 +408,7 @@ export default function DetalleAsistencia() {
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="bg-red-100 p-3 rounded-lg">
                   <XCircle className="h-6 w-6 text-red-600" />
@@ -422,7 +422,7 @@ export default function DetalleAsistencia() {
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="bg-indigo-100 p-3 rounded-lg">
                   <TrendingUp className="h-6 w-6 text-indigo-600" />

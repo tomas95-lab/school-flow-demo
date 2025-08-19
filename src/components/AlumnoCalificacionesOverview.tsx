@@ -241,12 +241,21 @@ export default function AlumnoCalificacionesOverview() {
                   label: "Fecha",
                   placeholder: "Seleccionar fecha",
                   element: (table) => (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full">
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4" />
-                            {startDate ? format(startDate, "dd/MM/yyyy") : "Desde"}
+                          <Button variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 min-w-0 flex-1 xs:flex-none">
+                            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                            <span className="truncate">
+                              {startDate ? (
+                                <>
+                                  <span className="hidden sm:inline">{format(startDate, "dd/MM/yyyy")}</span>
+                                  <span className="sm:hidden">{format(startDate, "dd/MM")}</span>
+                                </>
+                              ) : (
+                                "Desde"
+                              )}
+                            </span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -275,9 +284,18 @@ export default function AlumnoCalificacionesOverview() {
 
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4" />
-                            {endDate ? format(endDate, "dd/MM/yyyy") : "Hasta"}
+                          <Button variant="outline" size="sm" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 min-w-0 flex-1 xs:flex-none">
+                            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                            <span className="truncate">
+                              {endDate ? (
+                                <>
+                                  <span className="hidden sm:inline">{format(endDate, "dd/MM/yyyy")}</span>
+                                  <span className="sm:hidden">{format(endDate, "dd/MM")}</span>
+                                </>
+                              ) : (
+                                "Hasta"
+                              )}
+                            </span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -313,8 +331,10 @@ export default function AlumnoCalificacionesOverview() {
                             setEndDate(undefined);
                             table.getColumn("fecha")?.setFilterValue(undefined);
                           }}
+                          className="text-xs sm:text-sm px-2 sm:px-3 flex-1 xs:flex-none"
                         >
-                          Limpiar
+                          <span className="xs:hidden">✕</span>
+                          <span className="hidden xs:inline">Limpiar</span>
                         </Button>
                       )}
                     </div>
