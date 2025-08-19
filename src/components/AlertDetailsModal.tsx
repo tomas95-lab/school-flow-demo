@@ -2,7 +2,7 @@
  * Modal de Detalles de Alerta - Vista completa de una alerta específica
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -17,7 +17,6 @@ import {
   CheckCircle, 
   TrendingUp, 
   Archive, 
-  MessageSquare, 
   User, 
   Calendar, 
   Clock,

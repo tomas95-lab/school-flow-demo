@@ -2,7 +2,6 @@
  * Componente de Card de Workflow de Alerta
  */
 
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -10,9 +9,7 @@ import { Progress } from './ui/progress';
 import { 
   CheckCircle, 
   Clock, 
-  User, 
-  ArrowRight,
-  AlertTriangle 
+  User
 } from 'lucide-react';
 import type { AlertWorkflow } from '@/services/alertService';
 

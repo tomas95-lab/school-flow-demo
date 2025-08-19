@@ -6,17 +6,14 @@ export { default as BotOverview } from './BotOverview';
 export { default as InscripcionesOverview } from './InscripcionesOverview';
 
 // Componentes existentes
-export { default as AdminAlertasOverview } from './AdminAlertasOverview';
 export { default as AdminAttendanceOverview } from './AdminAttendanceOverview';
 export { default as AdminBoletinesOverview } from './AdminBoletinesOverview';
 export { default as AdminCalificacionesOverview } from './AdminCalificacionesOverview';
 export { default as AdminMensajesOverview } from './AdminMensajesOverview';
-export { default as AlumnoAlertasOverview } from './AlumnoAlertasOverview';
 export { default as AlumnoAttendanceOverview } from './AlumnoAttendanceOverview';
 export { default as AlumnoBoletinesOverview } from './AlumnoBoletinesOverview';
 export { default as AlumnoCalificacionesOverview } from './AlumnoCalificacionesOverview';
 export { default as AlumnoMensajesOverview } from './AlumnoMensajesOverview';
-export { default as TeacherAlertasOverview } from './TeacherAlertasOverview';
 export { default as TeacherAttendanceOverview } from './TeacherAttendanceOverview';
 export { default as TeacherCalificacionesOverView } from './TeacherCalificacionesOverView';
 export { default as TeacherMensajesOverview } from './TeacherMensajesOverview';

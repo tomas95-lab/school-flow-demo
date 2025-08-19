@@ -559,7 +559,7 @@ export default function GestionCursosMaterias() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         {/* Header mejorado con diseño moderno */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
@@ -591,7 +591,11 @@ export default function GestionCursosMaterias() {
             <div className="btn-container flex-container-safe">
               {canManageCourses && (
                 <Button 
-                  onClick={() => setActiveView("courses")}
+                  onClick={() => {
+                    setActiveView("courses");
+                    // Scroll suave al top cuando se cambia de módulo
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   className="btn-responsive bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 shadow-lg hover:shadow-xl transition-all duration-300 w-full lg:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-2 shrink-0" />
@@ -604,8 +608,8 @@ export default function GestionCursosMaterias() {
       </div>
 
         {/* Navegación por tabs mejorada */}
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-3">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {availableTabs.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeView === tab.id;
@@ -614,15 +618,21 @@ export default function GestionCursosMaterias() {
                 <Button
                   key={tab.id}
                   variant={isActive ? "default" : "outline"}
-                  onClick={() => setActiveView(tab.id)}
-                  className={`flex items-center gap-2 transition-all duration-300 ${
+                  onClick={() => {
+                    setActiveView(tab.id);
+                    // Scroll suave al top cuando se cambia de módulo
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  size="sm"
+                  className={`flex items-center gap-1 sm:gap-2 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 ${
                     isActive 
                       ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 shadow-lg' 
                       : 'hover:bg-gray-50 hover:shadow-md'
                   }`}
                 >
-                  <TabIcon className="h-4 w-4" />
-                  {tab.label}
+                  <TabIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">{tab.label}</span>
+                  <span className="xs:hidden">{tab.label.split(' ')[0]}</span>
                 </Button>
               );
             })}
@@ -634,7 +644,7 @@ export default function GestionCursosMaterias() {
           {activeView === "overview" && (
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               {/* Estadísticas (StatsCard) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <StatsCard icon={Building} label="Total Cursos" value={allCourses?.length || 0} color="orange" />
                 <StatsCard icon={BookOpen} label="Total Materias" value={allSubjects?.length || 0} color="indigo" />
                 <StatsCard icon={Users} label={user?.role === "docente" ? "Mis Cursos" : "Docentes"} value={user?.role === "docente" ? teacherCourses.length : (allTeachers?.length || 0)} color={user?.role === "docente" ? "green" : "purple"} />
@@ -714,7 +724,7 @@ export default function GestionCursosMaterias() {
                 {/* Información Básica */}
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-3">Información Básica</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="courseName">Nombre del Curso *</Label>
                       <Input
@@ -749,7 +759,7 @@ export default function GestionCursosMaterias() {
                 {/* Configuración Académica */}
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-3">Configuración Académica</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="courseLevel">Nivel Educativo *</Label>
                       <Select 
@@ -792,7 +802,7 @@ export default function GestionCursosMaterias() {
                 {/* Configuración Operativa */}
                 <div>
                   <h4 className="text-sm font-medium text-gray-900 mb-3">Configuración Operativa</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <Label htmlFor="courseModality">Modalidad</Label>
                       <Select 
@@ -863,10 +873,10 @@ export default function GestionCursosMaterias() {
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6 pt-4 border-t">
+              <div className="flex flex-col xs:flex-row gap-3 mt-6 pt-4 border-t">
                 <Button 
                   onClick={editingCourse ? handleUpdateCourse : handleAddCourse} 
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
+                  className="flex-1 xs:flex-initial bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
                 >
                   {editingCourse ? (
                     <>
@@ -886,6 +896,7 @@ export default function GestionCursosMaterias() {
                     setIsAddingCourse(false);
                     cancelEdit();
                   }}
+                  className="flex-1 xs:flex-initial"
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
@@ -903,52 +914,61 @@ export default function GestionCursosMaterias() {
               </div>
             ) : (
               allCourses?.map((course) => (
-                <div key={course.firestoreId} className="bg-white border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <h4 className="text-lg font-semibold text-gray-900">
+                <div key={course.firestoreId} className="bg-white border rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between xs:items-center gap-3 mb-3">
+                        <h4 className="text-lg font-semibold text-gray-900 break-words min-w-0">
                           {course.nombre} - División {course.division}
                         </h4>
-                        <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
-                          {course.status === 'active' ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                        <Badge variant="outline">
-                          {teacherCourses.some(c => c.firestoreId === course.firestoreId) ? "Mi Curso" : "Otro"}
-                        </Badge>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                          <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
+                            {course.status === 'active' ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          <Badge variant="outline">
+                            {teacherCourses.some(c => c.firestoreId === course.firestoreId) ? "Mi Curso" : "Otro"}
+                          </Badge>
+                        </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">Año:</span> {course.año}
+                      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-gray-600">
+                        <div className="flex flex-col xs:flex-row xs:gap-1">
+                          <span className="font-medium">Año:</span> 
+                          <span>{course.año}</span>
                         </div>
-                        <div>
-                          <span className="font-medium">Nivel:</span> {course.nivel || 'No definido'}
+                        <div className="flex flex-col xs:flex-row xs:gap-1">
+                          <span className="font-medium">Nivel:</span> 
+                          <span>{course.nivel || 'No definido'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium">Modalidad:</span> {course.modalidad || 'Presencial'}
+                        <div className="flex flex-col xs:flex-row xs:gap-1">
+                          <span className="font-medium">Modalidad:</span> 
+                          <span>{course.modalidad || 'Presencial'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium">Turno:</span> {course.turno || 'Mañana'}
+                        <div className="flex flex-col xs:flex-row xs:gap-1">
+                          <span className="font-medium">Turno:</span> 
+                          <span>{course.turno || 'Mañana'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium">Cupo:</span> {course.maxStudents || 30} estudiantes
+                        <div className="flex flex-col xs:flex-row xs:gap-1">
+                          <span className="font-medium">Cupo:</span> 
+                          <span>{course.maxStudents || 30} estudiantes</span>
                         </div>
-                        <div>
-                          <span className="font-medium">Aula:</span> {course.aula || 'No asignada'}
+                        <div className="flex flex-col xs:flex-row xs:gap-1">
+                          <span className="font-medium">Aula:</span> 
+                          <span>{course.aula || 'No asignada'}</span>
                         </div>
-                        <div className="col-span-2">
-                          <span className="font-medium">Profesor:</span> {
+                        <div className="flex flex-col xs:flex-row xs:gap-1 xs:col-span-2 lg:col-span-2">
+                          <span className="font-medium">Profesor:</span> 
+                          <span className="break-words">{
                             allTeachers?.find(t => t.firestoreId === course.teacherId)?.nombre 
                             ? `${allTeachers.find(t => t.firestoreId === course.teacherId)?.nombre} ${allTeachers.find(t => t.firestoreId === course.teacherId)?.apellido}`
                             : 'No asignado'
-                          }
+                          }</span>
                         </div>
                       </div>
 
                       {course.description && (
                         <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm text-gray-700">{course.description}</p>
+                          <p className="text-sm text-gray-700 break-words">{course.description}</p>
                         </div>
                       )}
                       
@@ -957,46 +977,48 @@ export default function GestionCursosMaterias() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 ml-4">
-                      <div className="flex gap-2">
+                    <div className="flex flex-row lg:flex-col gap-2 lg:gap-2 lg:ml-4 flex-wrap lg:flex-nowrap shrink-0">
                       <Button
                         variant="outline"
                         size="sm"
-                          onClick={() => handleViewCourseDetails(course)}
-                          title="Ver detalles"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditCourse(course)}
-                          title="Editar curso"
-                          disabled={editingCourse || isAddingCourse}
+                        onClick={() => handleViewCourseDetails(course)}
+                        title="Ver detalles"
+                        className="flex-1 lg:flex-initial"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Eye className="h-4 w-4 lg:mr-0" />
+                        <span className="ml-2 lg:hidden">Detalles</span>
                       </Button>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCourseStatusToggle(course.firestoreId || "", course.status || "active")}
-                          title={course.status === 'active' ? 'Desactivar curso' : 'Activar curso'}
-                          className={course.status === 'active' ? 'text-orange-600' : 'text-gray-600'}
-                        >
-                          {course.status === 'active' ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditCourse(course)}
+                        title="Editar curso"
+                        disabled={editingCourse || isAddingCourse}
+                        className="flex-1 lg:flex-initial"
+                      >
+                        <Edit className="h-4 w-4 lg:mr-0" />
+                        <span className="ml-2 lg:hidden">Editar</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCourseStatusToggle(course.firestoreId || "", course.status || "active")}
+                        title={course.status === 'active' ? 'Desactivar curso' : 'Activar curso'}
+                        className={`flex-1 lg:flex-initial ${course.status === 'active' ? 'text-orange-600' : 'text-gray-600'}`}
+                      >
+                        {course.status === 'active' ? <ToggleRight className="h-4 w-4 lg:mr-0" /> : <ToggleLeft className="h-4 w-4 lg:mr-0" />}
+                        <span className="ml-2 lg:hidden">{course.status === 'active' ? 'Desactivar' : 'Activar'}</span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteCourse(course.firestoreId || "")}
-                          title="Eliminar curso"
-                          className="text-red-600 hover:text-red-700"
+                        title="Eliminar curso"
+                        className="flex-1 lg:flex-initial text-red-600 hover:text-red-700"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 lg:mr-0" />
+                        <span className="ml-2 lg:hidden">Eliminar</span>
                       </Button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1049,7 +1071,7 @@ export default function GestionCursosMaterias() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="subjectName">Nombre de la Materia</Label>
                   <Input
@@ -1074,7 +1096,7 @@ export default function GestionCursosMaterias() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="sm:col-span-2 lg:col-span-1">
                   <Label htmlFor="subjectCourse">Curso</Label>
                   <Select value={newSubject.cursoId} onValueChange={(value) => setNewSubject({ ...newSubject, cursoId: value })}>
                     <SelectTrigger>
@@ -1090,10 +1112,10 @@ export default function GestionCursosMaterias() {
                   </Select>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-col xs:flex-row gap-2 mt-4">
                         <Button 
                           onClick={editingSubject ? handleUpdateSubject : handleAddSubject}
-                          className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
+                          className="flex-1 xs:flex-initial bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700"
                         >
                           {editingSubject ? (
                             <>
@@ -1113,6 +1135,7 @@ export default function GestionCursosMaterias() {
                             setIsAddingSubject(false);
                             cancelEdit();
                           }}
+                          className="flex-1 xs:flex-initial"
                         >
                           <X className="h-4 w-4 mr-2" />
                   Cancelar
@@ -1130,58 +1153,69 @@ export default function GestionCursosMaterias() {
                       </div>
                     ) : (
                       allSubjects?.map((subject) => (
-                        <div key={subject.firestoreId} className="bg-white border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                              <div className="p-3 bg-orange-100 rounded-lg">
+                        <div key={subject.firestoreId} className="bg-white border rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex flex-col xs:flex-row xs:items-start gap-4 flex-1 min-w-0">
+                              <div className="p-3 bg-orange-100 rounded-lg shrink-0">
                                 <BookOpen className="h-6 w-6 text-orange-600" />
                               </div>
-                  <div>
-                                <h4 className="text-lg font-semibold text-gray-900">{subject.nombre}</h4>
-                    <p className="text-sm text-gray-600">
-                      Docente: {allTeachers?.find(t => t.firestoreId === subject.teacherId)?.nombre} {allTeachers?.find(t => t.firestoreId === subject.teacherId)?.apellido}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Curso: {allCourses?.find(c => c.firestoreId === subject.cursoId)?.nombre} - {allCourses?.find(c => c.firestoreId === subject.cursoId)?.division}
-                    </p>
-                  </div>
-                  <Badge variant="outline">
-                    {teacherSubjects.some(s => s.firestoreId === subject.firestoreId) ? "Mis Materias" : "Otras"}
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-2">
+                                  <h4 className="text-lg font-semibold text-gray-900 break-words">{subject.nombre}</h4>
+                                  <Badge variant="outline" className="shrink-0 w-fit">
+                                    {teacherSubjects.some(s => s.firestoreId === subject.firestoreId) ? "Mis Materias" : "Otras"}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-sm text-gray-600 break-words">
+                                    <span className="font-medium">Docente:</span> {allTeachers?.find(t => t.firestoreId === subject.teacherId)?.nombre} {allTeachers?.find(t => t.firestoreId === subject.teacherId)?.apellido}
+                                  </p>
+                                  <p className="text-sm text-gray-600 break-words">
+                                    <span className="font-medium">Curso:</span> {allCourses?.find(c => c.firestoreId === subject.cursoId)?.nombre} - {allCourses?.find(c => c.firestoreId === subject.cursoId)?.division}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-row sm:flex-col lg:flex-row gap-2 shrink-0 flex-wrap sm:flex-nowrap lg:flex-wrap">
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleEditSubject(subject)}
                                 title="Editar materia"
                                 disabled={editingSubject || isAddingSubject}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  {/* Botón para abrir modal de horarios */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingSubject({ ...subject, __openSchedule: true })}
-                    title="Configurar horarios"
-                  >
-                    Horarios
-                  </Button>
-                  {editingSubject && editingSubject.__openSchedule && editingSubject.firestoreId === subject.firestoreId && (
-                    <SubjectScheduleModal subject={editingSubject} courseId={editingSubject.cursoId} open={true} onOpenChange={(v) => setEditingSubject(v ? editingSubject : null)} />
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteSubject(subject.firestoreId || "")}
+                                className="flex-1 sm:flex-initial lg:flex-1"
+                              >
+                                <Edit className="h-4 w-4 sm:mr-0 lg:mr-2" />
+                                <span className="hidden lg:inline">Editar</span>
+                              </Button>
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingSubject({ ...subject, __openSchedule: true })}
+                                title="Configurar horarios"
+                                className="flex-1 sm:flex-initial lg:flex-1"
+                              >
+                                <span className="text-xs sm:text-sm">Horarios</span>
+                              </Button>
+                              
+                              {editingSubject && editingSubject.__openSchedule && editingSubject.firestoreId === subject.firestoreId && (
+                                <SubjectScheduleModal subject={editingSubject} courseId={editingSubject.cursoId} open={true} onOpenChange={(v) => setEditingSubject(v ? editingSubject : null)} />
+                              )}
+                              
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteSubject(subject.firestoreId || "")}
                                 title="Eliminar materia"
-                                className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+                                className="flex-1 sm:flex-initial lg:flex-1 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4 sm:mr-0 lg:mr-2" />
+                                <span className="hidden lg:inline">Eliminar</span>
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       ))
                     )}
@@ -1195,7 +1229,7 @@ export default function GestionCursosMaterias() {
             <div className="animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-6">
                 {/* Tarjetas de métricas principales (StatsCard) */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatsCard icon={Building} label="Total Cursos" value={allCourses?.length || 0} color="orange" />
                   <StatsCard icon={UserCheck} label="Cursos Activos" value={allCourses?.filter(c => c.status === 'active').length || 0} color="green" />
                   <StatsCard icon={BookOpen} label="Total Materias" value={allSubjects?.length || 0} color="blue" />
@@ -1203,29 +1237,43 @@ export default function GestionCursosMaterias() {
                 </div>
 
                 {/* Gráficos interactivos reales */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   {/* Gráfico de barras - Distribución por nivel */}
                   <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-orange-600" />
-                        Distribución por Nivel Educativo
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                        <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                        <span className="hidden sm:inline">Distribución por Nivel Educativo</span>
+                        <span className="sm:hidden">Nivel Educativo</span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={levelChartConfig} className="min-h-[300px]">
-                        <BarChart data={chartDataByLevel} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CardContent className="pt-0">
+                      <ChartContainer config={levelChartConfig} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
+                        <BarChart 
+                          data={chartDataByLevel} 
+                          margin={{ 
+                            top: 10, 
+                            right: 10, 
+                            left: 5, 
+                            bottom: 5 
+                          }}
+                        >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="nivel" 
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={8}
                             axisLine={false}
+                            fontSize={12}
+                            tick={{ fontSize: 11 }}
                           />
                           <YAxis 
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
+                            tickMargin={6}
+                            fontSize={12}
+                            width={30}
+                            tick={{ fontSize: 11 }}
                           />
                           <ChartTooltip 
                             content={<ChartTooltipContent />}
@@ -1234,7 +1282,7 @@ export default function GestionCursosMaterias() {
                           <Bar 
                             dataKey="cursos" 
                             fill="#fb923c"
-                            radius={[4, 4, 0, 0]}
+                            radius={[2, 2, 0, 0]}
                           />
                         </BarChart>
                       </ChartContainer>
@@ -1243,14 +1291,15 @@ export default function GestionCursosMaterias() {
 
                   {/* Gráfico de pie - Modalidades */}
                   <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <School className="h-5 w-5 text-orange-600" />
-                        Modalidades de Enseñanza
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                        <School className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                        <span className="hidden sm:inline">Modalidades de Enseñanza</span>
+                        <span className="sm:hidden">Modalidades</span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={modalityChartConfig} className="min-h-[300px]">
+                    <CardContent className="pt-0">
+                      <ChartContainer config={modalityChartConfig} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
                         <PieChart>
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Pie
@@ -1259,15 +1308,18 @@ export default function GestionCursosMaterias() {
                             nameKey="modalidad"
                             cx="50%"
                             cy="50%"
-                            outerRadius={80}
-                            innerRadius={40}
+                            outerRadius="60%"
+                            innerRadius="30%"
                             paddingAngle={2}
                           >
                             {chartDataByModality.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <ChartLegend content={<ChartLegendContent />} />
+                          <ChartLegend 
+                            content={<ChartLegendContent />} 
+                            wrapperStyle={{ fontSize: '12px' }}
+                          />
                         </PieChart>
                       </ChartContainer>
                     </CardContent>
@@ -1275,29 +1327,46 @@ export default function GestionCursosMaterias() {
 
                   {/* Gráfico de barras comparativo - Cursos vs Materias por turno */}
                   <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-orange-600" />
-                        Cursos y Materias por Turno
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                        <span className="hidden sm:inline">Cursos y Materias por Turno</span>
+                        <span className="sm:hidden">Por Turno</span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={turnChartConfig} className="min-h-[300px]">
-                        <BarChart data={chartDataByTurn} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CardContent className="pt-0">
+                      <ChartContainer config={turnChartConfig} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
+                        <BarChart 
+                          data={chartDataByTurn} 
+                          margin={{ 
+                            top: 10, 
+                            right: 10, 
+                            left: 5, 
+                            bottom: 5 
+                          }}
+                        >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="turno"
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={8}
                             axisLine={false}
+                            fontSize={12}
+                            tick={{ fontSize: 11 }}
                           />
                           <YAxis 
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
+                            tickMargin={6}
+                            fontSize={12}
+                            width={30}
+                            tick={{ fontSize: 11 }}
                           />
                           <ChartTooltip content={<ChartTooltipContent />} />
-                          <ChartLegend content={<ChartLegendContent />} />
+                          <ChartLegend 
+                            content={<ChartLegendContent />} 
+                            wrapperStyle={{ fontSize: '12px' }}
+                          />
                           <Bar 
                             dataKey="cursos" 
                             fill="#fb923c"
@@ -1316,40 +1385,41 @@ export default function GestionCursosMaterias() {
                   </Card>
 
                   {/* Resumen de materias por curso */}
-                  <Card className="bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-orange-600" />
-                        Materias por Curso
+                  <Card className="bg-white/80 backdrop-blur-sm md:col-span-2">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                        <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                        <span className="hidden sm:inline">Materias por Curso</span>
+                        <span className="sm:hidden">Materias/Curso</span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {allCourses?.slice(0, 5).map((course) => {
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {allCourses?.slice(0, 6).map((course) => {
                           const subjectCount = allSubjects?.filter(s => s.cursoId === course.firestoreId).length || 0;
                           
                           return (
-                            <div key={course.firestoreId} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                              <div>
-                                <p className="font-medium text-gray-900">{course.nombre} - {course.division}</p>
-                                <p className="text-sm text-gray-600">{course.nivel || 'Nivel no definido'}</p>
+                            <div key={course.firestoreId} className="flex flex-col xs:flex-row xs:items-center xs:justify-between p-3 bg-orange-50 rounded-lg gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-gray-900 text-sm break-words">{course.nombre} - {course.division}</p>
+                                <p className="text-xs text-gray-600">{course.nivel || 'Nivel no definido'}</p>
                               </div>
-                              <Badge variant="outline">
-                                {subjectCount} materias
+                              <Badge variant="outline" className="shrink-0 w-fit text-xs">
+                                {subjectCount} mat.
                               </Badge>
                             </div>
                           );
                         })}
                         
                         {allCourses?.length === 0 && (
-                          <div className="text-center py-4 text-gray-500">
+                          <div className="text-center py-4 text-gray-500 sm:col-span-2">
                             <Building className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                            <p>No hay cursos para mostrar</p>
+                            <p className="text-sm">No hay cursos para mostrar</p>
                           </div>
                         )}
-          </div>
-        </CardContent>
-      </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </div>
@@ -1436,7 +1506,7 @@ export default function GestionCursosMaterias() {
           content={
             selectedCourse && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   {/* Información del curso */}
                   <Card>
                     <CardHeader>
@@ -1446,7 +1516,7 @@ export default function GestionCursosMaterias() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <Label className="text-sm font-medium text-gray-600">Año Lectivo</Label>
                           <p className="text-gray-900">{selectedCourse.año}</p>

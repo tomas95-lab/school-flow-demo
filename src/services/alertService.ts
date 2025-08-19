@@ -12,8 +12,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
-  limit,
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
@@ -274,7 +272,7 @@ export class AlertService {
         currentStep: 0,
         totalSteps: workflowTemplate.steps.length,
         status: 'pending',
-        steps: workflowTemplate.steps.map((step, index) => ({
+        steps: workflowTemplate.steps.map((step: any, index: number) => ({
           ...step,
           id: `${alertId}_step_${index}`,
           status: 'pending'
@@ -431,13 +429,13 @@ export class AlertService {
   // === MÉTODOS AUXILIARES ===
 
   private async getAlert(alertId: string): Promise<any> {
-    const doc = await getDoc(doc(db, 'alerts', alertId));
-    return doc.exists() ? { id: doc.id, ...doc.data() } : null;
+    const alertDoc = await getDoc(doc(db, 'alerts', alertId));
+    return alertDoc.exists() ? { id: alertDoc.id, ...alertDoc.data() } : null;
   }
 
   private async getAlertTemplate(templateId: string): Promise<AlertTemplate | null> {
-    const doc = await getDoc(doc(db, 'alertTemplates', templateId));
-    return doc.exists() ? { id: doc.id, ...doc.data() } as AlertTemplate : null;
+    const templateDoc = await getDoc(doc(db, 'alertTemplates', templateId));
+    return templateDoc.exists() ? { id: templateDoc.id, ...templateDoc.data() } as AlertTemplate : null;
   }
 
   private async evaluateRule(rule: AlertRule, studentData: any): Promise<boolean> {
@@ -515,7 +513,7 @@ export class AlertService {
     return alerts.length > 0 ? (escalatedAlerts.length / alerts.length) * 100 : 0;
   }
 
-  private async calculateDeliveryRate(alerts: any[]): Promise<number> {
+  private async calculateDeliveryRate(_alerts: any[]): Promise<number> {
     // Implementar cálculo de tasa de entrega de notificaciones
     return 95; // Placeholder
   }
@@ -524,7 +522,7 @@ export class AlertService {
     return this.calculateDistribution(alerts, 'targetUserId');
   }
 
-  private calculateTrendData(alerts: any[], timeRange: string): AlertTrend[] {
+  private calculateTrendData(_alerts: any[], _timeRange: string): AlertTrend[] {
     // Implementar cálculo de tendencias
     return []; // Placeholder
   }
@@ -541,51 +539,51 @@ export class AlertService {
   }
 
   // Métodos adicionales para workflows, notificaciones, etc.
-  private async getWorkflowTemplate(type: string, priority: string): Promise<any> {
+  private async getWorkflowTemplate(_type: string, _priority: string): Promise<any> {
     // Implementar obtención de templates de workflow
     return null; // Placeholder
   }
 
-  private async triggerNotifications(alertId: string, alertData: any): Promise<void> {
+  private async triggerNotifications(_alertId: string, alertData: any): Promise<void> {
     // Integrar con notificationService
     await notificationService.procesarAlertaAutomatica(alertData);
   }
 
-  private async updateMetrics(event: string, data: any): Promise<void> {
+  private async updateMetrics(_event: string, _data: any): Promise<void> {
     // Implementar actualización de métricas en tiempo real
   }
 
-  private async sendResolutionNotification(alertId: string, resolvedBy: string): Promise<void> {
+  private async sendResolutionNotification(_alertId: string, _resolvedBy: string): Promise<void> {
     // Implementar notificación de resolución
   }
 
-  private async sendEscalationNotification(alertId: string, level: number): Promise<void> {
+  private async sendEscalationNotification(_alertId: string, _level: number): Promise<void> {
     // Implementar notificación de escalamiento
   }
 
-  private async createEscalationWorkflow(alertId: string, level: number): Promise<void> {
+  private async createEscalationWorkflow(_alertId: string, _level: number): Promise<void> {
     // Implementar workflow de escalamiento
   }
 
-  private async completeWorkflow(workflowId: string, completedBy: string): Promise<void> {
+  private async completeWorkflow(_workflowId: string, _completedBy: string): Promise<void> {
     // Implementar finalización de workflow
   }
 
-  private async assignWorkflowStep(workflowId: string, stepIndex: number): Promise<void> {
+  private async assignWorkflowStep(_workflowId: string, _stepIndex: number): Promise<void> {
     // Implementar asignación de pasos de workflow
   }
 
-  private async generateStudentReport(studentId: string): Promise<any> {
+  private async generateStudentReport(_studentId: string): Promise<any> {
     // Implementar reporte de estudiante
     return {};
   }
 
-  private async generateCourseReport(courseId: string): Promise<any> {
+  private async generateCourseReport(_courseId: string): Promise<any> {
     // Implementar reporte de curso
     return {};
   }
 
-  private async generateTeacherReport(teacherId: string): Promise<any> {
+  private async generateTeacherReport(_teacherId: string): Promise<any> {
     // Implementar reporte de profesor
     return {};
   }
@@ -595,7 +593,7 @@ export class AlertService {
     return {};
   }
 
-  private async generateAlertFromRule(rule: AlertRule, studentData: any): Promise<any> {
+  private async generateAlertFromRule(_rule: AlertRule, _studentData: any): Promise<any> {
     // Implementar generación de alerta desde regla
     return {};
   }
