@@ -174,7 +174,6 @@ export default function IntervencionesOverview() {
               <Button variant="outline" size="sm" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="h-8 text-xs px-2 sm:px-3">
                 <LineChart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 <span className="hidden xs:inline">Actualizar</span>
-                <span className="xs:hidden">🔄</span>
               </Button>
             </div>
           </div>
