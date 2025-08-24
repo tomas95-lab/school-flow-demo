@@ -4,7 +4,7 @@ import { Users, GraduationCap, BookOpen, AlertCircle, PlusCircle, Settings, Book
 import { useContext, useEffect, useState, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
 import { SchoolSpinner } from "@/components/SchoolSpinner"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 // import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
 import { t } from "@/config/translations"
@@ -239,6 +239,7 @@ function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
 
 export default function Dashboard() {
   const { user, loading } = useContext(AuthContext)
+  const navigate = useNavigate()
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
   const [courseFilter, setCourseFilter] = useState<string>('all')
   const [stats, setStats] = useState<{
@@ -795,7 +796,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="p-6 space-y-6">
         <WelcomeMessage user={user} />
         {/* Filtros */}
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
@@ -1015,7 +1016,13 @@ export default function Dashboard() {
               ¿Necesitas ayuda con el panel? Consulta nuestros recursos.
             </p>
             <div className="flex gap-3">
-              <Button variant="outline" size="sm">Guía del dashboard</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/app/guia-dashboard')}
+              >
+                Guía del dashboard
+              </Button>
               <Button variant="outline" size="sm">Soporte</Button>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { Users, GraduationCap, UserCheck, Shield, Plus, AlertTriangle, Award, TrendingUp, UserPlus } from "lucide-react";
@@ -37,6 +38,7 @@ interface TabItem {
 
 export default function Usuarios() {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState("overview");
   const [users, setUsers] = useState<Array<{
     id: string;
@@ -463,7 +465,10 @@ export default function Usuarios() {
               ¿Necesitas ayuda con la gestión de usuarios? Consulta nuestros recursos.
             </p>
             <div className="flex gap-3">
-              <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+              <button 
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                onClick={() => navigate('/app/guia-usuarios')}
+              >
                 Guía de usuarios
               </button>
               <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">

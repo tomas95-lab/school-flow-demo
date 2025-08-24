@@ -292,7 +292,6 @@ export default function DetalleAsistencia() {
                 <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 flex items-center gap-1 sm:gap-2 shrink-0">
                   <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden xs:inline">Volver</span>
-                  <span className="xs:hidden">←</span>
                 </Button>
               </Link>
               <div className="min-w-0 flex-1">

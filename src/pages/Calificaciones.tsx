@@ -1,6 +1,7 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { BookOpen, Plus, Calendar, AlertTriangle, Brain, Award, TrendingUp, Users } from "lucide-react";
@@ -37,10 +38,11 @@ interface TabItem {
 
 export default function Calificaciones() {
   const { user, loading: userLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const roleScope = user?.role;
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
   const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
-
+  
   const { loading: coursesLoading } = useFirestoreCollection("courses", {
     constraints: roleScope === 'alumno'
       ? [where('alumnos', 'array-contains', user?.studentId || '')]
@@ -325,7 +327,11 @@ export default function Calificaciones() {
               ¿Necesitas ayuda con la gestión de calificaciones? Consulta nuestros recursos.
             </p>
             <div className="flex gap-3">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/app/guia-calificaciones')}
+              >
                 Guía de calificaciones
               </Button>
               <Button variant="outline" size="sm">

@@ -28,6 +28,16 @@ const PagoSimulado = lazy(() => import("@/pages/PagoSimulado"));
 const Auditoria = lazy(() => import("@/pages/Auditoria"));
 const ConfiguracionIAPanel = lazy(() => import("@/components/ConfiguracionIAPanel"));
 const ComunicacionFamiliasPanel = lazy(() => import("@/components/ComunicacionFamiliasPanel"));
+
+// Guías del sistema
+const GuiaAsistencias = lazy(() => import("@/pages/GuiaAsistencias"));
+const GuiaCalificaciones = lazy(() => import("@/pages/GuiaCalificaciones"));
+const GuiaAlertas = lazy(() => import("@/pages/GuiaAlertas"));
+const GuiaMensajeria = lazy(() => import("@/pages/GuiaMensajeria"));
+const GuiaUsuarios = lazy(() => import("@/pages/GuiaUsuarios"));
+const GuiaDashboard = lazy(() => import("@/pages/GuiaDashboard"));
+const GuiaBoletines = lazy(() => import("@/pages/GuiaBoletines"));
+
 import { PrivateRoute } from "./PrivateRoute";
 import { PermissionRoute } from "./PermissionRoute";
 
@@ -44,10 +54,19 @@ function PageViewTracker() {
   return null;
 }
 
+function ScrollToTop() {
+  const location = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  return null;
+}
+
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <PageViewTracker />
+      <ScrollToTop />
       <Suspense fallback={<SchoolSpinner text="Cargando sección..." fullScreen /> }>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -111,6 +130,15 @@ export function AppRoutes() {
                 </PermissionRoute>
               } 
             />
+            
+            {/* Rutas de Guías */}
+            <Route path="/app/guia-asistencias" element={<GuiaAsistencias />} />
+            <Route path="/app/guia-calificaciones" element={<GuiaCalificaciones />} />
+            <Route path="/app/guia-alertas" element={<GuiaAlertas />} />
+            <Route path="/app/guia-mensajeria" element={<GuiaMensajeria />} />
+            <Route path="/app/guia-usuarios" element={<GuiaUsuarios />} />
+            <Route path="/app/guia-dashboard" element={<GuiaDashboard />} />
+            <Route path="/app/guia-boletines" element={<GuiaBoletines />} />
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" />} />

@@ -2,6 +2,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 
 import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { Bell, Plus, AlertTriangle, Award, TrendingUp, Users, MessageSquare, BarChart3, Brain, Settings, FileText, Cog } from "lucide-react";
@@ -31,6 +32,7 @@ interface TabItem {
 
 export default function Alertas() {
   const { user, loading: userLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const roleScope = user?.role;
   const [activeView, setActiveView] = useState("overview");
 
@@ -425,7 +427,12 @@ export default function Alertas() {
               ¿Necesitas ayuda con el sistema de alertas? Consulta nuestros recursos.
             </p>
             <div className="flex flex-col xs:flex-row gap-3">
-              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 justify-start p-0">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 justify-start p-0"
+                onClick={() => navigate('/app/guia-alertas')}
+              >
                 Guía de alertas
               </Button>
               <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 justify-start p-0">

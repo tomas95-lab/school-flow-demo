@@ -3,6 +3,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ErrorState } from "@/components/ErrorState";
 import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { BookOpen, AlertTriangle, Award, TrendingUp, Users, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticas
 
 export default function Boletines() {
   const { user, loading: userLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const { loading: coursesLoading, error: coursesError } = useFirestoreCollection("courses");
 
   // Función para obtener el mensaje según el rol
@@ -146,7 +148,10 @@ export default function Boletines() {
               ¿Necesitas ayuda con la gestión de boletines? Consulta nuestros recursos.
             </p>
             <div className="flex gap-3">
-              <button className="text-purple-600 hover:text-purple-700 font-medium text-sm">
+              <button 
+                className="text-purple-600 hover:text-purple-700 font-medium text-sm"
+                onClick={() => navigate('/app/guia-boletines')}
+              >
                 Guía de boletines
               </button>
               <button className="text-purple-600 hover:text-purple-700 font-medium text-sm">

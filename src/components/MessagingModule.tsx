@@ -395,7 +395,12 @@ export default function MessagingModule() {
                 ¿Necesitas ayuda con la mensajería?
               </p>
               <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start hover:bg-blue-50 hover:border-blue-300">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start hover:bg-blue-50 hover:border-blue-300"
+                  onClick={() => window.location.href = '/app/guia-mensajeria'}
+                >
                   <Info className="h-4 w-4 mr-2" />
                   Guía de mensajería
                 </Button>

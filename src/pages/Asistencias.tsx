@@ -2,6 +2,7 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { Calendar, BookOpen, Plus, AlertTriangle, Brain, Award, TrendingUp, Users, CheckCircle, Upload } from "lucide-react";
@@ -42,6 +43,7 @@ interface TabItem {
 
 export default function Asistencias() {
   const { user, loading: userLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const roleScope = user?.role;
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
 
@@ -573,7 +575,11 @@ export default function Asistencias() {
               ¿Necesitas ayuda con la gestión de asistencias? Consulta nuestros recursos.
             </p>
             <div className="flex gap-3">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/app/guia-asistencias')}
+              >
                 Guía de asistencias
               </Button>
               <Button variant="outline" size="sm">
