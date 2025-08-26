@@ -72,7 +72,7 @@ const data = {
         { title: "Usuarios", url: "/app/usuarios", isActive: false },
         { title: "Cursos y Materias", url: "/app/gestion-cursos-materias", isActive: false },
         { title: "Inscripciones", url: "/app/inscripciones", isActive: false },
-        { title: "Finanzas", url: "/app/finanzas", isActive: false },
+        // { title: "Finanzas", url: "/app/finanzas", isActive: false },
       ],
     },
     {

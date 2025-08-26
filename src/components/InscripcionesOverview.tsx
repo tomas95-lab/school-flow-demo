@@ -51,7 +51,7 @@ interface AprobacionArea { estado: EstadoAprobacion; comentario?: string }
 interface AprobacionesPorArea {
   documentacion: AprobacionArea;
   academica: AprobacionArea;
-  finanzas: AprobacionArea;
+  // finanzas: AprobacionArea;
 }
 interface Inscripcion {
   firestoreId: string;
@@ -103,11 +103,11 @@ export default function InscripcionesOverview() {
   const [editForm, setEditForm] = useState<{ comentarios: string; documentos: string[]; aprobacionesPorArea: AprobacionesPorArea }>({
     comentarios: "",
     documentos: [] as string[],
-    aprobacionesPorArea: {
-      documentacion: { estado: 'pendiente', comentario: '' },
-      academica: { estado: 'pendiente', comentario: '' },
-      finanzas: { estado: 'pendiente', comentario: '' },
-    }
+          aprobacionesPorArea: {
+        documentacion: { estado: 'pendiente', comentario: '' },
+        academica: { estado: 'pendiente', comentario: '' },
+        // finanzas: { estado: 'pendiente', comentario: '' },
+      }
   });
   const [newFiles, setNewFiles] = useState<FileList | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -133,7 +133,7 @@ export default function InscripcionesOverview() {
         aprobacionesPorArea: inscripcion.aprobacionesPorArea || {
           documentacion: { estado: 'pendiente', comentario: '' },
           academica: { estado: 'pendiente', comentario: '' },
-          finanzas: { estado: 'pendiente', comentario: '' },
+          // finanzas: { estado: 'pendiente', comentario: '' },
         },
         estudiante: {
           nombre: estudiante?.nombre || "Estudiante no encontrado",
@@ -381,7 +381,7 @@ export default function InscripcionesOverview() {
       aprobacionesPorArea: inscripcion.aprobacionesPorArea || {
         documentacion: { estado: 'pendiente', comentario: '' },
         academica: { estado: 'pendiente', comentario: '' },
-        finanzas: { estado: 'pendiente', comentario: '' },
+        // finanzas: { estado: 'pendiente', comentario: '' },
       }
     });
     setShowEditModal(true);
@@ -738,7 +738,7 @@ export default function InscripcionesOverview() {
                            )}
                            {inscripcion.aprobacionesPorArea && (
                              <div className="flex items-center gap-2 text-xs">
-                               {(['documentacion','academica','finanzas'] as const).map(area => (
+                               {(['documentacion','academica'] as const).map(area => (
                                  <span key={area} className="px-2 py-0.5 rounded border bg-gray-50">
                                    {area}: {inscripcion.aprobacionesPorArea?.[area].estado}
                                  </span>
@@ -1077,8 +1077,8 @@ export default function InscripcionesOverview() {
                 {/* Aprobaciones por área */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Aprobaciones por área</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {(['documentacion','academica','finanzas'] as const).map(area => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(['documentacion','academica'] as const).map(area => (
                       <div key={area} className="p-3 bg-gray-50 rounded-lg border space-y-2">
                         <div className="text-sm font-medium text-gray-800 capitalize">{area}</div>
                         <Select
