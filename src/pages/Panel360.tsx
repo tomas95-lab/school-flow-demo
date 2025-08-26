@@ -207,7 +207,10 @@ export default function Panel360() {
 							</div>
 							<div className="flex gap-2">
 								{context && (
-									<Button variant="outline" onClick={exportPDF}><Download className="w-4 h-4 mr-1" /> Exportar PDF</Button>
+									<>
+										<Button variant="outline" onClick={exportPDF}><Download className="w-4 h-4 mr-1" /> Exportar PDF</Button>
+										<CreateAlertModal trigger={<Button variant="outline"><Bell className="w-4 h-4 mr-1" /> Crear alerta</Button>} studentId={(context as any).student?.firestoreId} suggestedTitle={context?.kind === 'student' ? `Intervención ${((context as any).myAvg || 0) < 7 ? 'por riesgo' : 'de seguimiento'}` : undefined} suggestedDescription={context?.kind === 'student' ? `Promedio ${(context as any).myAvg?.toFixed(2)} • Asistencia ${(context as any).myAtt}%` : undefined} />
+									</>
 								)}
 							</div>
 						</div>
@@ -216,10 +219,6 @@ export default function Panel360() {
 
 				{context && (
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-													<div className="flex gap-2">
-								<CreateAlertModal trigger={<Button variant="outline"><Bell className="w-4 h-4 mr-1" /> Crear alerta</Button>} studentId={(context as any).student?.firestoreId} suggestedTitle={context?.kind === 'student' ? `Intervención ${((context as any).myAvg || 0) < 7 ? 'por riesgo' : 'de seguimiento'}` : undefined} suggestedDescription={context?.kind === 'student' ? `Promedio ${(context as any).myAvg?.toFixed(2)} • Asistencia ${(context as any).myAtt}%` : undefined} />
-								<Button onClick={exportPDF}><Download className="w-4 h-4 mr-1" /> Exportar Informe</Button>
-							</div>
 						<div className="lg:col-span-2 space-y-6 h-max">
 							<Card>
 								<CardContent className="pt-6">
