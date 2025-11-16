@@ -242,7 +242,7 @@ function QuickAccessList({ role }: { role: keyof typeof quickAccessByRole }) {
 export default function Dashboard() {
   const { user, loading } = useContext(AuthContext)
   const navigate = useNavigate()
-  const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '90d' | 'all'>('30d')
+  const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '90d' | 'all'>('all')
   const [courseFilter, setCourseFilter] = useState<string>('all')
   const [stats, setStats] = useState<{
     totalStudents?: number;
@@ -293,15 +293,24 @@ export default function Dashboard() {
   // Hook para obtener estudiantes del docente
   const { teacherStudents } = useTeacherStudents(user?.teacherId);
 
-  // Memoizar cálculos pesados
   const calculatedStats = useMemo(() => {
-    // Merge de alumnos de ambas colecciones
     const studentsMap = new Map<string, any>();
     (studentsByCurso || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
     (studentsByCourse || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
     const mergedStudents = Array.from(studentsMap.values());
 
+    console.log('=== CALCULATED STATS DEBUG ===');
+    console.log('Data loaded:', {
+      students: mergedStudents?.length || 0,
+      courses: courses?.length || 0,
+      teachers: teachers?.length || 0,
+      calificaciones: calificaciones?.length || 0,
+      asistencias: asistencias?.length || 0,
+      subjects: subjects?.length || 0
+    });
+
     if (!mergedStudents || !courses || !teachers || !calificaciones || !asistencias || !subjects) {
+      console.log('Missing data, returning null');
       return null;
     }
 
@@ -354,30 +363,59 @@ export default function Dashboard() {
       });
     };
 
+    const subjectsMap = new Map(subjects.map(s => [s.firestoreId, s.cursoId]));
+    
+    console.log('Time filter:', timeFilter, 'Start date:', startDate.toISOString());
+    console.log('Course filter:', courseFilter);
+
     const filteredGrades = filterByTimeAndCourse(
       calificaciones,
       (g: any) => (g as any).fecha,
-      (g: any) => (g as any).courseId
+      (g: any) => subjectsMap.get((g as any).subjectId)
     );
     const filteredAttendance = filterByTimeAndCourse(
       asistencias,
       (a: any) => (a as any).fecha ?? (a as any).date,
       (a: any) => (a as any).courseId
     );
+    
+    console.log('Filtered grades:', filteredGrades.length, '/', calificaciones.length);
+    console.log('All calificaciones with dates:', calificaciones.map(g => ({ 
+      subjectId: g.subjectId, 
+      valor: g.valor, 
+      fecha: g.fecha,
+      fechaType: typeof g.fecha,
+      parsed: parseDate(g.fecha),
+      isAfterStart: parseDate(g.fecha) ? parseDate(g.fecha)! >= startDate : false
+    })));
+    console.log('Start date for filter:', startDate);
 
-    // Generar datos para charts
     const generateChartData = () => {
-      // Datos para bar chart de rendimiento por curso
+      console.log('=== DEBUG CHART DATA ===');
+      console.log('Total courses:', courses.length);
+      console.log('Total subjects:', subjects.length);
+      console.log('Total filteredGrades:', filteredGrades.length);
+      console.log('SubjectsMap size:', subjectsMap.size);
+      console.log('Sample subjects:', Array.from(subjectsMap.entries()).slice(0, 3));
+      console.log('Sample grades:', filteredGrades.slice(0, 3).map(g => ({ studentId: g.studentId, subjectId: g.subjectId, valor: g.valor })));
+      
       const performanceByCourse = courses.map(course => {
-        const courseGrades = filteredGrades.filter(g => g.courseId === course.firestoreId);
+        const courseGrades = filteredGrades.filter(g => {
+          const subjectCursoId = subjectsMap.get(g.subjectId);
+          return subjectCursoId === course.firestoreId;
+        });
         const avgGrade = courseGrades.length > 0 
           ? courseGrades.reduce((sum, g) => sum + g.valor, 0) / courseGrades.length 
           : 0;
+        console.log(`Course ${course.nombre}: ${courseGrades.length} grades, avg: ${avgGrade}`);
         return {
           curso: course.nombre || course.name || 'Sin nombre',
           promedio: parseFloat(avgGrade.toFixed(1))
         };
       }).filter(item => item.promedio > 0);
+      
+      console.log('Performance by course (filtered):', performanceByCourse);
+      console.log('======================');
 
       // Datos para line chart de asistencia por mes (datos reales de Firestore)
       const generateAttendanceByMonth = () => {
