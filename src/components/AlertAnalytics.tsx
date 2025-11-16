@@ -22,6 +22,29 @@ import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
 
+// Helper function to handle dates from both Firestore and demo data
+const getDateFromAlert = (createdAt: any): Date => {
+  if (!createdAt) return new Date();
+  
+  // If it's a Firestore timestamp, use toDate()
+  if (typeof createdAt.toDate === 'function') {
+    return createdAt.toDate();
+  }
+  
+  // If it's a string (demo data), parse it
+  if (typeof createdAt === 'string') {
+    return new Date(createdAt);
+  }
+  
+  // If it's already a Date object
+  if (createdAt instanceof Date) {
+    return createdAt;
+  }
+  
+  // Fallback
+  return new Date();
+};
+
 interface AlertAnalyticsProps {
   className?: string;
 }
@@ -69,7 +92,7 @@ export function AlertAnalytics({ className = '' }: AlertAnalyticsProps) {
     }
 
     const currentPeriodAlerts = alerts.filter(alert => 
-      alert.createdAt && alert.createdAt.toDate() >= pastDate
+      alert.createdAt && getDateFromAlert(alert.createdAt) >= pastDate
     );
 
     const previousPeriodStart = new Date(pastDate);
@@ -77,8 +100,8 @@ export function AlertAnalytics({ className = '' }: AlertAnalyticsProps) {
     
     const previousPeriodAlerts = alerts.filter(alert => 
       alert.createdAt && 
-      alert.createdAt.toDate() >= previousPeriodStart && 
-      alert.createdAt.toDate() < pastDate
+      getDateFromAlert(alert.createdAt) >= previousPeriodStart && 
+      getDateFromAlert(alert.createdAt) < pastDate
     );
 
     const currentCount = currentPeriodAlerts.length;
@@ -169,7 +192,7 @@ export function AlertAnalytics({ className = '' }: AlertAnalyticsProps) {
       if (alert.targetUserId) data.students.add(alert.targetUserId);
       
       if (alert.status === 'resolved' && alert.resolvedAt && alert.createdAt) {
-        const resolutionTime = (alert.resolvedAt.toDate().getTime() - alert.createdAt.toDate().getTime()) / (1000 * 60 * 60);
+        const resolutionTime = (getDateFromAlert(alert.resolvedAt).getTime() - getDateFromAlert(alert.createdAt).getTime()) / (1000 * 60 * 60);
         data.resolutionTimes.push(resolutionTime);
       }
     });
@@ -194,7 +217,7 @@ export function AlertAnalytics({ className = '' }: AlertAnalyticsProps) {
     const overdueAlerts = alerts.filter(a => 
       a.status === 'active' && 
       a.createdAt && 
-      (new Date().getTime() - a.createdAt.toDate().getTime()) > (24 * 60 * 60 * 1000)
+      (new Date().getTime() - getDateFromAlert(a.createdAt).getTime()) > (24 * 60 * 60 * 1000)
     ).length;
 
     return {
@@ -214,7 +237,7 @@ export function AlertAnalytics({ className = '' }: AlertAnalyticsProps) {
     if (resolvedAlerts.length === 0) return 0;
     
     const totalTime = resolvedAlerts.reduce((sum, alert) => {
-      const time = (alert.resolvedAt.toDate().getTime() - alert.createdAt.toDate().getTime()) / (1000 * 60 * 60);
+      const time = (getDateFromAlert(alert.resolvedAt).getTime() - getDateFromAlert(alert.createdAt).getTime()) / (1000 * 60 * 60);
       return sum + time;
     }, 0);
     

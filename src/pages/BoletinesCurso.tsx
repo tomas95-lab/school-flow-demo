@@ -17,6 +17,18 @@ export default function BoletinesCurso() {
   const [id] = useState(searchParams.get("id") || "");
   const periodoActual = (getPeriodoActual()).split("T")[1];
 
+  // Verificar que los datos estén cargados antes de procesarlos
+  if (!boletines || !courses || !asistencias) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando boletines...</p>
+        </div>
+      </div>
+    );
+  }
+
   const boletinesCurso = boletines.filter((b) => b.curso === id);
   const course = courses.find((c) => c.firestoreId === id);
 
@@ -61,10 +73,10 @@ export default function BoletinesCurso() {
 	const promedioTotal = getPromedioTotal(b.materias, { incluirTrimestreEnCurso: false });
 
 	// Calcular datos de asistencia del alumno
-	const asistenciasAlumno = asistencias.filter((a) => 
+	const asistenciasAlumno = asistencias?.filter((a) => 
 		a.studentId === b.alumnoId && 
 		a.courseId === id
-	);
+	) || [];
 	
 	const totalAsistencias = asistenciasAlumno.length;
 	const asistenciasPresentes = asistenciasAlumno.filter((a) => a.present).length;

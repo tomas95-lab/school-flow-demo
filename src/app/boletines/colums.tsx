@@ -19,6 +19,7 @@ export interface BoletinceRow {
 		promedio: number;
 	}[];
 	comentario?: string;
+	observacionGeneral?: string;
 	// Datos de asistencia
 	asistencia?: {
 		total: number;
@@ -122,6 +123,35 @@ export function useColumnsDetalle(): ColumnDef<BoletinceRow>[] {
 							</div>
 						)}
 					</div>
+				);
+			},
+		},
+		{
+			accessorKey: "observacionGeneral",
+			header: "Observación",
+			cell: ({ row }) => {
+				const observacion = row.getValue<string>("observacionGeneral");
+				const getObservacionColor = (obs: string) => {
+					switch (obs) {
+						case "Excelente":
+							return "bg-green-100 text-green-700 border-green-200";
+						case "Muy Bueno":
+							return "bg-blue-100 text-blue-700 border-blue-200";
+						case "Bueno":
+							return "bg-yellow-100 text-yellow-700 border-yellow-200";
+						case "Regular":
+							return "bg-orange-100 text-orange-700 border-orange-200";
+						case "Insuficiente":
+							return "bg-red-100 text-red-700 border-red-200";
+						default:
+							return "bg-gray-100 text-gray-700 border-gray-200";
+					}
+				};
+				
+				return (
+					<Badge className={getObservacionColor(observacion)}>
+						{observacion}
+					</Badge>
 				);
 			},
 		},

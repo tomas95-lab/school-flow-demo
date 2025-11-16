@@ -22,6 +22,7 @@ import { AuthContext } from "@/context/AuthContext"
 import { signOut } from "firebase/auth"
 import { auth } from "@/firebaseConfig"
 import { LogOut } from "lucide-react"
+import { isDemoMode } from "@/data/demoData"
 
 // Lista de rutas válidas reales extraídas del sidebar
 const validRoutes = [
@@ -117,6 +118,11 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
               </BreadcrumbList>
             </Breadcrumb>
             <div className="flex items-center gap-2 sm:gap-3 ml-2 sm:ml-4">
+              {isDemoMode() && (
+                <Badge className="text-xs px-2 py-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                  Demo
+                </Badge>
+              )}
               <Badge className="text-xs px-2 py-1">
                 {user?.role === 'admin'? 'Admin'
                   : user?.role === 'docente'
@@ -130,16 +136,25 @@ export default function SideBarComponent({ children }: { children: React.ReactNo
                 size="sm"
                 onClick={async () => {
                   try {
-                    await signOut(auth)
+                    if (isDemoMode()) {
+                      // Limpiar modo demo
+                      localStorage.removeItem('DEMO_MODE');
+                      localStorage.removeItem('DEMO_USER');
+                    } else {
+                      // Logout normal de Firebase
+                      await signOut(auth);
+                    }
                   } finally {
-                    navigate('/login')
+                    navigate('/login');
                   }
                 }}
                 className="gap-1 sm:gap-2 px-2 sm:px-3"
                 aria-label="Cerrar sesión"
               >
                 <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline">
+                  {isDemoMode() ? 'Salir Demo' : 'Logout'}
+                </span>
               </Button>
             </div>
           </div>

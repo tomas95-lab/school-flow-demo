@@ -331,7 +331,7 @@ export async function generarPDFBoletin(row: BoletinRow) {
       throw new Error('No hay datos del boletín para generar el PDF');
     }
 
-    // Importar dinámicamente las librerías
+    // Importar dinámicamente las librerías con fallback
     let jsPDF, autoTable;
     
     try {
@@ -339,7 +339,8 @@ export async function generarPDFBoletin(row: BoletinRow) {
       jsPDF = jsPDFModule.default || jsPDFModule;
     } catch (error) {
       console.error('Error al importar jsPDF:', error);
-      throw new Error('Error al cargar la librería de PDF. Inténtalo de nuevo.');
+      // Fallback: usar plantilla HTML
+      return generarPDFFallback(row);
     }
 
     try {
@@ -347,16 +348,14 @@ export async function generarPDFBoletin(row: BoletinRow) {
       autoTable = autoTableModule.default || autoTableModule;
     } catch (error) {
       console.error('Error al importar jspdf-autotable:', error);
-      throw new Error('Error al cargar la librería de tablas PDF. Inténtalo de nuevo.');
+      // Fallback: usar plantilla HTML
+      return generarPDFFallback(row);
     }
 
     // Verificar que las librerías estén disponibles
-    if (typeof jsPDF === 'undefined') {
-      throw new Error('La librería jsPDF no está disponible');
-    }
-
-    if (typeof autoTable === 'undefined') {
-      throw new Error('La librería autoTable no está disponible');
+    if (typeof jsPDF === 'undefined' || typeof autoTable === 'undefined') {
+      console.warn('Librerías PDF no disponibles, usando fallback HTML');
+      return generarPDFFallback(row);
     }
 
   const template = await getBoletinTemplate();
@@ -741,4 +740,192 @@ function hexToRgbTuple(hex: string): [number, number, number] {
   }
   // fallback slate-600
   return [75, 85, 99];
+}
+
+// Función de fallback para generar PDF usando HTML
+async function generarPDFFallback(row: BoletinRow) {
+  try {
+    // Crear contenido HTML del boletín
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Boletín de Calificaciones</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .title { font-size: 24px; font-weight: bold; color: #1e40af; }
+          .subtitle { font-size: 14px; color: #64748b; margin-top: 5px; }
+          .student-info { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+          .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+          .info-label { font-weight: bold; color: #374151; }
+          .info-value { color: #1f2937; }
+          .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+          .stat-card { background: white; border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; text-align: center; }
+          .stat-number { font-size: 24px; font-weight: bold; color: #1e40af; }
+          .stat-label { font-size: 12px; color: #6b7280; margin-top: 5px; }
+          .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          .table th, .table td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+          .table th { background: #1e40af; color: white; font-weight: bold; }
+          .table tr:nth-child(even) { background: #f9fafb; }
+          .grade-excellent { color: #059669; font-weight: bold; }
+          .grade-good { color: #0891b2; font-weight: bold; }
+          .grade-average { color: #d97706; font-weight: bold; }
+          .grade-poor { color: #dc2626; font-weight: bold; }
+          .comment { background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #1e40af; }
+          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">BOLETÍN DE CALIFICACIONES</div>
+          <div class="subtitle">Período: ${row.periodo || 'Académico'}</div>
+        </div>
+
+        <div class="student-info">
+          <div class="info-row">
+            <span class="info-label">Estudiante:</span>
+            <span class="info-value">${row.Nombre || 'N/A'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Promedio General:</span>
+            <span class="info-value">${(row.promediototal || 0).toFixed(1)}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Estado:</span>
+            <span class="info-value">${row.estado === 'cerrado' ? 'Cerrado' : 'Abierto'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Alertas:</span>
+            <span class="info-value">${row.alertas || 0}</span>
+          </div>
+          ${row.asistencia ? `
+          <div class="info-row">
+            <span class="info-label">Asistencia:</span>
+            <span class="info-value">${row.asistencia.porcentaje}%</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Clases:</span>
+            <span class="info-value">${row.asistencia.presentes || 0}/${row.asistencia.total || 0}</span>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-number">${(row.materias || []).length}</div>
+            <div class="stat-label">Total Materias</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${(row.materias || []).filter(m => {
+              const t1 = m.t1 || m.T1 || 0;
+              const t2 = m.t2 || m.T2 || 0;
+              const t3 = m.t3 || m.T3 || 0;
+              const promedio = m.promedio || (t1 + t2 + t3) / 3;
+              return promedio >= 7.0;
+            }).length}</div>
+            <div class="stat-label">Aprobadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${(row.materias || []).filter(m => {
+              const t1 = m.t1 || m.T1 || 0;
+              const t2 = m.t2 || m.T2 || 0;
+              const t3 = m.t3 || m.T3 || 0;
+              const promedio = m.promedio || (t1 + t2 + t3) / 3;
+              return promedio >= 9.0;
+            }).length}</div>
+            <div class="stat-label">Destacadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${(row.materias || []).filter(m => {
+              const t1 = m.t1 || m.T1 || 0;
+              const t2 = m.t2 || m.T2 || 0;
+              const t3 = m.t3 || m.T3 || 0;
+              const promedio = m.promedio || (t1 + t2 + t3) / 3;
+              return promedio < 7.0;
+            }).length}</div>
+            <div class="stat-label">En Riesgo</div>
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Materia</th>
+              <th>T1</th>
+              <th>T2</th>
+              <th>T3</th>
+              <th>Promedio</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(row.materias || []).map(materia => {
+              const t1 = materia.t1 || materia.T1 || 0;
+              const t2 = materia.t2 || materia.T2 || 0;
+              const t3 = materia.t3 || materia.T3 || 0;
+              const promedio = materia.promedio || (t1 + t2 + t3) / 3;
+              const gradeClass = promedio >= 9 ? 'grade-excellent' : 
+                                promedio >= 8 ? 'grade-good' : 
+                                promedio >= 7 ? 'grade-average' : 'grade-poor';
+              const estado = promedio >= 7.0 ? 'Aprobada' : 'Reprobada';
+              
+              return `
+                <tr>
+                  <td>${materia.nombre || 'N/A'}</td>
+                  <td class="${gradeClass}">${t1.toFixed(1)}</td>
+                  <td class="${gradeClass}">${t2.toFixed(1)}</td>
+                  <td class="${gradeClass}">${t3.toFixed(1)}</td>
+                  <td class="${gradeClass}">${promedio.toFixed(1)}</td>
+                  <td>${estado}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        ${row.comentario ? `
+        <div class="comment">
+          <h3>Comentario General</h3>
+          <p>${row.comentario}</p>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>Documento generado automáticamente - Sistema de Gestión Escolar</p>
+          <p>Fecha: ${new Date().toLocaleDateString('es-ES')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Crear ventana nueva con el contenido HTML
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Esperar a que cargue y luego imprimir
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+      
+      // Fallback si onload no funciona
+      setTimeout(() => {
+        try {
+          printWindow.print();
+        } catch (error) {
+          console.warn('No se pudo imprimir automáticamente');
+        }
+      }, 1000);
+    } else {
+      throw new Error('No se pudo abrir ventana de impresión');
+    }
+    
+  } catch (error) {
+    console.error('Error en fallback PDF:', error);
+    throw new Error('Error al generar el boletín. Intenta de nuevo.');
+  }
 }
