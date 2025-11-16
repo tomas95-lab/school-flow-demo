@@ -21,6 +21,7 @@ import {
 } from "@/utils/alertasAutomaticas";
 import { BarChartComponent, PieChartComponent } from "@/components/charts"
 import { DashboardSkeleton } from "@/components/ChartSkeleton"
+import { parseFirestoreDate, getDateRangeForFilter } from "@/utils/dateUtils"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -303,46 +304,11 @@ export default function Dashboard() {
       return null;
     }
 
-    const now = new Date();
-    const subDays = (d: Date, days: number) => new Date(d.getTime() - days * 24 * 60 * 60 * 1000);
-    const startDate = timeFilter === '7d' ? subDays(now, 7)
-      : timeFilter === '30d' ? subDays(now, 30)
-      : timeFilter === '90d' ? subDays(now, 90)
-      : new Date(0);
-
-    const parseDate = (val: any): Date | null => {
-      if (!val) return null;
-      try {
-        if (typeof val === 'string') {
-          // soporta yyyy-MM-dd o ISO
-          const m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-          const d = new Date(val);
-          return isNaN(d.getTime()) ? null : d;
-        }
-        if (typeof val === 'number') {
-          return new Date(val > 1e12 ? val : val * 1000);
-        }
-        if (val && typeof val === 'object') {
-          if ('toDate' in val && typeof (val as any).toDate === 'function') {
-            const d = (val as any).toDate();
-            return isNaN(d.getTime()) ? null : d;
-          }
-          if ('seconds' in val && typeof (val as any).seconds === 'number') {
-            const d = new Date((val as any).seconds * 1000);
-            return isNaN(d.getTime()) ? null : d;
-          }
-          if (val instanceof Date) {
-            return isNaN(val.getTime()) ? null : val;
-          }
-        }
-      } catch {}
-      return null;
-    };
+    const startDate = getDateRangeForFilter(timeFilter);
 
     const filterByTimeAndCourse = <T,>(items: T[], getDate: (x: T) => any, getCourseId?: (x: T) => string | undefined) => {
       return items.filter((it) => {
-        const d = parseDate(getDate(it));
+        const d = parseFirestoreDate(getDate(it));
         if (!d || d < startDate) return false;
         if (courseFilter !== 'all' && getCourseId) {
           const cid = (getCourseId(it) || '').toString().trim();
@@ -601,7 +567,7 @@ export default function Dashboard() {
       ...roleStats,
       chartData
     };
-  }, [studentsByCurso, studentsByCourse, courses, teachers, calificaciones, asistencias, subjects, user, teacherStudents]);
+  }, [studentsByCurso, studentsByCourse, courses, teachers, calificaciones, asistencias, subjects, user, teacherStudents, timeFilter, courseFilter]);
 
   // Actualizar stats cuando calculatedStats cambie
   useEffect(() => {

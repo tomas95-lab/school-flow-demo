@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
-import { SchoolSpinner } from "@/components/SchoolSpinner";
+import { DashboardSkeleton } from "@/components/ChartSkeleton";
 import { trackPageView } from "@/services/analytics";
 const Login = lazy(() => import("../pages/Login"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
@@ -67,7 +67,7 @@ export function AppRoutes() {
     <BrowserRouter>
       <PageViewTracker />
       <ScrollToTop />
-      <Suspense fallback={<SchoolSpinner text="Cargando sección..." fullScreen /> }>
+      <Suspense fallback={<DashboardSkeleton />}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route

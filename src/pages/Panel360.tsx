@@ -8,6 +8,7 @@ import { CreateAlertModal } from "@/components/CreateAlertModal"
 import { Download, Search, User, Users, Bell } from "lucide-react"
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { parseFirestoreDate } from "@/utils/dateUtils"
 
 type Student = { firestoreId: string; nombre: string; apellido: string; cursoId?: string }
 type Course = { firestoreId: string; nombre: string; division?: string; año?: string }
@@ -30,28 +31,9 @@ export default function Panel360() {
 	const { data: alerts } = useFirestoreCollection<Alert>("alerts", { enableCache: true })
 	const { data: announcements } = useFirestoreCollection<Announcement>("announcements", { enableCache: true })
 
-	// Normaliza distintos formatos de fecha (Firestore Timestamp, string, number, Date)
 	const normalizeDate = (value: any): string | undefined => {
-		if (!value) return undefined
-		try {
-			if (typeof value === 'object') {
-				if ('toDate' in value && typeof (value as any).toDate === 'function') {
-					const d = (value as any).toDate()
-					return isNaN(d.getTime()) ? undefined : d.toISOString()
-				}
-				if ('seconds' in value && typeof (value as any).seconds === 'number') {
-					const d = new Date((value as any).seconds * 1000)
-					return isNaN(d.getTime()) ? undefined : d.toISOString()
-				}
-				if (value instanceof Date) {
-					return isNaN(value.getTime()) ? undefined : value.toISOString()
-				}
-			}
-			const d = new Date(value)
-			return isNaN(d.getTime()) ? undefined : d.toISOString()
-		} catch {
-			return undefined
-		}
+		const date = parseFirestoreDate(value)
+		return date ? date.toISOString() : undefined
 	}
 
 	const filteredStudents = useMemo(() => {

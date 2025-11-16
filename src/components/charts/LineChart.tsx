@@ -2,14 +2,21 @@
 
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts"
 
+interface ChartDataPoint {
+  [key: string]: string | number
+}
+
 interface LineChartProps {
-  data: any[]
+  data: ChartDataPoint[]
   xKey: string
   yKey: string
   title?: string
   description?: string
   className?: string
   color?: string
+  showReferenceLine?: boolean
+  referenceLineValue?: number
+  referenceLineColor?: string
 }
 
 export function LineChartComponent({ 
@@ -19,10 +26,15 @@ export function LineChartComponent({
   title, 
   description, 
   className = "",
-  color = "#3b82f6"
+  color = "#3b82f6",
+  showReferenceLine = true,
+  referenceLineValue = 7,
+  referenceLineColor = "#10b981"
 }: LineChartProps) {
-  // Verificar si hay datos válidos
-  const hasValidData = data && data.length > 0 && data.some(item => item[yKey] > 0);
+  const hasValidData = data && data.length > 0 && data.some(item => {
+    const value = item[yKey]
+    return typeof value === 'number' && value > 0
+  });
 
   if (!hasValidData) {
     return (
@@ -111,7 +123,14 @@ export function LineChartComponent({
               dot={{ fill: color, strokeWidth: 2, r: 3 }}
               activeDot={{ r: 5, stroke: color, strokeWidth: 2, fill: color }}
             />
-            <ReferenceLine y={7} stroke="#10b981" strokeDasharray="3 3" ifOverflow="extendDomain" />
+            {showReferenceLine && (
+              <ReferenceLine 
+                y={referenceLineValue} 
+                stroke={referenceLineColor} 
+                strokeDasharray="3 3" 
+                ifOverflow="extendDomain" 
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
