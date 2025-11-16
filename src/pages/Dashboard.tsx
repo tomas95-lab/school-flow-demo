@@ -3,7 +3,6 @@ import { Users, GraduationCap, BookOpen, AlertCircle, PlusCircle, Settings, Book
 // import { ReutilizableCard } from "@/components/ReutilizableCard"
 import { useContext, useEffect, useState, useMemo } from "react"
 import { AuthContext } from "@/context/AuthContext"
-import { SchoolSpinner } from "@/components/SchoolSpinner"
 import { Link, useNavigate } from "react-router-dom"
 // import { StatsCard } from "@/components/StatCards"
 import { Button } from "@/components/ui/button"
@@ -21,6 +20,7 @@ import {
   type DatosAlumno
 } from "@/utils/alertasAutomaticas";
 import { BarChartComponent, PieChartComponent } from "@/components/charts"
+import { DashboardSkeleton } from "@/components/ChartSkeleton"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -299,18 +299,7 @@ export default function Dashboard() {
     (studentsByCourse || []).forEach((s: any) => { if (s?.firestoreId) studentsMap.set(s.firestoreId, s); });
     const mergedStudents = Array.from(studentsMap.values());
 
-    console.log('=== CALCULATED STATS DEBUG ===');
-    console.log('Data loaded:', {
-      students: mergedStudents?.length || 0,
-      courses: courses?.length || 0,
-      teachers: teachers?.length || 0,
-      calificaciones: calificaciones?.length || 0,
-      asistencias: asistencias?.length || 0,
-      subjects: subjects?.length || 0
-    });
-
     if (!mergedStudents || !courses || !teachers || !calificaciones || !asistencias || !subjects) {
-      console.log('Missing data, returning null');
       return null;
     }
 
@@ -364,9 +353,6 @@ export default function Dashboard() {
     };
 
     const subjectsMap = new Map(subjects.map(s => [s.firestoreId, s.cursoId]));
-    
-    console.log('Time filter:', timeFilter, 'Start date:', startDate.toISOString());
-    console.log('Course filter:', courseFilter);
 
     const filteredGrades = filterByTimeAndCourse(
       calificaciones,
@@ -378,27 +364,8 @@ export default function Dashboard() {
       (a: any) => (a as any).fecha ?? (a as any).date,
       (a: any) => (a as any).courseId
     );
-    
-    console.log('Filtered grades:', filteredGrades.length, '/', calificaciones.length);
-    console.log('All calificaciones with dates:', calificaciones.map(g => ({ 
-      subjectId: g.subjectId, 
-      valor: g.valor, 
-      fecha: g.fecha,
-      fechaType: typeof g.fecha,
-      parsed: parseDate(g.fecha),
-      isAfterStart: parseDate(g.fecha) ? parseDate(g.fecha)! >= startDate : false
-    })));
-    console.log('Start date for filter:', startDate);
 
     const generateChartData = () => {
-      console.log('=== DEBUG CHART DATA ===');
-      console.log('Total courses:', courses.length);
-      console.log('Total subjects:', subjects.length);
-      console.log('Total filteredGrades:', filteredGrades.length);
-      console.log('SubjectsMap size:', subjectsMap.size);
-      console.log('Sample subjects:', Array.from(subjectsMap.entries()).slice(0, 3));
-      console.log('Sample grades:', filteredGrades.slice(0, 3).map(g => ({ studentId: g.studentId, subjectId: g.subjectId, valor: g.valor })));
-      
       const performanceByCourse = courses.map(course => {
         const courseGrades = filteredGrades.filter(g => {
           const subjectCursoId = subjectsMap.get(g.subjectId);
@@ -407,15 +374,11 @@ export default function Dashboard() {
         const avgGrade = courseGrades.length > 0 
           ? courseGrades.reduce((sum, g) => sum + g.valor, 0) / courseGrades.length 
           : 0;
-        console.log(`Course ${course.nombre}: ${courseGrades.length} grades, avg: ${avgGrade}`);
         return {
           curso: course.nombre || course.name || 'Sin nombre',
           promedio: parseFloat(avgGrade.toFixed(1))
         };
       }).filter(item => item.promedio > 0);
-      
-      console.log('Performance by course (filtered):', performanceByCourse);
-      console.log('======================');
 
       // Datos para line chart de asistencia por mes (datos reales de Firestore)
       const generateAttendanceByMonth = () => {
@@ -838,11 +801,7 @@ export default function Dashboard() {
   const role = (user?.role || "alumno").toLowerCase();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <SchoolSpinner text="Cargando datos del dashboard..." fullScreen={true} />
-      </div>
-    );
+    return <DashboardSkeleton />
   }
 
   // (Eliminadas funciones no utilizadas getRoleIcon/getRoleMessage)

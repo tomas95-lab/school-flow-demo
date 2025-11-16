@@ -82,7 +82,7 @@ export default function Panel360() {
 				return avg >= 7
 			}).length
 			const alertsFor = (alerts || []).filter(a => a.studentId === student.firestoreId)
-			// Charts
+
 			const perfBySubject = studentSubjects.map(sub => {
 				const sg = grades.filter(g => g.subjectId === sub.firestoreId)
 				const avg = sg.length ? (sg.reduce((s, g) => s + (g.valor || 0), 0) / sg.length) : 0
@@ -108,7 +108,13 @@ export default function Panel360() {
 		}
 		const course = (courses || []).find(c => c.firestoreId === selectedId)
 		if (!course) return null
-		const grades = (calificaciones || []).filter(g => g.courseId === course.firestoreId)
+		
+		const subjectsMap = new Map((subjects || []).map(s => [s.firestoreId, s.cursoId]))
+		const grades = (calificaciones || []).filter(g => {
+			const subjectCursoId = subjectsMap.get(g.subjectId || '')
+			return subjectCursoId === course.firestoreId
+		})
+		
 		const atts = (asistencias || []).filter(a => a.courseId === course.firestoreId)
 		const avg = grades.length ? (grades.reduce((s, g) => s + (g.valor || 0), 0) / grades.length) : 0
 		const present = atts.filter(a => a.present).length

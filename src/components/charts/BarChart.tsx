@@ -2,13 +2,21 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts"
 
+interface ChartDataPoint {
+  [key: string]: string | number
+}
+
 interface BarChartProps {
-  data: any[]
+  data: ChartDataPoint[]
   xKey: string
   yKey: string
   title?: string
   description?: string
   className?: string
+  colors?: {
+    bar?: string
+    referenceLine?: string
+  }
 }
 
 export function BarChartComponent({ 
@@ -17,10 +25,16 @@ export function BarChartComponent({
   yKey, 
   title, 
   description, 
-  className = "" 
+  className = "",
+  colors = {
+    bar: "#2563eb",
+    referenceLine: "#10b981"
+  }
 }: BarChartProps) {
-  // Verificar si hay datos válidos
-  const hasValidData = data && data.length > 0 && data.some(item => item[yKey] > 0);
+  const hasValidData = data && data.length > 0 && data.some(item => {
+    const value = item[yKey]
+    return typeof value === 'number' && value > 0
+  });
 
   if (!hasValidData) {
     return (
@@ -106,11 +120,11 @@ export function BarChartComponent({
             />
             <Bar 
               dataKey={yKey} 
-              fill="#2563eb" 
+              fill={colors.bar} 
               radius={[6, 6, 0, 0]} 
               maxBarSize={48}
             />
-            <ReferenceLine y={7} stroke="#10b981" strokeDasharray="3 3" ifOverflow="extendDomain" />
+            <ReferenceLine y={7} stroke={colors.referenceLine} strokeDasharray="3 3" ifOverflow="extendDomain" />
           </BarChart>
         </ResponsiveContainer>
       </div>

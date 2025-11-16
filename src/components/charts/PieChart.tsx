@@ -2,8 +2,21 @@
 
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
 
+interface ChartDataPoint {
+  [key: string]: string | number
+}
+
+interface LabelRenderProps {
+  cx: number
+  cy: number
+  midAngle: number
+  innerRadius: number
+  outerRadius: number
+  percent: number
+}
+
 interface PieChartProps {
-  data: any[]
+  data: ChartDataPoint[]
   dataKey: string
   nameKey: string
   title?: string
@@ -21,9 +34,8 @@ export function PieChartComponent({
   className = "",
   colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
 }: PieChartProps) {
-  // Etiqueta interna solo con porcentaje para evitar desbordes
   const RADIAN = Math.PI / 180
-  const renderPercentLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  const renderPercentLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: LabelRenderProps) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
@@ -34,8 +46,11 @@ export function PieChartComponent({
       </text>
     )
   }
-  // Verificar si hay datos válidos
-  const hasValidData = data && data.length > 0 && data.some(item => item[dataKey] > 0);
+
+  const hasValidData = data && data.length > 0 && data.some(item => {
+    const value = item[dataKey]
+    return typeof value === 'number' && value > 0
+  });
 
   if (!hasValidData) {
     return (

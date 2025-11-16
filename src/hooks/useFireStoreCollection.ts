@@ -7,7 +7,17 @@ import { isDemoMode, getDemoData } from "@/data/demoData";
 
 // Cache global para evitar múltiples listeners
 const cache = new Map<string, { data: DocumentData[]; timestamp: number; listeners: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+const CACHE_DURATION = 5 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 50;
+
+function cleanOldCacheEntries() {
+  if (cache.size > MAX_CACHE_ENTRIES) {
+    const entries = Array.from(cache.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toDelete = entries.slice(0, cache.size - MAX_CACHE_ENTRIES);
+    toDelete.forEach(([key]) => cache.delete(key));
+  }
+}
 
 export function useFirestoreCollection<T extends DocumentData & { firestoreId?: string }>(
   path: string, 
@@ -88,7 +98,6 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
           setData(docs);
           setLoading(false);
 
-          // Actualizar cache
           if (options?.enableCache !== false) {
             const existing = cache.get(cacheKey);
             cache.set(cacheKey, {
@@ -96,6 +105,7 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
               timestamp: Date.now(),
               listeners: existing ? existing.listeners : 1,
             });
+            cleanOldCacheEntries();
           }
         },
         (error: any) => {
