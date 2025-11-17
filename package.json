@@ -20,6 +20,8 @@
     "dump:firestore": "node scripts/dump-firestore.js",
     "export:core": "node scripts/export-core-collections.js",
     "reconcile:teacher-courses": "node scripts/reconcile-teacher-courses.js",
+    "init:collections": "node scripts/initCollections.js",
+    "init:quick": "node scripts/initQuickCollections.js",
     "test:coverage": "vitest run --coverage",
     "deploy": "npm run build:prod && firebase deploy",
     "deploy:hosting": "npm run build:prod && firebase deploy --only hosting",

@@ -22,6 +22,7 @@ import {
 import { BarChartComponent, PieChartComponent } from "@/components/charts"
 import { DashboardSkeleton } from "@/components/ChartSkeleton"
 import { parseFirestoreDate, getDateRangeForFilter } from "@/utils/dateUtils"
+import { InitCollectionsButton } from "@/components/InitCollectionsButton"
 
 // Enlaces corregidos y funcionales por rol - SOLO RUTAS QUE EXISTEN
 const quickAccessByRole = {
@@ -778,7 +779,7 @@ export default function Dashboard() {
         <WelcomeMessage user={user} />
         {/* Filtros */}
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <div className="w-44">
               <Select value={timeFilter} onValueChange={(v: '7d' | '30d' | '90d' | 'all') => setTimeFilter(v)}>
                 <SelectTrigger>
@@ -807,6 +808,7 @@ export default function Dashboard() {
                 </Select>
               </div>
             )}
+            {user?.role === 'admin' && <InitCollectionsButton />}
           </div>
         </div>
         

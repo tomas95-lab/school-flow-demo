@@ -17,7 +17,8 @@ import {
   Layers3,
   Bot,
   LineChart,
-  Settings2
+  Settings2,
+  BookCheck
 } from "lucide-react"
 
 import {
@@ -52,6 +53,7 @@ const data = {
       items: [
         { title: "Asistencias", url: "/app/asistencias", isActive: false },
         { title: "Calificaciones", url: "/app/calificaciones", isActive: false },
+        { title: "Tareas", url: "/app/tareas", isActive: false },
         { title: "Boletines", url: "/app/boletines", isActive: false },
       ],
     },
@@ -62,6 +64,7 @@ const data = {
       items: [
         { title: "Mensajes", url: "/app/mensajes", isActive: false },
         { title: "Alertas", url: "/app/alertas", isActive: false },
+        { title: "Familias", url: "/app/comunicacion-familias-module", isActive: false },
       ],
     },
     {
@@ -106,9 +109,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "Dashboard": LayoutDashboard,
     "Asistencias": CalendarCheck2,
     "Calificaciones": NotebookText,
+    "Tareas": BookCheck,
     "Boletines": FileText,
     "Mensajes": MessagesSquare,
     "Alertas": Bell,
+    "Familias": Users2,
     "Usuarios": Users2,
     "Cursos y Materias": Layers3,
     "Inscripciones": BookOpen,

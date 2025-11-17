@@ -93,6 +93,33 @@ export interface Grade {
   creadoPor?: string;
 }
 
+export interface Tarea {
+  firestoreId: string;
+  title: string;
+  description?: string;
+  courseId: string;
+  subjectId: string;
+  teacherId: string;
+  studentIds: string[];
+  dueDate: string;
+  status: 'active' | 'closed';
+  createdAt: string;
+  updatedAt?: string;
+  points?: number;
+  attachments?: string[];
+  submissions?: TareaSubmission[];
+}
+
+export interface TareaSubmission {
+  studentId: string;
+  tareaId: string;
+  submittedAt?: string;
+  status: 'pending' | 'submitted' | 'graded';
+  grade?: number;
+  feedback?: string;
+  attachments?: string[];
+}
+
 export interface Alert {
   firestoreId: string;
   title: string;

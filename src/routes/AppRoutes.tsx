@@ -23,6 +23,8 @@ const ExplicacionBoletinOverview = lazy(() => import("@/components/ExplicacionBo
 const BotOverview = lazy(() => import("@/components/BotOverview"));
 const IntervencionesOverview = lazy(() => import("@/components/IntervencionesOverview"));
 const Panel360 = lazy(() => import("@/pages/Panel360"));
+const Tareas = lazy(() => import("@/pages/Tareas"));
+const ComunicacionFamiliasModule = lazy(() => import("@/pages/ComunicacionFamilias"));
 // const Finanzas = lazy(() => import("@/pages/Finanzas"));
 const PagoSimulado = lazy(() => import("@/pages/PagoSimulado"));
 const Auditoria = lazy(() => import("@/pages/Auditoria"));
@@ -110,6 +112,8 @@ export function AppRoutes() {
             <Route path="/app/explicacion-boletin" element={<ExplicacionBoletinOverview />} />
             <Route path="/app/bot" element={<BotOverview />} />
             <Route path="/app/360" element={<Panel360 />} />
+            <Route path="/app/tareas" element={<Tareas />} />
+            <Route path="/app/comunicacion-familias-module" element={<ComunicacionFamiliasModule />} />
             {/* <Route path="/app/finanzas" element={<Finanzas />} /> */}
             <Route path="/app/pago/:id" element={<PagoSimulado />} />
             <Route path="/app/auditoria" element={<Auditoria />} />

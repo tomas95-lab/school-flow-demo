@@ -1,4 +1,4 @@
-import type { User, Course, Subject, Student, Teacher, Attendance, Grade, Alert, Message } from './index';
+import type { User, Course, Subject, Student, Teacher, Attendance, Grade, Alert, Message, Tarea } from './index';
 
 // Mapa colección → tipo de documento
 export type CollectionsMap = {
@@ -11,6 +11,7 @@ export type CollectionsMap = {
   calificaciones: Grade;
   alerts: Alert;
   messages: Message;
+  tareas: Tarea;
 };
 
 export type CollectionName = keyof CollectionsMap;
