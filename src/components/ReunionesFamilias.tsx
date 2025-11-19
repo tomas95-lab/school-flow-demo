@@ -1,27 +1,23 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useTeacherCourses } from "@/hooks/useTeacherCourses";
+import { where, collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { where } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Video, Plus, Calendar, Loader2, Eye, Edit, Trash2 } from "lucide-react";
+import { Video, Plus, Calendar, Eye, Edit, Trash2, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { DataTable } from "@/components/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDateTime } from "@/utils/dateUtils";
+import ReutilizableDialog from "@/components/DialogReutlizable";
+import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { toast } from "sonner";
-import { EditReunionModal } from "@/components/EditReunionModal";
-import { ViewReunionModal } from "@/components/ViewReunionModal";
-import { DeleteReunionModal } from "@/components/DeleteReunionModal";
 
 interface Reunion {
   firestoreId: string;
@@ -36,29 +32,478 @@ interface Reunion {
   modalidad?: string;
 }
 
-export default function ReunionesFamilias() {
+function CreateReunionCell({ onSuccess }: { onSuccess: () => void }) {
   const { user } = useContext(AuthContext);
   const { teacherCourses } = useTeacherCourses(user?.teacherId);
   const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
 
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [formData, setFormData] = useState({
+    studentId: "",
+    fecha: "",
+    motivo: "",
+    modalidad: "presencial",
+    duracion: 30
+  });
 
-  const [selectedReunion, setSelectedReunion] = useState<Reunion | null>(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const { data: students } = useFirestoreCollection("students", {
+    constraints: teacherCourseIds.length > 0
+      ? [where('cursoId', 'in', teacherCourseIds.slice(0, 10))]
+      : [],
+    enableCache: true,
+    dependencies: [teacherCourseIds.join(',')]
+  });
+
+  const { data: users } = useFirestoreCollection("users", {
+    constraints: [where('role', '==', 'familiar')],
+    enableCache: true
+  });
+
+  const handleSubmit = async () => {
+    if (!formData.studentId || !formData.fecha || !formData.motivo) {
+      toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const familiar = users?.find(u => u.studentId === formData.studentId);
+      const familyId = familiar?.uid || 'demo-parent-1';
+
+      await addDoc(collection(db, "reuniones_familias"), {
+        teacherId: user?.teacherId || "",
+        familyId: familyId,
+        studentId: formData.studentId,
+        date: formData.fecha,
+        motivo: formData.motivo,
+        modalidad: formData.modalidad,
+        duracion: formData.duracion,
+        status: "scheduled",
+        createdAt: new Date().toISOString()
+      });
+
+      toast.success("Reunión programada exitosamente");
+
+      setFormData({
+        studentId: "",
+        fecha: "",
+        motivo: "",
+        modalidad: "presencial",
+        duracion: 30
+      });
+
+      setOpen(false);
+      onSuccess();
+    } catch (error) {
+      console.error("Error creating reunion:", error);
+      toast.error("Error al programar la reunión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formContent = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="student">Estudiante *</Label>
+        <Select
+          value={formData.studentId}
+          onValueChange={(value) => setFormData({ ...formData, studentId: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecciona un estudiante" />
+          </SelectTrigger>
+          <SelectContent>
+            {students?.filter(s => s.firestoreId).map((student) => (
+              <SelectItem key={student.firestoreId} value={student.firestoreId!}>
+                {student.nombre} {student.apellido}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="fecha">Fecha y Hora *</Label>
+        <Input
+          id="fecha"
+          type="datetime-local"
+          value={formData.fecha}
+          onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="modalidad">Modalidad</Label>
+        <Select
+          value={formData.modalidad}
+          onValueChange={(value) => setFormData({ ...formData, modalidad: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="presencial">Presencial</SelectItem>
+            <SelectItem value="virtual">Virtual</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="duracion">Duración (minutos)</Label>
+        <Input
+          id="duracion"
+          type="number"
+          min="15"
+          step="15"
+          value={formData.duracion}
+          onChange={(e) => setFormData({ ...formData, duracion: parseInt(e.target.value) })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="motivo">Motivo *</Label>
+        <Textarea
+          id="motivo"
+          value={formData.motivo}
+          onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
+          placeholder="Describe el motivo de la reunión..."
+          rows={3}
+        />
+      </div>
+
+      {loading && (
+        <div className="text-blue-600 text-sm mt-2">Guardando...</div>
+      )}
+    </div>
+  );
+
+  const formFooter = (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setOpen(false)}
+        disabled={loading}
+      >
+        Cancelar
+      </Button>
+      <Button onClick={handleSubmit} disabled={loading}>
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Programar
+      </Button>
+    </>
+  );
+
+  return (
+    <ReutilizableDialog
+      small={false}
+      open={open}
+      onOpenChange={setOpen}
+      title="Programar Reunión"
+      description="Programa una reunión con la familia de un estudiante"
+      content={formContent}
+      footer={formFooter}
+      triger={
+        <span className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Nueva Reunión
+        </span>
+      }
+      background={true}
+    />
+  );
+}
+
+function ViewReunionCell({ reunion }: { reunion: Reunion }) {
+  const [open, setOpen] = useState(false);
+
+  const { data: students } = useFirestoreCollection("students", { enableCache: true });
+  const student = students?.find(s => s.firestoreId === reunion.studentId);
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      scheduled: 'Programada',
+      completed: 'Completada',
+      cancelled: 'Cancelada'
+    };
+    return map[status] || status;
+  };
+
+  const content = (
+    <div className="space-y-4">
+      <div>
+        <Label>Estudiante</Label>
+        <p className="text-sm text-gray-700 mt-1">
+          {student ? `${student.nombre} ${student.apellido}` : 'Sin estudiante'}
+        </p>
+      </div>
+      <div>
+        <Label>Fecha y Hora</Label>
+        <p className="text-sm text-gray-700 mt-1">{formatDateTime(reunion.date)}</p>
+      </div>
+      <div>
+        <Label>Modalidad</Label>
+        <p className="text-sm text-gray-700 mt-1">{reunion.modalidad || 'N/A'}</p>
+      </div>
+      <div>
+        <Label>Duración</Label>
+        <p className="text-sm text-gray-700 mt-1">{reunion.duracion} minutos</p>
+      </div>
+      <div>
+        <Label>Estado</Label>
+        <p className="text-sm text-gray-700 mt-1">{getStatusLabel(reunion.status)}</p>
+      </div>
+      <div>
+        <Label>Motivo</Label>
+        <p className="text-sm text-gray-700 mt-1">{reunion.motivo}</p>
+      </div>
+      {reunion.notas && (
+        <div>
+          <Label>Notas</Label>
+          <p className="text-sm text-gray-700 mt-1">{reunion.notas}</p>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <ReutilizableDialog
+      small={true}
+      open={open}
+      onOpenChange={setOpen}
+      title="Detalles de la Reunión"
+      description="Información completa de la reunión"
+      content={content}
+      triger={<Eye className="w-4 h-4" />}
+    />
+  );
+}
+
+function EditReunionCell({ reunion, onSuccess }: { reunion: Reunion; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fecha: reunion.date,
+    motivo: reunion.motivo,
+    modalidad: reunion.modalidad || "presencial",
+    duracion: reunion.duracion || 30,
+    status: reunion.status,
+    notas: reunion.notas || ""
+  });
+
+  const handleSubmit = async () => {
+    if (!formData.fecha || !formData.motivo) {
+      toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await updateDoc(doc(db, "reuniones_familias", reunion.firestoreId), {
+        date: formData.fecha,
+        motivo: formData.motivo,
+        modalidad: formData.modalidad,
+        duracion: formData.duracion,
+        status: formData.status,
+        notas: formData.notas
+      });
+
+      toast.success("Reunión actualizada exitosamente");
+      setOpen(false);
+      onSuccess();
+    } catch (error) {
+      console.error("Error updating reunion:", error);
+      toast.error("Error al actualizar la reunión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formContent = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Fecha y Hora *</Label>
+        <Input
+          type="datetime-local"
+          value={formData.fecha}
+          onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Estado</Label>
+        <Select
+          value={formData.status}
+          onValueChange={(value) => setFormData({ ...formData, status: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="scheduled">Programada</SelectItem>
+            <SelectItem value="completed">Completada</SelectItem>
+            <SelectItem value="cancelled">Cancelada</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Modalidad</Label>
+        <Select
+          value={formData.modalidad}
+          onValueChange={(value) => setFormData({ ...formData, modalidad: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="presencial">Presencial</SelectItem>
+            <SelectItem value="virtual">Virtual</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Duración (minutos)</Label>
+        <Input
+          type="number"
+          min="15"
+          step="15"
+          value={formData.duracion}
+          onChange={(e) => setFormData({ ...formData, duracion: parseInt(e.target.value) })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Motivo *</Label>
+        <Textarea
+          value={formData.motivo}
+          onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
+          rows={3}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Notas</Label>
+        <Textarea
+          value={formData.notas}
+          onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+          rows={2}
+        />
+      </div>
+
+      {loading && (
+        <div className="text-blue-600 text-sm">Guardando...</div>
+      )}
+    </div>
+  );
+
+  const formFooter = (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(false)}
+        disabled={loading}
+      >
+        Cancelar
+      </Button>
+      <Button onClick={handleSubmit} disabled={loading}>
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Guardar
+      </Button>
+    </>
+  );
+
+  return (
+    <ReutilizableDialog
+      small={false}
+      open={open}
+      onOpenChange={setOpen}
+      title="Editar Reunión"
+      description="Modifica los detalles de la reunión"
+      content={formContent}
+      footer={formFooter}
+      triger={<Edit className="w-4 h-4" />}
+    />
+  );
+}
+
+function DeleteReunionCell({ reunion, onSuccess }: { reunion: Reunion; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleDelete = async () => {
+    setLoading(true);
+
+    try {
+      await deleteDoc(doc(db, "reuniones_familias", reunion.firestoreId));
+      toast.success("Reunión eliminada exitosamente");
+      setOpen(false);
+      onSuccess();
+    } catch (error) {
+      console.error("Error deleting reunion:", error);
+      toast.error("Error al eliminar la reunión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const content = (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-700">
+        ¿Estás seguro de que deseas eliminar esta reunión? Esta acción no se puede deshacer.
+      </p>
+      {loading && (
+        <div className="text-blue-600 text-sm">Eliminando...</div>
+      )}
+    </div>
+  );
+
+  const footer = (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(false)}
+        disabled={loading}
+      >
+        Cancelar
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={handleDelete}
+        disabled={loading}
+      >
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Eliminar
+      </Button>
+    </>
+  );
+
+  return (
+    <ReutilizableDialog
+      small={true}
+      open={open}
+      onOpenChange={setOpen}
+      title="Eliminar Reunión"
+      description="Esta acción no se puede deshacer"
+      content={content}
+      footer={footer}
+      triger={<Trash2 className="w-4 h-4" />}
+    />
+  );
+}
+
+export default function ReunionesFamilias() {
+  const { user } = useContext(AuthContext);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
   };
-
-  const [formData, setFormData] = useState({
-    studentId: "",
-    fecha: "",
-    motivo: ""
-  });
 
   const { data: reuniones } = useFirestoreCollection<Reunion>("reuniones_familias", {
     constraints: user?.role === 'familiar' && user?.uid
@@ -71,50 +516,8 @@ export default function ReunionesFamilias() {
   });
 
   const { data: students } = useFirestoreCollection("students", {
-    constraints: user?.role === 'docente' && teacherCourseIds.length > 0
-      ? [where('cursoId', 'in', teacherCourseIds.slice(0, 10))]
-      : [],
-    enableCache: true,
-    dependencies: [teacherCourseIds.join(',')]
+    enableCache: true
   });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.studentId || !formData.fecha || !formData.motivo) {
-      toast.error("Por favor completa todos los campos");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await addDoc(collection(db, "reuniones_familias"), {
-        teacherId: user?.teacherId || "",
-        familyId: "demo-parent-1",
-        studentId: formData.studentId,
-        date: formData.fecha,
-        motivo: formData.motivo,
-        status: "scheduled",
-        createdAt: serverTimestamp()
-      });
-
-      toast.success("Reunión programada exitosamente");
-      
-      setFormData({
-        studentId: "",
-        fecha: "",
-        motivo: ""
-      });
-
-      setCreateModalOpen(false);
-    } catch (error) {
-      console.error("Error creating reunion:", error);
-      toast.error("Error al programar la reunión");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const columns: ColumnDef<Reunion>[] = [
     {
@@ -159,9 +562,6 @@ export default function ReunionesFamilias() {
       cell: ({ row }) => {
         const status = row.original.status || 'scheduled';
         const config: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
-          programada: { label: 'Programada', variant: 'default' },
-          realizada: { label: 'Realizada', variant: 'secondary' },
-          cancelada: { label: 'Cancelada', variant: 'destructive' },
           scheduled: { label: 'Programada', variant: 'default' },
           completed: { label: 'Realizada', variant: 'secondary' },
           cancelled: { label: 'Cancelada', variant: 'destructive' }
@@ -177,39 +577,11 @@ export default function ReunionesFamilias() {
         const reunion = row.original;
         return (
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setSelectedReunion(reunion);
-                setViewModalOpen(true);
-              }}
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
+            <ViewReunionCell reunion={reunion} />
             {(user?.role === 'docente' || user?.role === 'admin') && (
               <>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedReunion(reunion);
-                    setEditModalOpen(true);
-                  }}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => {
-                    setSelectedReunion(reunion);
-                    setDeleteModalOpen(true);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <EditReunionCell reunion={reunion} onSuccess={handleRefresh} />
+                <DeleteReunionCell reunion={reunion} onSuccess={handleRefresh} />
               </>
             )}
           </div>
@@ -233,10 +605,7 @@ export default function ReunionesFamilias() {
           />
           {user?.role === 'docente' && (
             <div className="flex justify-center mt-6">
-              <Button onClick={() => setCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Programar Reunión
-              </Button>
+              <CreateReunionCell onSuccess={handleRefresh} />
             </div>
           )}
         </CardContent>
@@ -245,125 +614,25 @@ export default function ReunionesFamilias() {
   }
 
   return (
-    <>
-      <Card className="bg-white shadow-lg border-gray-200">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Reuniones Programadas</CardTitle>
-              <CardDescription>Gestiona las reuniones con las familias</CardDescription>
-            </div>
-            {user?.role === 'docente' && (
-              <Button onClick={() => setCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nueva Reunión
-              </Button>
-            )}
+    <Card className="bg-white shadow-lg border-gray-200">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Reuniones Programadas</CardTitle>
+            <CardDescription>Gestiona las reuniones con las familias</CardDescription>
           </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable 
-            columns={columns} 
-            data={reuniones || []} 
-            placeholder="Buscar reuniones..."
-          />
-        </CardContent>
-      </Card>
-
-      {user?.role === 'docente' && (
-        <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Programar Reunión</DialogTitle>
-              <DialogDescription>
-                Programa una reunión con la familia de un estudiante
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="student">Estudiante *</Label>
-                <Select
-                  value={formData.studentId}
-                  onValueChange={(value) => setFormData({ ...formData, studentId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un estudiante" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students?.filter(s => s.firestoreId).map((student) => (
-                      <SelectItem key={student.firestoreId} value={student.firestoreId!}>
-                        {student.nombre} {student.apellido}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fecha">Fecha y Hora *</Label>
-                <Input
-                  id="fecha"
-                  type="datetime-local"
-                  value={formData.fecha}
-                  onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="motivo">Motivo *</Label>
-                <Textarea
-                  id="motivo"
-                  value={formData.motivo}
-                  onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
-                  placeholder="Describe el motivo de la reunión..."
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreateModalOpen(false)}
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Programar
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {selectedReunion && (
-        <>
-          <ViewReunionModal
-            open={viewModalOpen}
-            onOpenChange={setViewModalOpen}
-            reunion={selectedReunion}
-          />
-          <EditReunionModal
-            open={editModalOpen}
-            onOpenChange={setEditModalOpen}
-            reunion={selectedReunion}
-            onSuccess={handleRefresh}
-          />
-          <DeleteReunionModal
-            open={deleteModalOpen}
-            onOpenChange={setDeleteModalOpen}
-            reunion={selectedReunion}
-            onSuccess={handleRefresh}
-          />
-        </>
-      )}
-    </>
+          {user?.role === 'docente' && (
+            <CreateReunionCell onSuccess={handleRefresh} />
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <DataTable 
+          columns={columns} 
+          data={reuniones || []} 
+          placeholder="Buscar reuniones..."
+        />
+      </CardContent>
+    </Card>
   );
 }
-
