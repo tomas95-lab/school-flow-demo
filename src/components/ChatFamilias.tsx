@@ -3,7 +3,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useMessages } from "@/hooks/useMessages";
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import { where as whereFirestore } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Send, MessageCircle, User } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
+import { NuevaConversacionModal } from "@/components/NuevaConversacionModal";
 
 interface Conversacion {
   firestoreId: string;
@@ -31,7 +32,12 @@ export default function ChatFamilias() {
   const { user } = useContext(AuthContext);
   const [selectedConversacion, setSelectedConversacion] = useState<Conversacion | null>(null);
   const [newMessage, setNewMessage] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   const { data: conversaciones } = useFirestoreCollection<Conversacion>("conversaciones_familias", {
     constraints: user?.role === 'familiar'
@@ -40,7 +46,7 @@ export default function ChatFamilias() {
         ? [whereFirestore('teacherId', '==', user.teacherId)]
         : [],
     enableCache: true,
-    dependencies: [user?.role, user?.uid, user?.teacherId]
+    dependencies: [user?.role, user?.uid, user?.teacherId, refreshKey]
   });
 
   const { data: students } = useFirestoreCollection("students", { enableCache: true });
@@ -60,10 +66,10 @@ export default function ChatFamilias() {
       await addDoc(collection(db, "mensajes_familias"), {
         conversacionId: selectedConversacion.firestoreId,
         senderId: user?.uid || "",
-        senderName: user?.name || "Usuario",
         senderRole: user?.role || "",
-        message: newMessage,
-        timestamp: serverTimestamp()
+        text: newMessage,
+        createdAt: new Date().toISOString(),
+        readBy: []
       });
 
       setNewMessage("");
@@ -76,20 +82,33 @@ export default function ChatFamilias() {
 
   if (!conversaciones || conversaciones.length === 0) {
     return (
-      <EmptyState
-        icon={MessageCircle}
-        title="No hay conversaciones"
-        description="Aún no tienes conversaciones activas"
-      />
+      <div className="space-y-4">
+        {user?.role === 'docente' && (
+          <div className="flex justify-end">
+            <NuevaConversacionModal onSuccess={handleRefresh} />
+          </div>
+        )}
+        <EmptyState
+          icon={MessageCircle}
+          title="No hay conversaciones"
+          description={user?.role === 'docente' ? "Inicia una nueva conversación con una familia" : "Aún no tienes conversaciones activas"}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
-      <Card className="md:col-span-1">
-        <CardHeader>
-          <CardTitle className="text-base">Conversaciones</CardTitle>
-        </CardHeader>
+    <div className="space-y-4">
+      {user?.role === 'docente' && (
+        <div className="flex justify-end">
+          <NuevaConversacionModal onSuccess={handleRefresh} />
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-base">Conversaciones</CardTitle>
+          </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[500px]">
             <div className="space-y-2 p-4">
@@ -151,6 +170,7 @@ export default function ChatFamilias() {
                 <div className="space-y-4">
                   {messages.map((msg) => {
                     const isOwnMessage = msg.senderId === user?.uid;
+                    const senderName = msg.senderRole === 'docente' ? 'Docente' : msg.senderRole === 'familiar' ? 'Familiar' : 'Usuario';
                     return (
                       <div
                         key={msg.id}
@@ -163,13 +183,13 @@ export default function ChatFamilias() {
                               : 'bg-gray-100 text-gray-900'
                           }`}
                         >
-                          <p className="text-xs font-semibold mb-1">{msg.senderName}</p>
-                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-xs font-semibold mb-1">{senderName}</p>
+                          <p className="text-sm">{msg.text}</p>
                           <p className={`text-xs mt-1 ${isOwnMessage ? 'text-blue-100' : 'text-gray-500'}`}>
-                            {msg.timestamp?.toDate?.()?.toLocaleTimeString('es-AR', {
+                            {new Date(msg.createdAt).toLocaleTimeString('es-AR', {
                               hour: '2-digit',
                               minute: '2-digit'
-                            }) || 'Enviando...'}
+                            })}
                           </p>
                         </div>
                       </div>
@@ -203,6 +223,7 @@ export default function ChatFamilias() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }

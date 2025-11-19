@@ -15,7 +15,8 @@ import {
   Calendar,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Award
 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { DataTable } from "@/components/data-table";
@@ -25,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 import { EditTareaModal } from "@/components/EditTareaModal";
 import { ViewTareaModal } from "@/components/ViewTareaModal";
 import { DeleteTareaModal } from "@/components/DeleteTareaModal";
+import { GradeTareaModal } from "@/components/GradeTareaModal";
 
 interface Tarea {
   firestoreId: string;
@@ -52,6 +54,7 @@ export default function TeacherTareasOverview() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [gradeModalOpen, setGradeModalOpen] = useState(false);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -75,16 +78,38 @@ export default function TeacherTareasOverview() {
     dependencies: [user?.teacherId]
   });
 
+  const { data: submissions } = useFirestoreCollection("tarea_submissions", {
+    enableCache: true,
+    dependencies: [refreshKey]
+  });
+
+  const tareasWithSubmissions = useMemo(() => {
+    if (!tareas || !submissions) return tareas || [];
+    
+    return tareas.map(tarea => {
+      const tareaSubmissions = submissions.filter((s: any) => s.tareaId === tarea.firestoreId);
+      const submittedCount = tareaSubmissions.filter((s: any) => s.status === 'submitted' || s.status === 'graded').length;
+      const gradedCount = tareaSubmissions.filter((s: any) => s.status === 'graded').length;
+      
+      return {
+        ...tarea,
+        submissionsCount: submittedCount,
+        gradedCount: gradedCount,
+        pendingGradeCount: submittedCount - gradedCount
+      };
+    });
+  }, [tareas, submissions]);
+
   const stats = useMemo(() => {
-    if (!tareas) return { total: 0, activas: 0, cerradas: 0, porCalificar: 0 };
+    if (!tareasWithSubmissions) return { total: 0, activas: 0, cerradas: 0, porCalificar: 0 };
 
     return {
-      total: tareas.length,
-      activas: tareas.filter(t => t.status === 'active').length,
-      cerradas: tareas.filter(t => t.status === 'closed').length,
-      porCalificar: tareas.filter(t => (t.submissionsCount || 0) > 0 && t.status === 'active').length
+      total: tareasWithSubmissions.length,
+      activas: tareasWithSubmissions.filter(t => t.status === 'active').length,
+      cerradas: tareasWithSubmissions.filter(t => t.status === 'closed').length,
+      porCalificar: tareasWithSubmissions.filter(t => (t.submissionsCount || 0) > 0 && t.status === 'active').length
     };
-  }, [tareas]);
+  }, [tareasWithSubmissions]);
 
   const columns: ColumnDef<Tarea>[] = [
     {
@@ -104,9 +129,16 @@ export default function TeacherTareasOverview() {
       header: "Curso",
       cell: ({ row }) => {
         const course = courses?.find(c => c.firestoreId === row.original.courseId);
+        if (!course) {
+          return (
+            <span className="text-xs text-gray-400 italic" title={`ID: ${row.original.courseId}`}>
+              Sin curso
+            </span>
+          );
+        }
         return (
           <Badge variant="outline" className="text-xs">
-            {course?.nombre || 'N/A'}
+            {course.nombre}
           </Badge>
         );
       },
@@ -132,14 +164,38 @@ export default function TeacherTareasOverview() {
     {
       accessorKey: "submissionsCount",
       header: "Entregas",
-      cell: ({ row }) => (
-        <div className="text-center">
-          <span className="text-sm font-medium text-indigo-600">
-            {row.original.submissionsCount || 0}
-          </span>
-          <span className="text-xs text-gray-500"> entregas</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const total = row.original.submissionsCount || 0;
+        const pendingGrade = (row.original as any).pendingGradeCount || 0;
+        const graded = (row.original as any).gradedCount || 0;
+        
+        if (total === 0) {
+          return (
+            <div className="text-center">
+              <span className="text-xs text-gray-400">Sin entregas</span>
+            </div>
+          );
+        }
+        
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-indigo-600">{total}</span>
+              <span className="text-xs text-gray-500">total</span>
+            </div>
+            {pendingGrade > 0 && (
+              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                {pendingGrade} por calificar
+              </Badge>
+            )}
+            {graded > 0 && (
+              <span className="text-xs text-green-600">
+                {graded} calificadas
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -158,8 +214,24 @@ export default function TeacherTareasOverview() {
       header: "Acciones",
       cell: ({ row }) => {
         const tarea = row.original;
+        const hasSubmissions = (tarea.submissionsCount || 0) > 0;
+        
         return (
-          <div className="flex gap-2">
+          <div className="flex gap-1">
+            {hasSubmissions && (
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => {
+                  setSelectedTarea(tarea);
+                  setGradeModalOpen(true);
+                }}
+                title="Calificar entregas"
+              >
+                <Award className="w-4 h-4" />
+              </Button>
+            )}
             <Button
               size="sm"
               variant="ghost"
@@ -167,6 +239,7 @@ export default function TeacherTareasOverview() {
                 setSelectedTarea(tarea);
                 setViewModalOpen(true);
               }}
+              title="Ver detalles"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -177,6 +250,7 @@ export default function TeacherTareasOverview() {
                 setSelectedTarea(tarea);
                 setEditModalOpen(true);
               }}
+              title="Editar"
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -188,6 +262,7 @@ export default function TeacherTareasOverview() {
                 setSelectedTarea(tarea);
                 setDeleteModalOpen(true);
               }}
+              title="Eliminar"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -197,7 +272,7 @@ export default function TeacherTareasOverview() {
     },
   ];
 
-  if (!tareas || tareas.length === 0) {
+  if (!tareasWithSubmissions || tareasWithSubmissions.length === 0) {
     return (
       <div className="space-y-4">
         <EmptyState
@@ -287,7 +362,7 @@ export default function TeacherTareasOverview() {
         <CardContent>
           <DataTable 
             columns={columns} 
-            data={tareas} 
+            data={tareasWithSubmissions} 
             placeholder="Buscar tareas..."
           />
         </CardContent>
@@ -312,6 +387,12 @@ export default function TeacherTareasOverview() {
             open={deleteModalOpen}
             onOpenChange={setDeleteModalOpen}
             tarea={{ ...selectedTarea, studentIds: selectedTarea.studentIds || [] }}
+            onSuccess={handleRefresh}
+          />
+          <GradeTareaModal
+            open={gradeModalOpen}
+            onOpenChange={setGradeModalOpen}
+            tarea={selectedTarea}
             onSuccess={handleRefresh}
           />
         </>

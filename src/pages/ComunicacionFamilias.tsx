@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -25,6 +24,7 @@ import TeacherComunicacionOverview from "@/components/TeacherComunicacionOvervie
 import FamiliarComunicacionOverview from "@/components/FamiliarComunicacionOverview";
 import ChatFamilias from "@/components/ChatFamilias";
 import ReunionesFamilias from "@/components/ReunionesFamilias";
+import NotificacionesFamilias from "@/components/NotificacionesFamilias";
 
 import ObservacionesAutomaticasPanel from "@/components/ObservacionesAutomaticasPanel";
 
@@ -239,17 +239,13 @@ export default function ComunicacionFamilias() {
           )}
 
           {activeView === "notificaciones" && (
-            <Card className="bg-white shadow-lg border-gray-200">
-              <CardContent className="p-6">
-                <p className="text-gray-500">Sistema de notificaciones (próximamente)</p>
-              </CardContent>
-            </Card>
+            <NotificacionesFamilias />
           )}
 
           {activeView === "observaciones" && user?.role && (
             <ObservacionesAutomaticasPanel 
               role={user.role as 'admin' | 'docente' | 'alumno'}
-              context="general"
+              context="comunicacion"
             />
           )}
         </div>

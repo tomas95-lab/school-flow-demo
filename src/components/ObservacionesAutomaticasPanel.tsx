@@ -17,7 +17,7 @@ interface ObservacionData {
 interface ObservacionesAutomaticasPanelProps {
   role: 'admin' | 'docente' | 'alumno';
   className?: string;
-  context?: 'asistencias' | 'calificaciones' | 'boletines' | 'general';
+  context?: 'asistencias' | 'calificaciones' | 'boletines' | 'general' | 'tareas' | 'comunicacion';
 }
 
 // Constantes
@@ -25,14 +25,18 @@ const CONTEXT_TITLES = {
   asistencias: 'Observaciones de Asistencia',
   calificaciones: 'Observaciones de Rendimiento',
   boletines: 'Observaciones Generales',
-  general: 'Observaciones Automáticas'
+  general: 'Observaciones Automáticas',
+  tareas: 'Observaciones de Tareas',
+  comunicacion: 'Observaciones de Comunicación'
 } as const;
 
 const CONTEXT_FILTERS = {
   asistencias: ['asistencia'],
   calificaciones: ['rendimiento', 'tendencia', 'excelencia'],
   boletines: ['rendimiento', 'tendencia', 'excelencia', 'asistencia'],
-  general: ['rendimiento', 'tendencia', 'excelencia', 'asistencia']
+  general: ['rendimiento', 'tendencia', 'excelencia', 'asistencia'],
+  tareas: ['rendimiento', 'excelencia', 'neutral'],
+  comunicacion: ['rendimiento', 'neutral']
 } as const;
 
 export default function ObservacionesAutomaticasPanel({ 
@@ -42,11 +46,33 @@ export default function ObservacionesAutomaticasPanel({
 }: ObservacionesAutomaticasPanelProps) {
   const { user } = useContext(AuthContext);
   
-  // Hooks de datos
-  const { data: calificaciones } = useFirestoreCollection("calificaciones");
-  const { data: asistencias } = useFirestoreCollection("attendances");
-  const { data: students } = useFirestoreCollection("students");
-  const { data: teachers } = useFirestoreCollection("teachers");
+  // Hooks de datos - carga según contexto
+  const shouldLoadAcademicData = context !== 'tareas' && context !== 'comunicacion';
+  const shouldLoadTareas = context === 'tareas';
+  const shouldLoadComunicacion = context === 'comunicacion';
+
+  const { data: calificaciones } = useFirestoreCollection("calificaciones", {
+    enableCache: true,
+    dependencies: [shouldLoadAcademicData]
+  });
+  const { data: asistencias } = useFirestoreCollection("attendances", {
+    enableCache: true,
+    dependencies: [shouldLoadAcademicData]
+  });
+  const { data: tareas } = useFirestoreCollection("tareas", {
+    enableCache: true,
+    dependencies: [shouldLoadTareas]
+  });
+  const { data: conversaciones } = useFirestoreCollection("conversaciones_familias", {
+    enableCache: true,
+    dependencies: [shouldLoadComunicacion]
+  });
+  const { data: reuniones } = useFirestoreCollection("reuniones_familias", {
+    enableCache: true,
+    dependencies: [shouldLoadComunicacion]
+  });
+  const { data: students } = useFirestoreCollection("students", { enableCache: true });
+  const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
 
   // Función helper para obtener período anterior
   const obtenerPeriodoAnterior = (periodoActual: string): string | undefined => {
@@ -61,6 +87,154 @@ export default function ObservacionesAutomaticasPanel({
     }
   };
 
+  // Generar observaciones de tareas
+  const generarObservacionesTareas = (studentId: string, studentName: string): ObservacionData | null => {
+    if (!tareas) return null;
+
+    const tareasEstudiante = tareas.filter((t: any) => 
+      t.studentIds?.includes(studentId) || t.studentId === studentId
+    );
+
+    // Si no hay tareas, generar observación informativa
+    if (tareasEstudiante.length === 0) {
+      return {
+        studentId,
+        studentName,
+        observacion: {
+          texto: 'Sin tareas asignadas actualmente.',
+          tipo: 'neutral',
+          prioridad: 'baja',
+          reglaAplicada: 'tareas_analysis',
+          datosSoporte: {
+            promedioActual: 0,
+            ausencias: 0,
+            tendencia: 'sin_datos' as any,
+            tareasActivas: 0,
+            tareasAtrasadas: 0,
+            porcentajeAtrasadas: '0'
+          } as any
+        }
+      };
+    }
+
+    const now = new Date();
+    const tareasActivas = tareasEstudiante.filter((t: any) => t.status === 'active');
+    const tareasAtrasadas = tareasActivas.filter((t: any) => new Date(t.dueDate) < now);
+    const porcentajeAtrasadas = tareasActivas.length > 0 
+      ? (tareasAtrasadas.length / tareasActivas.length) * 100 
+      : 0;
+
+    let texto = '';
+    let tipo: 'rendimiento' | 'tendencia' | 'excelencia' | 'neutral' = 'neutral';
+    
+    if (tareasAtrasadas.length > 2) {
+      texto = `Tiene ${tareasAtrasadas.length} tareas atrasadas. Se recomienda ponerse al día.`;
+      tipo = 'rendimiento';
+    } else if (tareasActivas.length > 5) {
+      texto = `Tiene ${tareasActivas.length} tareas pendientes. Buena carga de trabajo.`;
+      tipo = 'neutral';
+    } else if (tareasAtrasadas.length === 0 && tareasActivas.length > 0) {
+      texto = `Al día con todas sus tareas (${tareasActivas.length} activas). ¡Excelente organización!`;
+      tipo = 'excelencia';
+    } else {
+      texto = `${tareasActivas.length} tareas pendientes, ${tareasAtrasadas.length} atrasadas.`;
+      tipo = 'neutral';
+    }
+
+    return {
+      studentId,
+      studentName,
+      observacion: {
+        texto,
+        tipo,
+        prioridad: tipo === 'rendimiento' ? 'alta' : 'media',
+        reglaAplicada: 'tareas_analysis',
+        datosSoporte: {
+          promedioActual: tareasActivas.length,
+          ausencias: tareasAtrasadas.length,
+          tendencia: 'estable' as any,
+          tareasActivas: tareasActivas.length,
+          tareasAtrasadas: tareasAtrasadas.length,
+          porcentajeAtrasadas: porcentajeAtrasadas.toFixed(1)
+        } as any
+      }
+    };
+  };
+
+  // Generar observaciones de comunicación
+  const generarObservacionesComunicacion = (studentId: string, studentName: string): ObservacionData | null => {
+    if (!conversaciones && !reuniones) return null;
+
+    const conversacionesEstudiante = conversaciones?.filter((c: any) => c.studentId === studentId) || [];
+    const reunionesEstudiante = reuniones?.filter((r: any) => r.studentId === studentId) || [];
+
+    // Si no hay comunicación, generar observación informativa
+    if (conversacionesEstudiante.length === 0 && reunionesEstudiante.length === 0) {
+      return {
+        studentId,
+        studentName,
+        observacion: {
+          texto: 'Sin comunicación activa con las familias.',
+          tipo: 'neutral',
+          prioridad: 'baja',
+          reglaAplicada: 'comunicacion_analysis',
+          datosSoporte: {
+            promedioActual: 0,
+            ausencias: 0,
+            tendencia: 'sin_datos' as any,
+            conversacionesAbiertas: 0,
+            reunionesPendientes: 0,
+            conversacionesPrioridad: 0
+          } as any
+        }
+      };
+    }
+
+    const conversacionesAbiertas = conversacionesEstudiante.filter((c: any) => 
+      c.status === 'abierta' || c.status === 'active'
+    );
+    const reunionesPendientes = reunionesEstudiante.filter((r: any) => 
+      r.status === 'scheduled' || r.status === 'programada'
+    );
+    const conversacionesPrioridad = conversacionesAbiertas.filter((c: any) => c.prioridad === 'alta');
+
+    let texto = '';
+    let tipo: 'rendimiento' | 'neutral' = 'neutral';
+    
+    if (conversacionesPrioridad.length > 0) {
+      texto = `${conversacionesPrioridad.length} conversación(es) de alta prioridad. Requiere atención inmediata.`;
+      tipo = 'rendimiento';
+    } else if (reunionesPendientes.length > 0) {
+      texto = `${reunionesPendientes.length} reunión(es) programada(s). Comunicación activa con familias.`;
+      tipo = 'neutral';
+    } else if (conversacionesAbiertas.length > 0) {
+      texto = `${conversacionesAbiertas.length} conversación(es) abierta(s) con familias.`;
+      tipo = 'neutral';
+    } else {
+      texto = `Sin conversaciones o reuniones pendientes.`;
+      tipo = 'neutral';
+    }
+
+    return {
+      studentId,
+      studentName,
+      observacion: {
+        texto,
+        tipo,
+        prioridad: tipo === 'rendimiento' ? 'alta' : 'media',
+        reglaAplicada: 'comunicacion_analysis',
+        datosSoporte: {
+          promedioActual: conversacionesAbiertas.length,
+          ausencias: 0,
+          tendencia: 'estable' as any,
+          conversacionesAbiertas: conversacionesAbiertas.length,
+          reunionesPendientes: reunionesPendientes.length,
+          conversacionesPrioridad: conversacionesPrioridad.length
+        } as any
+      }
+    };
+  };
+
   // Función para filtrar observaciones según el contexto
   const filtrarObservacionesPorContexto = (observaciones: ObservacionData[]) => {
     const tiposPermitidos = CONTEXT_FILTERS[context];
@@ -73,7 +247,39 @@ export default function ObservacionesAutomaticasPanel({
 
   // Generar observaciones según el rol
   const observacionesGeneradas = useMemo((): ObservacionData[] => {
-    if (!calificaciones || !asistencias || !students) return [];
+    if (!students) return [];
+    
+    // Filtrar estudiantes según el rol
+    let studentsToAnalyze = students;
+    
+    if (role === 'alumno' && user?.studentId) {
+      studentsToAnalyze = students.filter((s: any) => s.firestoreId === user.studentId);
+    } else if (role === 'docente' && teachers && user?.teacherId) {
+      const teacher = teachers.find((t: any) => t.firestoreId === user.teacherId);
+      if (teacher) {
+        studentsToAnalyze = students.filter((student: any) => 
+          student.teacherId === user.teacherId || student.cursoId === teacher.cursoId
+        );
+      }
+    }
+    
+    // Para contextos de Tareas y Comunicación, usar funciones específicas
+    if (context === 'tareas') {
+      if (!tareas) return [];
+      return studentsToAnalyze
+        .map((student: any) => generarObservacionesTareas(student.firestoreId, `${student.nombre} ${student.apellido}`))
+        .filter((obs): obs is ObservacionData => obs !== null);
+    }
+
+    if (context === 'comunicacion') {
+      if (!conversaciones && !reuniones) return [];
+      return studentsToAnalyze
+        .map((student: any) => generarObservacionesComunicacion(student.firestoreId, `${student.nombre} ${student.apellido}`))
+        .filter((obs): obs is ObservacionData => obs !== null);
+    }
+
+    // Para otros contextos, usar el sistema anterior
+    if (!calificaciones || !asistencias) return [];
 
     const periodoActual = getPeriodoActual();
     const periodoAnterior = obtenerPeriodoAnterior(periodoActual);
@@ -167,10 +373,16 @@ export default function ObservacionesAutomaticasPanel({
       default:
         return [];
     }
-  }, [role, user, calificaciones, asistencias, students, teachers]);
+  }, [role, user, calificaciones, asistencias, students, teachers, tareas, conversaciones, reuniones, context]);
 
   // Filtrar observaciones por contexto y relevancia
   const observacionesFiltradas = useMemo(() => {
+    // Para Tareas y Comunicación, mostrar todas las observaciones (incluyendo neutrales)
+    if (context === 'tareas' || context === 'comunicacion') {
+      return filtrarObservacionesPorContexto(observacionesGeneradas);
+    }
+    
+    // Para otros contextos, filtrar neutrales
     const observacionesRelevantes = observacionesGeneradas.filter(
       (item) => item.observacion.tipo !== 'neutral'
     );

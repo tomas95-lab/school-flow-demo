@@ -251,7 +251,7 @@ export default function Tareas() {
           {activeView === "observaciones" && user?.role && (
             <ObservacionesAutomaticasPanel 
               role={user.role as 'admin' | 'docente' | 'alumno'}
-              context="general"
+              context="tareas"
             />
           )}
         </div>

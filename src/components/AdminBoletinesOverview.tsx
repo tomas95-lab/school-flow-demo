@@ -306,7 +306,7 @@ export default function AdminBoletinesOverview() {
             >
               <CourseCard
                 course={safeCourse}
-                link={`/app/boletines/cursos?id=${course.firestoreId}`}
+                link={`/boletines/cursos?id=${course.firestoreId}`}
                 descripcion="Ver y gestionar Boletines de este curso"
               />
             </div>

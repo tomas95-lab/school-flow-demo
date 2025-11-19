@@ -3,7 +3,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,8 +66,8 @@ export default function CreateTareaModal({ open, onOpenChange, onSuccess }: Crea
         dueDate: formData.dueDate,
         status: "active",
         points: parseInt(formData.points) || 100,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
 
       toast.success("Tarea creada exitosamente");

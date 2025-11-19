@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { db } from "@/firebaseConfig";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 interface Message {
   id: string;
   conversacionId: string;
   senderId: string;
-  senderName: string;
   senderRole: string;
-  message: string;
-  timestamp: any;
+  text: string;
+  createdAt: string;
+  readBy?: string[];
 }
 
 export function useMessages(conversacionId: string | null) {
@@ -28,8 +28,7 @@ export function useMessages(conversacionId: string | null) {
       const messagesRef = collection(db, "mensajes_familias");
       const q = query(
         messagesRef,
-        where("conversacionId", "==", conversacionId),
-        orderBy("timestamp", "asc")
+        where("conversacionId", "==", conversacionId)
       );
 
       const unsubscribe = onSnapshot(
@@ -39,6 +38,13 @@ export function useMessages(conversacionId: string | null) {
             id: doc.id,
             ...doc.data()
           })) as Message[];
+          
+          msgs.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateA - dateB;
+          });
+          
           setMessages(msgs);
           setLoading(false);
         },

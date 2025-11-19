@@ -122,9 +122,16 @@ export default function ReunionesFamilias() {
       header: "Estudiante",
       cell: ({ row }) => {
         const student = students?.find(s => s.firestoreId === row.original.studentId);
+        if (!student) {
+          return (
+            <span className="text-xs text-gray-400 italic" title={`ID: ${row.original.studentId}`}>
+              Sin estudiante
+            </span>
+          );
+        }
         return (
           <span className="font-medium text-gray-900">
-            {student ? `${student.nombre} ${student.apellido}` : 'N/A'}
+            {student.nombre} {student.apellido}
           </span>
         );
       },

@@ -92,7 +92,14 @@ export default function AdminTareasOverview() {
       header: "Curso",
       cell: ({ row }) => {
         const course = courses?.find(c => c.firestoreId === row.original.courseId);
-        return <span className="text-sm text-gray-700">{course?.nombre || 'N/A'}</span>;
+        if (!course) {
+          return (
+            <span className="text-xs text-gray-400 italic" title={`ID: ${row.original.courseId}`}>
+              Sin curso
+            </span>
+          );
+        }
+        return <span className="text-sm text-gray-700">{course.nombre}</span>;
       },
     },
     {
@@ -100,7 +107,14 @@ export default function AdminTareasOverview() {
       header: "Materia",
       cell: ({ row }) => {
         const subject = subjects?.find(s => s.firestoreId === row.original.subjectId);
-        return <span className="text-sm text-gray-700">{subject?.nombre || 'N/A'}</span>;
+        if (!subject) {
+          return (
+            <span className="text-xs text-gray-400 italic" title={`ID: ${row.original.subjectId}`}>
+              Sin materia
+            </span>
+          );
+        }
+        return <span className="text-sm text-gray-700">{subject.nombre}</span>;
       },
     },
     {

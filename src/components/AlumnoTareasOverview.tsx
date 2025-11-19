@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { AuthContext } from "@/context/AuthContext";
 import { where } from "firebase/firestore";
@@ -19,8 +19,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { DataTable } from "@/components/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "@/utils/dateUtils";
-import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { SubmitTareaModal } from "@/components/SubmitTareaModal";
 
 interface Tarea {
   firestoreId: string;
@@ -39,20 +39,53 @@ interface Tarea {
 
 export default function AlumnoTareasOverview() {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
+  const [submitModalOpen, setSubmitModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   const { data: tareas } = useFirestoreCollection<Tarea>("tareas", {
     constraints: user?.studentId 
       ? [where('studentIds', 'array-contains', user.studentId)]
       : [],
     enableCache: true,
-    dependencies: [user?.studentId]
+    dependencies: [user?.studentId, refreshKey]
+  });
+
+  const { data: submissions } = useFirestoreCollection("tarea_submissions", {
+    constraints: user?.studentId 
+      ? [where('studentId', '==', user.studentId)]
+      : [],
+    enableCache: true,
+    dependencies: [user?.studentId, refreshKey]
   });
 
   const { data: subjects } = useFirestoreCollection("subjects", { enableCache: true });
 
+  const tareasWithStatus = useMemo(() => {
+    if (!tareas || !submissions) return tareas || [];
+    
+    return tareas.map(tarea => {
+      const submission = submissions.find((s: any) => s.tareaId === tarea.firestoreId);
+      
+      if (!submission) {
+        return { ...tarea, studentStatus: 'pending' as const };
+      }
+      
+      return {
+        ...tarea,
+        studentStatus: submission.status as 'pending' | 'submitted' | 'graded',
+        studentGrade: submission.grade,
+        submittedAt: submission.submittedAt
+      };
+    });
+  }, [tareas, submissions]);
+
   const stats = useMemo(() => {
-    if (!tareas) return { 
+    if (!tareasWithStatus) return { 
       total: 0, 
       pendientes: 0, 
       entregadas: 0, 
@@ -62,23 +95,23 @@ export default function AlumnoTareasOverview() {
     };
 
     const now = new Date();
-    const calificadas = tareas.filter(t => t.studentStatus === 'graded');
+    const calificadas = tareasWithStatus.filter(t => t.studentStatus === 'graded');
     const promedio = calificadas.length > 0
       ? calificadas.reduce((sum, t) => sum + (t.studentGrade || 0), 0) / calificadas.length
       : 0;
 
     return {
-      total: tareas.length,
-      pendientes: tareas.filter(t => t.studentStatus === 'pending' || !t.studentStatus).length,
-      entregadas: tareas.filter(t => t.studentStatus === 'submitted').length,
+      total: tareasWithStatus.length,
+      pendientes: tareasWithStatus.filter(t => t.studentStatus === 'pending' || !t.studentStatus).length,
+      entregadas: tareasWithStatus.filter(t => t.studentStatus === 'submitted').length,
       calificadas: calificadas.length,
-      atrasadas: tareas.filter(t => {
+      atrasadas: tareasWithStatus.filter(t => {
         const dueDate = new Date(t.dueDate);
         return (t.studentStatus === 'pending' || !t.studentStatus) && dueDate < now;
       }).length,
       promedioNotas: promedio
     };
-  }, [tareas]);
+  }, [tareasWithStatus]);
 
   const columns: ColumnDef<Tarea>[] = [
     {
@@ -98,9 +131,16 @@ export default function AlumnoTareasOverview() {
       header: "Materia",
       cell: ({ row }) => {
         const subject = subjects?.find(s => s.firestoreId === row.original.subjectId);
+        if (!subject) {
+          return (
+            <span className="text-xs text-gray-400 italic" title={`ID: ${row.original.subjectId}`}>
+              Sin materia
+            </span>
+          );
+        }
         return (
           <Badge variant="outline" className="text-xs">
-            {subject?.nombre || 'N/A'}
+            {subject.nombre}
           </Badge>
         );
       },
@@ -165,33 +205,39 @@ export default function AlumnoTareasOverview() {
     {
       id: "actions",
       header: "Acciones",
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          {row.original.studentStatus === 'pending' || !row.original.studentStatus ? (
-            <Button
-              size="sm"
-              variant="default"
-              onClick={() => navigate(`/app/tareas/${row.original.firestoreId}/entregar`)}
-            >
-              <Upload className="w-3 h-3 mr-1" />
-              Entregar
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate(`/app/tareas/${row.original.firestoreId}`)}
-            >
-              <FileText className="w-3 h-3 mr-1" />
-              Ver
-            </Button>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const tarea = row.original;
+        return (
+          <div className="flex gap-2">
+            {tarea.studentStatus === 'pending' || !tarea.studentStatus ? (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => {
+                  setSelectedTarea(tarea);
+                  setSubmitModalOpen(true);
+                }}
+              >
+                <Upload className="w-3 h-3 mr-1" />
+                Entregar
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+              >
+                <FileText className="w-3 h-3 mr-1" />
+                Entregada
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
-  if (!tareas || tareas.length === 0) {
+  if (!tareasWithStatus || tareasWithStatus.length === 0) {
     return (
       <EmptyState
         icon={BookCheck}
@@ -325,18 +371,28 @@ export default function AlumnoTareasOverview() {
               <CardDescription>Todas las tareas asignadas a ti</CardDescription>
             </div>
             <Badge variant="outline" className="text-sm">
-              {tareas.length} tareas
+              {tareasWithStatus.length} tareas
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
           <DataTable 
             columns={columns} 
-            data={tareas} 
+            data={tareasWithStatus} 
             placeholder="Buscar tareas..."
           />
         </CardContent>
       </Card>
+
+      {selectedTarea && user?.studentId && (
+        <SubmitTareaModal
+          open={submitModalOpen}
+          onOpenChange={setSubmitModalOpen}
+          tarea={selectedTarea}
+          studentId={user.studentId}
+          onSuccess={handleRefresh}
+        />
+      )}
     </div>
   );
 }
