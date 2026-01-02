@@ -39,12 +39,10 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
   const { handleError } = useGlobalError();
   const { user, loading: authLoading } = useAuth();
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
+  useEffect(() => {
     // Wait for authentication to complete
     if (authLoading) {
+      setLoading(true);
       return;
     }
 
@@ -55,16 +53,19 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       return;
     }
 
-    try {
-      // Verificar cache si está habilitado y usar datos iniciales para evitar flashes
-      if (options?.enableCache !== false && cache.has(cacheKey)) {
-        const cached = cache.get(cacheKey)!;
-        if (Date.now() - cached.timestamp < CACHE_DURATION && (cached.data?.length ?? 0) > 0) {
-          setData(cached.data as T[]);
-          // No retornamos aún: continuamos para revalidar en segundo plano
-        }
-      }
+    setLoading(true);
+    setError(null);
 
+    // Verificar cache si está habilitado y usar datos iniciales para evitar flashes
+    if (options?.enableCache !== false && cache.has(cacheKey)) {
+      const cached = cache.get(cacheKey)!;
+      if (Date.now() - cached.timestamp < CACHE_DURATION && (cached.data?.length ?? 0) > 0) {
+        setData(cached.data as T[]);
+        // No retornamos aún: continuamos para revalidar en segundo plano
+      }
+    }
+
+    try {
       // Crear query con opciones
       let qRef = collection(db, path);
       let q = qRef as any;
@@ -132,19 +133,15 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
       setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
     }
-  }, [path, options?.limit, options?.orderBy, options?.enableCache, cacheKey, db, handleError, user, authLoading, ...(options?.dependencies || [])]);
-
-  useEffect(() => {
-    // Don't fetch data while authentication is loading
-    if (authLoading) {
-      return;
-    }
-
-    fetchData();
 
     return () => {
       if (unsubscribeRef.current) {
-        unsubscribeRef.current();
+        try {
+          unsubscribeRef.current();
+        } catch (err) {
+          // Silently catch unsubscribe errors
+          console.debug('Error during unsubscribe:', err);
+        }
         unsubscribeRef.current = null;
       }
       
@@ -157,9 +154,17 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
         }
       }
     };
-  }, [fetchData, cacheKey, authLoading]);
+  }, [path, options?.limit, options?.orderBy, options?.enableCache, cacheKey, db, handleError, user, authLoading, ...(options?.dependencies || [])]);
 
-  return { data, loading, error, refetch: fetchData };
+  const refetch = useCallback(() => {
+    // Trigger re-fetch by cleaning cache
+    if (cache.has(cacheKey)) {
+      cache.delete(cacheKey);
+    }
+    // The useEffect will run again due to the dependencies
+  }, [cacheKey]);
+
+  return { data, loading, error, refetch };
 }
 
 // Hook para datos que no necesitan actualizaciones en tiempo real
