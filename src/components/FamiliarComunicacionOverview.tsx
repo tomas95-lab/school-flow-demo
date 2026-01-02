@@ -64,7 +64,6 @@ export default function FamiliarComunicacionOverview() {
   });
 
   const { data: teachers } = useFirestoreCollection("teachers", { enableCache: true });
-  const { data: students } = useFirestoreCollection("students", { enableCache: true });
 
   const stats = useMemo(() => {
     if (!conversaciones || !reuniones) return { 

@@ -1,8 +1,6 @@
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
-import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { where } from "firebase/firestore";
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import { LoadingState } from "@/components/LoadingState";
 import { 
@@ -16,7 +14,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePermission } from "@/hooks/usePermission";
@@ -40,10 +37,7 @@ interface TabItem {
 
 export default function Tareas() {
   const { user, loading: userLoading } = useContext(AuthContext);
-  const navigate = useNavigate();
   const roleScope = user?.role;
-  const { teacherCourses } = useTeacherCourses(user?.teacherId);
-  const teacherCourseIds = (teacherCourses || []).map(c => c.firestoreId).filter(Boolean) as string[];
   
   const { loading: coursesLoading } = useFirestoreCollection("courses", {
     constraints: roleScope === 'alumno'
@@ -52,16 +46,6 @@ export default function Tareas() {
         ? [where('teacherId', '==', user.teacherId)]
         : [],
     dependencies: [roleScope, user?.studentId, user?.teacherId]
-  });
-
-  const { data: tareas } = useFirestoreCollection("tareas", {
-    constraints: roleScope === 'alumno'
-      ? [where('studentIds', 'array-contains', user?.studentId || '')]
-      : roleScope === 'docente' && teacherCourseIds.length > 0
-        ? [where('courseId', 'in', teacherCourseIds.slice(0, 10))]
-        : [],
-    enableCache: true,
-    dependencies: [roleScope, user?.studentId, teacherCourseIds.join(',')]
   });
 
   const [activeView, setActiveView] = useState("overview");
@@ -141,16 +125,6 @@ export default function Tareas() {
   }
 
   const RoleIcon = getRoleIcon(user?.role);
-
-  const tareasStats = {
-    total: tareas?.length || 0,
-    pendientes: tareas?.filter((t: any) => t.status === 'pending').length || 0,
-    entregadas: tareas?.filter((t: any) => t.status === 'submitted').length || 0,
-    atrasadas: tareas?.filter((t: any) => {
-      if (t.status === 'completed' || t.status === 'graded') return false;
-      return new Date(t.dueDate) < new Date();
-    }).length || 0
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">

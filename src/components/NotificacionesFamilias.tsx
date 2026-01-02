@@ -204,7 +204,7 @@ export default function NotificacionesFamilias() {
     {
       accessorKey: "status",
       header: "Estado",
-      cell: ({ row }) => (
+      cell: () => (
         <Badge className="bg-green-100 text-green-800">
           <CheckCircle2 className="w-3 h-3 mr-1" />
           Enviada
@@ -286,8 +286,8 @@ export default function NotificacionesFamilias() {
                       <SelectValue placeholder="Selecciona un curso" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courses?.map(course => (
-                        <SelectItem key={course.firestoreId} value={course.firestoreId}>
+                      {courses?.filter(course => course.firestoreId).map(course => (
+                        <SelectItem key={course.firestoreId} value={course.firestoreId!}>
                           {course.nombre} - {course.division}
                         </SelectItem>
                       ))}
@@ -304,8 +304,8 @@ export default function NotificacionesFamilias() {
                       <SelectValue placeholder="Selecciona un estudiante" />
                     </SelectTrigger>
                     <SelectContent>
-                      {studentsWithCourses.map(student => (
-                        <SelectItem key={student.firestoreId} value={student.firestoreId}>
+                      {studentsWithCourses.filter(student => student.firestoreId).map(student => (
+                        <SelectItem key={student.firestoreId} value={student.firestoreId!}>
                           {student.nombre} {student.apellido}
                         </SelectItem>
                       ))}

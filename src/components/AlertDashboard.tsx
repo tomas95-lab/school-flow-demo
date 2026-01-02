@@ -334,7 +334,7 @@ export function AlertDashboard({ className = '' }: AlertDashboardProps) {
                 </CardHeader>
                 <CardContent>
                   <LineChartComponent
-                    data={chartData.trendData}
+                    data={chartData.trendData as any}
                     xKey="date"
                     yKey="count"
                     className="h-64"

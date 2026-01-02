@@ -2,7 +2,6 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
   MessageCircle, 
   Users, 
@@ -15,7 +14,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { DataTable } from "@/components/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { formatDate, formatRelativeTime } from "@/utils/dateUtils";
+import { formatRelativeTime } from "@/utils/dateUtils";
 
 interface Conversacion {
   firestoreId: string;

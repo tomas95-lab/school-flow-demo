@@ -4,7 +4,6 @@ import { useFirestoreCollection } from "@/hooks/useFireStoreCollection";
 import { useTeacherCourses } from "@/hooks/useTeacherCourses";
 import { where } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
@@ -147,7 +146,7 @@ export default function TareaCalendar() {
                     {day.getDate()}
                   </span>
                   <div className="flex-1 space-y-1 overflow-y-auto">
-                    {dayTareas.slice(0, 3).map((tarea) => {
+                    {dayTareas.slice(0, 3).map((tarea: any) => {
                       const subject = subjects?.find(s => s.firestoreId === tarea.subjectId);
                       return (
                         <div

@@ -152,8 +152,8 @@ export function NuevaConversacionModal({ onSuccess }: NuevaConversacionModalProp
                 <SelectValue placeholder="Selecciona un estudiante" />
               </SelectTrigger>
               <SelectContent>
-                {teacherStudents?.map(student => (
-                  <SelectItem key={student.firestoreId} value={student.firestoreId}>
+                {teacherStudents?.filter(student => student.firestoreId).map(student => (
+                  <SelectItem key={student.firestoreId} value={student.firestoreId!}>
                     {student.nombre} {student.apellido}
                   </SelectItem>
                 ))}
