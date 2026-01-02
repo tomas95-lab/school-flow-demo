@@ -3,7 +3,6 @@ import { collection, onSnapshot, getFirestore, query, orderBy, limit, type Query
 import type { DocumentData } from "firebase/firestore";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 import { useAuth } from "@/context/AuthContext";
-import { isDemoMode, getDemoData } from "@/data/demoData";
 
 // Cache global para evitar múltiples listeners
 const cache = new Map<string, { data: DocumentData[]; timestamp: number; listeners: number }>();
@@ -57,14 +56,6 @@ export function useFirestoreCollection<T extends DocumentData & { firestoreId?: 
     }
 
     try {
-      // Si estamos en modo demo, usar datos demo
-      if (isDemoMode()) {
-        const demoData = await getDemoData<T>(path as any);
-        setData(demoData);
-        setLoading(false);
-        return;
-      }
-
       // Verificar cache si está habilitado y usar datos iniciales para evitar flashes
       if (options?.enableCache !== false && cache.has(cacheKey)) {
         const cached = cache.get(cacheKey)!;

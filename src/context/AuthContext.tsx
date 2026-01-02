@@ -33,33 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Verificar modo demo primero
-    const checkDemoMode = () => {
-      const demoMode = localStorage.getItem('DEMO_MODE');
-      const demoUser = localStorage.getItem('DEMO_USER');
-      
-      if (demoMode === 'true' && demoUser) {
-        try {
-          const userData = JSON.parse(demoUser);
-          setUser(userData);
-          setLoading(false);
-          setInitialized(true);
-          return true;
-        } catch (error) {
-          console.error('Error parsing demo user:', error);
-          localStorage.removeItem('DEMO_MODE');
-          localStorage.removeItem('DEMO_USER');
-        }
-      }
-      return false;
-    };
-
-    // Si está en modo demo, usar datos demo
-    if (checkDemoMode()) {
-      return;
-    }
-
-    // Si no está en modo demo, usar Firebase Auth
+    // Usar Firebase Auth
     const unsub = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));

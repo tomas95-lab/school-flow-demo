@@ -13,8 +13,6 @@ import { Separator } from "@/components/ui/separator"
 import { useFirestoreCollection } from "@/hooks/useFireStoreCollection"
 import { where } from "firebase/firestore"
 import { useTeacherStudents, useTeacherCourses } from "@/hooks/useTeacherCourses"
-import { useDemoKPIs } from "@/hooks/useDemoKPIs"
-import { isDemoMode } from "@/data/demoData"
 import { 
   generarAlertasAutomaticas, 
   type DatosAlumno
@@ -263,8 +261,6 @@ export default function Dashboard() {
     totalSubjects?: number;
   }>({})
   
-  // Hook para KPIs demo
-  const { kpis: demoKPIs, loading: demoKPIsLoading } = useDemoKPIs()
   const [alertStats, setAlertStats] = useState({
     total: 0,
     critical: 0,
@@ -572,20 +568,10 @@ export default function Dashboard() {
 
   // Actualizar stats cuando calculatedStats cambie
   useEffect(() => {
-    if (isDemoMode() && !demoKPIsLoading) {
-      // Usar KPIs demo
-      setStats({
-        totalStudents: demoKPIs.totalStudents,
-        totalTeachers: demoKPIs.totalTeachers,
-        totalCourses: demoKPIs.totalCourses,
-        avgAttendance: `${demoKPIs.attendanceRate}%`,
-        avgGrades: demoKPIs.averageGrade.toFixed(1),
-        criticalAlerts: demoKPIs.activeAlerts
-      });
-    } else if (calculatedStats) {
+    if (calculatedStats) {
       setStats(calculatedStats);
     }
-  }, [calculatedStats, demoKPIs, demoKPIsLoading]);
+  }, [calculatedStats]);
 
   // Estado para alertas automáticas
   const [alertasAutomaticas, setAlertasAutomaticas] = useState<any[]>([]);

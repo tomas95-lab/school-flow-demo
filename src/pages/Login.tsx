@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { AuthContext } from "../context/AuthContext";
 import { useGlobalError } from "@/components/GlobalErrorProvider";
 import { toast } from "sonner";
-import { Play, User, Lock } from "lucide-react";
+import { User, Lock } from "lucide-react";
 
 async function signInWithEmailAndPassword(auth: Auth, email: string, password: string) {
   return firebaseSignInWithEmailAndPassword(auth, email, password);
@@ -20,7 +20,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { handleError } = useGlobalError();
@@ -79,41 +78,6 @@ export default function Login() {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setDemoLoading(true);
-    
-    try {
-      // Simular delay de login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Activar modo demo en localStorage
-      localStorage.setItem('DEMO_MODE', 'true');
-      localStorage.setItem('DEMO_USER', JSON.stringify({
-        uid: 'demo-admin-123',
-        email: 'demo@schoolflow.com',
-        role: 'admin',
-        name: 'Usuario Demo',
-        teacherId: '',
-        studentId: ''
-      }));
-      
-      toast.success('Modo Demo Activado', {
-        description: 'Acceso completo al sistema de demostración'
-      });
-      
-      // Recargar la página para activar el modo demo
-      window.location.href = '/app/dashboard';
-    } catch (error) {
-      toast.error('Error al activar modo demo', {
-        description: 'Intenta de nuevo'
-      });
-    } finally {
-      setDemoLoading(false);
-    }
-  };
-
-
-
   useEffect(() => {
     if (user) {
       navigate("/app/dashboard");
@@ -133,36 +97,15 @@ export default function Login() {
           full="login"
           description="Por favor ingresa tus credenciales"
           action={
-            <div className="space-y-3">
-              <Button
-                className="w-full cursor-pointer"
-                variant="info"
-                type="submit"
-                disabled={loading}
-                form="login-form"
-              >
-                {loading ? "Cargando..." : "Iniciar sesión"}
-              </Button>
-              
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">o</span>
-                </div>
-              </div>
-              
-              <Button
-                className="w-full cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
-                variant="outline"
-                onClick={handleDemoLogin}
-                disabled={demoLoading}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                {demoLoading ? "Activando..." : "Ver Demo"}
-              </Button>
-            </div>
+            <Button
+              className="w-full cursor-pointer"
+              variant="info"
+              type="submit"
+              disabled={loading}
+              form="login-form"
+            >
+              {loading ? "Cargando..." : "Iniciar sesión"}
+            </Button>
           }
         >
           <form
