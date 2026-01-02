@@ -1,4 +1,5 @@
 import type { User, Course, Subject, Student, Teacher, Attendance, Grade, Alert, Message, Tarea } from './index';
+import type { EventoEscolar } from './calendario';
 
 // Mapa colección → tipo de documento
 export type CollectionsMap = {
@@ -12,6 +13,7 @@ export type CollectionsMap = {
   alerts: Alert;
   messages: Message;
   tareas: Tarea;
+  eventos_escolares: EventoEscolar;
 };
 
 export type CollectionName = keyof CollectionsMap;

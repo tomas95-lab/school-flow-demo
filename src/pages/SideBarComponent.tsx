@@ -31,6 +31,7 @@ const validRoutes = [
   "/app/asistencias",
   "/app/calificaciones",
   "/app/tareas",
+  "/app/calendario",
   "/app/boletines",
   "/app/comunicacion",
   "/app/mensajes",

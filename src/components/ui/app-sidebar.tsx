@@ -18,7 +18,8 @@ import {
   Bot,
   LineChart,
   Settings2,
-  BookCheck
+  BookCheck,
+  Calendar
 } from "lucide-react"
 
 import {
@@ -54,6 +55,7 @@ const data = {
         { title: "Asistencias", url: "/app/asistencias", isActive: false },
         { title: "Calificaciones", url: "/app/calificaciones", isActive: false },
         { title: "Tareas", url: "/app/tareas", isActive: false },
+        { title: "Calendario", url: "/app/calendario", isActive: false },
         { title: "Boletines", url: "/app/boletines", isActive: false },
       ],
     },
@@ -110,6 +112,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "Asistencias": CalendarCheck2,
     "Calificaciones": NotebookText,
     "Tareas": BookCheck,
+    "Calendario": Calendar,
     "Boletines": FileText,
     "Mensajes": MessagesSquare,
     "Alertas": Bell,
